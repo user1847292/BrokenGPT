@@ -497,7 +497,7 @@ function addChatMessage(label,content){
   const heading=document.createElement("b");heading.textContent=label;
   const body=document.createElement("p");body.textContent=content;
   card.append(heading,body);
-  if(label.startsWith("BROKENGPT ·")){
+  if(currentUser&&label.startsWith("BROKENGPT ·")){
     const actions=document.createElement("div");actions.className="message-feedback";
     [["positive","👍 Helpful"],["negative","👎 Not helpful"]].forEach(([rating,title])=>{
       const button=document.createElement("button");button.type="button";button.textContent=title;
