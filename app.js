@@ -1,9 +1,9 @@
 const buttons=[...document.querySelectorAll("[data-view]")];function show(id){document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",v.id===id));buttons.forEach(b=>b.classList.toggle("selected",b.dataset.view===id));document.getElementById("page").textContent=id==="chat"?"CHAT":id.toUpperCase();closeDrawer()}buttons.forEach(b=>b.addEventListener("click",()=>show(b.dataset.view)));const drawer=document.getElementById("app-drawer"),drawerToggle=document.getElementById("drawer-toggle"),drawerBackdrop=document.getElementById("drawer-backdrop");function closeDrawer(){drawer?.classList.remove("drawer-open");drawerBackdrop?.classList.remove("visible");drawerToggle?.setAttribute("aria-expanded","false")}drawerToggle?.addEventListener("click",()=>{const open=!drawer.classList.contains("drawer-open");drawer.classList.toggle("drawer-open",open);drawerBackdrop.classList.toggle("visible",open);drawerToggle.setAttribute("aria-expanded",String(open))});drawerBackdrop?.addEventListener("click",closeDrawer);show("chat");const messages=document.getElementById("messages");document.getElementById("chat-form").addEventListener("submit",e=>{e.preventDefault();const field=document.getElementById("prompt"),value=field.value.trim();if(!value)return;field.value="";sendChatMessage(value)});document.getElementById("new-chat").addEventListener("click",()=>{messages.replaceChildren();liveConversation=[];show("chat")});document.getElementById("browser-form").addEventListener("submit",e=>{e.preventDefault();const q=document.getElementById("address").value.trim();if(!q)return;const url=/^https?:\/\//i.test(q)?q:/^[\w-]+\.[a-z]{2,}/i.test(q)?"https://"+q:"https://www.google.com/search?q="+encodeURIComponent(q);window.open(url,"_blank","noopener,noreferrer")});
 const languages=window.BROKENGPT_LANGUAGES||{};const languageSelect=document.getElementById("language-select");const savedLanguage=localStorage.getItem("brokengpt-language")||"en";
 Object.entries(languages).forEach(([code,item])=>{const opt=document.createElement("option");opt.value=code;opt.textContent=item.name;languageSelect.append(opt)});
-function applyLanguage(code){const lang=languages[code]||languages.en;document.documentElement.lang=code;document.documentElement.dir=lang.dir||"ltr";document.querySelector('[data-view="chat"]').textContent="◈ "+(lang.chat||"Chat");document.querySelector('[data-view="battle"]').textContent=" "+(lang.battle||"AI Battle");document.querySelector('[data-view="browser"]').textContent="◎ "+(lang.browser||"Browser");document.querySelector('[data-view="studio"]').textContent="▧ "+(lang.studio||"Creative Studio");document.querySelector('[data-view="cyber"]').textContent="⌘ "+(lang.cyber||"Cyber Lab");document.querySelector('[data-view="settings"]').textContent=" "+(lang.settings||"Settings");document.getElementById("new-chat").textContent="＋ "+(lang.newChat||"New chat");["home","notes","prompts","academy","toolbox","favorites","history"].forEach(id=>{const nav=document.querySelector(`[data-view="${id}"]`);if(nav&&lang[id])nav.textContent=({home:"⌂ ",notes:"▤ ",prompts:" ",academy:"▣ ",toolbox:"⌘ ",favorites:" ",history:"◷ "}[id])+lang[id]});document.querySelector("#chat .hero h1").innerHTML=(lang.welcome||"I can help with")+" <em>"+(lang.anything||"anything.")+"</em>";document.getElementById("prompt").placeholder=lang.message||"Message BROKENGPT...";document.querySelector("#settings h1").innerHTML=(lang.account||"Account")+" <em>"+(lang.settings||"Settings")+"</em>";document.getElementById("language-status").textContent=lang.languageSaved||"Interface language selected. AI reply language can be configured after provider connection.";localStorage.setItem("brokengpt-language",code)}
+function applyLanguage(code){const lang=languages[code]||languages.en;document.documentElement.lang=code;document.documentElement.dir=lang.dir||"ltr";document.querySelector('[data-view="chat"]').textContent="◈ "+(lang.chat||"Chat");document.querySelector('[data-view="battle"]').textContent=" "+(lang.battle||"AI Battle");document.querySelector('[data-view="browser"]').textContent="◎ "+(lang.browser||"Browser");document.querySelector('[data-view="studio"]').textContent="▧ "+(lang.studio||"Creative Studio");document.querySelector('[data-view="cyber"]').textContent="⌘ "+(lang.cyber||"Cyber Lab");document.querySelector('[data-view="settings"]').textContent=" "+(lang.settings||"Settings");document.getElementById("new-chat").textContent="＋ "+(lang.newChat||"New chat");["home","notes","prompts","academy","toolbox","favorites","history"].forEach(id=>{const nav=document.querySelector(`[data-view="${id}"]`);if(nav&&lang[id])nav.textContent=({home:"⌂ ",notes:"▤ ",prompts:" ",academy:"▣ ",toolbox:"⌘ ",favorites:" ",history:"◷ "}[id])+lang[id]});document.querySelector("#chat .hero h1").innerHTML=(lang.welcome||"I can help with")+" <em>"+(lang.anything||"anything.")+"</em>";document.getElementById("prompt").placeholder=lang.message||"Message BrokenGPT...";document.querySelector("#settings h1").innerHTML=(lang.account||"Account")+" <em>"+(lang.settings||"Settings")+"</em>";document.getElementById("language-status").textContent=lang.languageSaved||"Interface language selected. AI reply language can be configured after provider connection.";localStorage.setItem("brokengpt-language",code)}
 languageSelect.value=savedLanguage in languages?savedLanguage:"en";applyLanguage(languageSelect.value);languageSelect.addEventListener("change",()=>applyLanguage(languageSelect.value));
-const defaults={personality:" BROKENGPT Default",responseLength:"Balanced",explanationLevel:"Adaptive",emojis:false,combine:false,secondary:" Funny",bg:"#080808",fg:"#ff3038",accent:"#b00020",bubble:"#121212",font:"system-ui",rgb:false,rgbSpeed:"4s",rainbowText:false,rgbGlow:false,customName:"",customDescription:""};let prefs={...defaults};try{const saved=JSON.parse(localStorage.getItem("brokengpt-prefs")||"{}");if(saved.bg==="#080808"&&saved.fg==="#f5f5f5"&&saved.accent==="#df2028")saved.fg="#ff3038";prefs={...defaults,...saved}}catch{}
+const defaults={personality:" BrokenGPT Default",responseLength:"Balanced",explanationLevel:"Adaptive",emojis:false,combine:false,secondary:" Funny",bg:"#080808",fg:"#ff3038",accent:"#b00020",bubble:"#121212",font:"system-ui",rgb:false,rgbSpeed:"4s",rainbowText:false,rgbGlow:false,customName:"",customDescription:""};let prefs={...defaults};try{const saved=JSON.parse(localStorage.getItem("brokengpt-prefs")||"{}");if(saved.bg==="#080808"&&saved.fg==="#f5f5f5"&&saved.accent==="#df2028")saved.fg="#ff3038";prefs={...defaults,...saved}}catch{}
 const el=id=>document.getElementById(id);function applyPrefs(){document.documentElement.style.setProperty("--bg",prefs.bg);document.documentElement.style.setProperty("--red",prefs.accent);document.documentElement.style.setProperty("--text",prefs.fg);document.documentElement.style.setProperty("--panel",prefs.bubble);document.body.style.color=prefs.fg;document.body.style.fontFamily=prefs.font+",sans-serif";document.body.classList.toggle("rgb-on",prefs.rgb);document.body.classList.toggle("rgb-glow",prefs.rgbGlow);document.body.style.setProperty("--rgb-speed",prefs.rgbSpeed);el("personality").value=prefs.personality;el("response-length").value=prefs.responseLength;el("explanation-level").value=prefs.explanationLevel;el("use-emojis").checked=prefs.emojis;el("combine-personalities").checked=prefs.combine;el("secondary-personality").value=prefs.secondary;el("background-color").value=prefs.bg;el("text-color").value=prefs.fg;el("accent-color").value=prefs.accent;el("bubble-color").value=prefs.bubble;el("font-choice").value=prefs.font;el("rainbow-enabled").checked=prefs.rgb;el("rainbow-speed").value=prefs.rgbSpeed;el("rainbow-text").checked=prefs.rainbowText;el("rainbow-glow").checked=prefs.rgbGlow;el("custom-name").value=prefs.customName;el("custom-description").value=prefs.customDescription;el("custom-personality").classList.toggle("hidden",prefs.personality!=="custom");el("combine-area").classList.toggle("hidden",!prefs.combine)}
 function readPrefs(){prefs={...prefs,personality:el("personality").value,responseLength:el("response-length").value,explanationLevel:el("explanation-level").value,emojis:el("use-emojis").checked,combine:el("combine-personalities").checked,secondary:el("secondary-personality").value,bg:el("background-color").value,fg:el("text-color").value,accent:el("accent-color").value,bubble:el("bubble-color").value,font:el("font-choice").value,rgb:el("rainbow-enabled").checked,rgbSpeed:el("rainbow-speed").value,rainbowText:el("rainbow-text").checked,rgbGlow:el("rainbow-glow").checked,customName:el("custom-name").value,customDescription:el("custom-description").value};applyPrefs()}
 ["personality","response-length","explanation-level","use-emojis","combine-personalities","secondary-personality","background-color","text-color","accent-color","bubble-color","font-choice","rainbow-enabled","rainbow-speed","rainbow-text","rainbow-glow","custom-name","custom-description"].forEach(id=>el(id).addEventListener("input",readPrefs));
@@ -11,7 +11,7 @@ el("personality").addEventListener("change",()=>{el("custom-personality").classL
 el("save-personality").addEventListener("click",()=>{readPrefs();localStorage.setItem("brokengpt-prefs",JSON.stringify(prefs));el("settings-status").textContent="Personality preferences saved on this device."});
 document.querySelectorAll("[data-theme]").forEach(b=>b.addEventListener("click",()=>{const t={blood:["#080808","#ff3038","#b00020","#121212",false],midnight:["#15152a","#f5f2ff","#a78bfa","#201f38",false],light:["#f2f2f2","#171717","#2563eb","#fff",false],forest:["#10251b","#effaf2","#65d99b","#183528",false],rainbow:["#080808","#fff","#ed3b9d","#15121b",true]}[b.dataset.theme];[prefs.bg,prefs.fg,prefs.accent,prefs.bubble,prefs.rgb]=t;applyPrefs();el("settings-status").textContent="Theme preview selected. Save appearance to keep it."}));
 el("save-appearance").addEventListener("click",()=>{readPrefs();localStorage.setItem("brokengpt-prefs",JSON.stringify(prefs));el("settings-status").textContent="Appearance saved on this device."});
-el("reset-settings").addEventListener("click",()=>{prefs={...defaults};applyPrefs();localStorage.removeItem("brokengpt-prefs");el("settings-status").textContent="Settings reset to BROKENGPT defaults."});
+el("reset-settings").addEventListener("click",()=>{prefs={...defaults};applyPrefs();localStorage.removeItem("brokengpt-prefs");el("settings-status").textContent="Settings reset to BrokenGPT defaults."});
 
 /* Stage 3: navigation, modes, notes, prompts, local history and utilities */
 const modeInfo={
@@ -117,7 +117,7 @@ function renderAppDirectory(query=""){
 function renderConnectedApps(){
  const target=el("connected-apps"),select=el("task-app"),apps=getConnectedApps();target.replaceChildren();select.replaceChildren(new Option("Choose an app",""));
  if(!apps.length)target.append(safeText("p","No apps added yet.","status"));
- apps.forEach((app,index)=>{const row=document.createElement("div");row.className="connected-entry";const info=document.createElement("div");info.append(safeText("strong",app.name),safeText("small",(app.category||"Other")+" · Added to BROKENGPT list; integration "+(app.integration?"available":"not connected")));const actions=document.createElement("div");if(app.site){const open=document.createElement("button");open.textContent="Open";open.addEventListener("click",()=>window.open(app.site,"_blank","noopener,noreferrer"));actions.append(open)}if(app.store){const store=document.createElement("button");store.textContent="Install page";store.addEventListener("click",()=>window.open(app.store,"_blank","noopener,noreferrer"));actions.append(store)}const remove=document.createElement("button");remove.textContent="Remove";remove.addEventListener("click",()=>{const list=getConnectedApps();list.splice(index,1);saveConnectedApps(list);renderConnectedApps()});actions.append(remove);row.append(info,actions);target.append(row);select.add(new Option(app.name,app.name))});
+ apps.forEach((app,index)=>{const row=document.createElement("div");row.className="connected-entry";const info=document.createElement("div");info.append(safeText("strong",app.name),safeText("small",(app.category||"Other")+" · Added to BrokenGPT list; integration "+(app.integration?"available":"not connected")));const actions=document.createElement("div");if(app.site){const open=document.createElement("button");open.textContent="Open";open.addEventListener("click",()=>window.open(app.site,"_blank","noopener,noreferrer"));actions.append(open)}if(app.store){const store=document.createElement("button");store.textContent="Install page";store.addEventListener("click",()=>window.open(app.store,"_blank","noopener,noreferrer"));actions.append(store)}const remove=document.createElement("button");remove.textContent="Remove";remove.addEventListener("click",()=>{const list=getConnectedApps();list.splice(index,1);saveConnectedApps(list);renderConnectedApps()});actions.append(remove);row.append(info,actions);target.append(row);select.add(new Option(app.name,app.name))});
 }
 function addConnectedApp(app){
  const apps=getConnectedApps();if(!apps.some(item=>item.name.toLowerCase()===app.name.toLowerCase())){apps.push({name:app.name,category:app.category||"Other",description:app.description||"",site:app.site||"",store:app.store||"",integration:false,addedAt:new Date().toISOString()});saveConnectedApps(apps)}
@@ -127,7 +127,7 @@ el("app-search").addEventListener("input",()=>renderAppDirectory(el("app-search"
 el("add-manual-app").addEventListener("click",()=>{const name=el("manual-app-name").value.trim();if(!name)return;addConnectedApp({name,category:el("manual-app-type").value});el("manual-app-name").value=""});
 el("prepare-app-task").addEventListener("click",()=>{
  const app=el("task-app").value,task=el("app-task").value.trim();if(!app||!task){el("app-task-result").textContent="Choose an app and describe the task first.";return}
- const plan="APP TASK PLAN · "+app+"\n\nYour request: "+task+"\n\nStatus: Awaiting your approval.\nBROKENGPT can prepare guidance now. Automatic in-app actions are unavailable until this app has a supported, permissioned integration. Review the steps before doing anything.";
+ const plan="APP TASK PLAN · "+app+"\n\nYour request: "+task+"\n\nStatus: Awaiting your approval.\nBrokenGPT can prepare guidance now. Automatic in-app actions are unavailable until this app has a supported, permissioned integration. Review the steps before doing anything.";
  el("app-task-result").textContent=plan;
 });
 renderAppDirectory();renderConnectedApps();
@@ -192,7 +192,7 @@ function loadCharacterPrefs(){
  el("character-display-toggle").checked=!!characterPrefs.display;el("character-voice-toggle").checked=!!characterPrefs.voice;
  el("character-voice-style").value=characterPrefs.voiceStyle||"energetic";el("character-outside-toggle").checked=!!characterPrefs.outside;
  renderCharacterAvatar();companion.classList.toggle("hidden",!characterPrefs.display);
- el("character-outside-status").textContent=characterPrefs.outside?"Requested: outside-app mode is saved, but this web build has no native Android overlay service yet. The character remains inside BROKENGPT.":"A real floating companion outside the app requires a native Android companion service and Android overlay permission. This web prototype cannot keep a character above other apps.";
+ el("character-outside-status").textContent=characterPrefs.outside?"Requested: outside-app mode is saved, but this web build has no native Android overlay service yet. The character remains inside BrokenGPT.":"A real floating companion outside the app requires a native Android companion service and Android overlay permission. This web prototype cannot keep a character above other apps.";
 }
 el("character-choice").addEventListener("change",()=>{characterPrefs.choice=el("character-choice").value;if(characterPrefs.choice==="speedster"){characterPrefs.name="Speedster Hero";characterPrefs.description="A cheerful, confident, fast-talking blue speedster hero who loves jokes and helping out."}else{characterPrefs.name="My Character";characterPrefs.description="Describe your own character's personality and behavior."}el("custom-character-name").value=characterPrefs.name;el("custom-character-description").value=characterPrefs.description;renderCharacterAvatar()});
 el("save-character").addEventListener("click",()=>{characterPrefs.name=el("custom-character-name").value.trim()||(characterPrefs.choice==="speedster"?"Speedster Hero":"My Character");characterPrefs.description=el("custom-character-description").value.trim();characterPrefs.costume=el("character-costume").value;saveCharacterPrefs();renderCharacterAvatar();el("character-save-status").textContent="Saved "+characterPrefs.name+" and its costume on this device."});
@@ -383,7 +383,7 @@ async function apiRequest(url,options={}){
   if(options.csrf)headers["X-CSRF-Token"]=csrfToken;
   const response=await fetch(url,{method:options.method||"GET",credentials:"same-origin",headers,body:options.body?JSON.stringify(options.body):undefined});
   const type=response.headers.get("content-type")||"";
-  if(!type.includes("application/json"))throw new Error("BROKENGPT backend is not connected to this website yet.");
+  if(!type.includes("application/json"))throw new Error("BrokenGPT backend is not connected to this website yet.");
   const data=await response.json();
   if(!response.ok)throw new Error(data.error||"The request failed.");
   return data;
@@ -413,7 +413,7 @@ async function restoreAccount(){
     currentUser=data.user;csrfToken=data.csrfToken;updateAccountUI();await refreshProviderStatus();
   }catch(error){
     currentUser=null;csrfToken="";updateAccountUI();
-    accountMessage(error.message.includes("not connected")?"Backend not connected. Run or deploy the BROKENGPT backend to enable accounts.":"No active account session. Create an account or sign in.");
+    accountMessage(error.message.includes("not connected")?"Backend not connected. Run or deploy the BrokenGPT backend to enable accounts.":"No active account session. Create an account or sign in.");
   }
 }
 async function submitAccount(action){
@@ -485,21 +485,21 @@ function addChatMessage(label,content){
 async function sendChatMessage(value){
   addChatMessage("YOU",value);
   const provider=apiEl("active-provider").value,model=apiEl("active-model").value.trim();
-  if(!currentUser){addChatMessage("BROKENGPT · SETUP","Sign in and connect an AI provider in Settings to get real AI replies. This is a local prototype until the backend is deployed.");return;}
+  if(!currentUser){addChatMessage("BrokenGPT · SETUP","Sign in and connect an AI provider in Settings to get real AI replies. This is a local prototype until the backend is deployed.");return;}
   const button=document.getElementById("send-message");button.disabled=true;
   try{
     liveConversation.push({role:"user",content:value});
-    const personality=prefs.personality||"BROKENGPT Default";
+    const personality=prefs.personality||"BrokenGPT Default";
     const mode=apiEl("mode-select").value||"Balanced";
-    const system="You are BROKENGPT, a helpful AI assistant. Personality: "+personality+". Mode: "+mode+". Explanation level: "+(prefs.explanationLevel||"Adaptive")+". Response length: "+(prefs.responseLength||"Balanced")+". Be clear, safe, honest about uncertainty, and adapt explanations to the user's level.";
+    const system="You are BrokenGPT, a helpful AI assistant. Personality: "+personality+". Mode: "+mode+". Explanation level: "+(prefs.explanationLevel||"Adaptive")+". Response length: "+(prefs.responseLength||"Balanced")+". Be clear, safe, honest about uncertainty, and adapt explanations to the user's level.";
     const data=await apiRequest("/api/chat",{method:"POST",csrf:true,body:{provider,model,messages:[{role:"system",content:system},...liveConversation]}});
     const answer=data.reply||"(The provider returned an empty response.)";
     liveConversation.push({role:"assistant",content:answer});
-    addChatMessage("BROKENGPT · "+data.provider.toUpperCase()+" / "+data.model,answer);speakAIReply(answer);
-    const hist=readList("brokengpt-history");hist.push({title:value.slice(0,48),preview:"You: "+value+"\nBROKENGPT: "+answer.slice(0,700),time:new Date().toISOString()});writeList("brokengpt-history",hist);renderHistory();
+    addChatMessage("BrokenGPT · "+data.provider.toUpperCase()+" / "+data.model,answer);speakAIReply(answer);
+    const hist=readList("brokengpt-history");hist.push({title:value.slice(0,48),preview:"You: "+value+"\nBrokenGPT: "+answer.slice(0,700),time:new Date().toISOString()});writeList("brokengpt-history",hist);renderHistory();
   }catch(error){
     if(liveConversation.at(-1)?.role==="user")liveConversation.pop();
-    addChatMessage("BROKENGPT · CONNECTION",error.message);
+    addChatMessage("BrokenGPT · CONNECTION",error.message);
   }finally{button.disabled=false;}
 }
 restoreAccount();
@@ -523,7 +523,7 @@ apiEl("run-battle").addEventListener("click",async()=>{
   apiEl("battle-final-result").textContent="Waiting for both models…";
   apiEl("battle-status").textContent="Sending the same prompt to both models…";
   try{
-    const ask=(slot,config)=>apiRequest("/api/chat",{method:"POST",csrf:true,body:{provider:config.provider,model:config.model,messages:[{role:"system",content:"You are an independent AI participant in BROKENGPT AI Battle. Answer the user's prompt carefully and clearly. Do not refer to another model's answer because you cannot see it."},{role:"user",content:prompt}]}});
+    const ask=(slot,config)=>apiRequest("/api/chat",{method:"POST",csrf:true,body:{provider:config.provider,model:config.model,messages:[{role:"system",content:"You are an independent AI participant in BrokenGPT AI Battle. Answer the user's prompt carefully and clearly. Do not refer to another model's answer because you cannot see it."},{role:"user",content:prompt}]}});
     const results=await Promise.allSettled([ask("a",a),ask("b",b)]);
     const first=results[0].status==="fulfilled"?results[0].value:null;
     const second=results[1].status==="fulfilled"?results[1].value:null;
@@ -533,7 +533,7 @@ apiEl("run-battle").addEventListener("click",async()=>{
     if(!first||!second){apiEl("battle-final-result").textContent="Only one model responded. The individual answer is shown above; synthesis was skipped because two answers are needed.";apiEl("battle-status").textContent="Partial result: one model request failed.";return;}
     apiEl("battle-status").textContent="Both models answered. Comparing and synthesizing…";
     const synthesis=await apiRequest("/api/chat",{method:"POST",csrf:true,body:{provider:synth.provider,model:synth.model,messages:[
-      {role:"system",content:"You are the BROKENGPT AI Battle judge. Compare two independent answers to the same prompt. Identify agreement, meaningful differences, unsupported claims, and omissions. Then produce one clear, accurate, useful combined answer. Do not automatically prefer either model. Be honest about uncertainty and do not claim external verification."},
+      {role:"system",content:"You are the BrokenGPT AI Battle judge. Compare two independent answers to the same prompt. Identify agreement, meaningful differences, unsupported claims, and omissions. Then produce one clear, accurate, useful combined answer. Do not automatically prefer either model. Be honest about uncertainty and do not claim external verification."},
       {role:"user",content:"Original prompt:\n"+prompt+"\n\nModel A ("+a.provider+" / "+a.model+") answer:\n"+first.reply+"\n\nModel B ("+b.provider+" / "+b.model+") answer:\n"+second.reply+"\n\nCompare them briefly, then give the strongest combined answer."}
     ]}});
     apiEl("battle-final-result").textContent=synthesis.reply||"The synthesis model returned an empty response.";
@@ -677,7 +677,7 @@ apiEl("download-video").addEventListener("click",async()=>{
    if(!name){$("wifi-device-status").textContent="Enter a device label first.";return;}
    const list=read(deviceKey);list.push({name,detail});write(deviceKey,list);
    $("wifi-device-name").value="";$("wifi-device-detail").value="";
-   $("wifi-device-status").textContent="Saved as a manual note. It was not detected by BROKENGPT.";
+   $("wifi-device-status").textContent="Saved as a manual note. It was not detected by BrokenGPT.";
    renderDeviceNotes();
  });
  renderDeviceNotes();
@@ -721,7 +721,7 @@ apiEl("download-video").addEventListener("click",async()=>{
    renderOffline();
  });
  renderOffline();
-/* Approved BROKENGPT update: composer actions, file attachment, and family shortcuts */
+/* Approved BrokenGPT update: composer actions, file attachment, and family shortcuts */
   const plus=document.getElementById("composer-plus");
   const menu=document.getElementById("composer-menu");
   const fileInput=document.getElementById("chat-file-input");
