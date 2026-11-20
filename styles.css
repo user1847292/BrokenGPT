@@ -127,3 +127,12 @@ body.rgb-direct-switch{--rgb-easing:steps(1,end)}
 body,body *{color:var(--text-red)!important}
 button,form button,.settings-card button{background:#26090d!important;border-color:#6f1820!important}
 input::placeholder,textarea::placeholder{color:#c94b53!important;opacity:1}
+
+
+/* Deep blood-red theme refinement */
+:root{--red:#C00000;--text-red:#C00000}
+body,body *{color:#C00000!important}
+.brand:first-letter,.brand b,em,.message b,.tile>b,.rgb-studio h3,.mode-bar label,.label,section>small,.settings-card label,.battle-controls label,.creative-options label,.ai-connection-bar label{color:#C00000!important}
+button,form button,.settings-card button{background:#260000!important;border-color:#8B0000!important;color:#C00000!important}
+nav button:hover,nav button.selected,.hacking-tab.selected{background:#240000!important;border-color:#8B0000!important;color:#C00000!important}
+input::placeholder,textarea::placeholder{color:#8B0000!important}
