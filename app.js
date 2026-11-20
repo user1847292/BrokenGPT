@@ -275,3 +275,101 @@ function playCharacterScene(key){
   window.setTimeout(()=>{companion.classList.remove(exitStyle);if(characterPrefs.display)companion.classList.remove("hidden");},1900);
  }
 }
+
+
+/* Character Universe: searchable character presets with original placeholder presentation.
+   Official artwork, logos, and exact character voices are not bundled. */
+const universeCharacters = [
+ {id:"mario",name:"Mario",category:"Games",emoji:"🍄",description:"An upbeat, brave platforming hero who encourages teamwork and never gives up.",tag:"Let's-a go!",style:["power-up","jump time","coin chase","level clear","teamwork","super jump","bonus stage","adventure time","brave move","here we go"]},
+ {id:"luigi",name:"Luigi",category:"Games",emoji:"👻",description:"A kind, clever, slightly nervous adventurer who finds courage when friends need help.",tag:"I can do this!",style:["careful step","ghost hunt","brave moment","deep breath","green power","team helper","quiet courage","unexpected win","mystery mansion","let's-a go"]},
+ {id:"peach",name:"Princess Peach",category:"Games",emoji:"👑",description:"A warm, confident royal leader with a thoughtful and adventurous spirit.",tag:"A royal adventure!",style:["kindness first","royal plan","bright idea","castle day","graceful move","friendship wins","brave heart","team spirit","a lovely surprise","onward"]},
+ {id:"bowser",name:"Bowser",category:"Games",emoji:"🐲",description:"A loud, dramatic fantasy boss character with playful competitive energy.",tag:"ROAR!",style:["boss mode","big entrance","fiery plan","thunderous laugh","challenge accepted","power move","dramatic roar","not so fast","kingly stomp","next level"]},
+ {id:"yoshi",name:"Yoshi",category:"Games",emoji:"🦖",description:"A cheerful, loyal dinosaur companion who loves helping friends.",tag:"Yoshi!",style:["happy hop","friendly flutter","egg-cellent idea","team jump","snack time","little adventure","big smile","green sprint","helping hand","whee"]},
+ {id:"kirby",name:"Kirby",category:"Games",emoji:"🌸",description:"A sweet, energetic star adventurer with a playful and optimistic personality.",tag:"Poyo!",style:["star power","dream land","tiny hero","happy bounce","snack break","cosmic cheer","copy ability","pink power","big adventure","poyo time"]},
+ {id:"link",name:"Link",category:"Games",emoji:"🗡️",description:"A quiet, courageous fantasy adventurer who communicates through actions and thoughtful gestures.",tag:"Adventure awaits.",style:["quest accepted","shield ready","forest path","ancient secret","brave heart","treasure found","quiet focus","hero's call","new discovery","onward"]},
+ {id:"pikachu",name:"Pikachu",category:"Games",emoji:"⚡",description:"A loyal, energetic electric mouse companion who is curious and encouraging.",tag:"Pika-pika!",style:["spark of joy","thunder ready","tiny zap","team bond","electric energy","happy squeak","curious peek","bright idea","quick dash","pika power"]},
+ {id:"shadow",name:"Shadow",category:"Games",emoji:"🖤",description:"A cool, serious, determined speed rival with a guarded but helpful side.",tag:"Hmph. Try to keep up.",style:["chaos control","serious mode","ultimate focus","dark speed","mission accepted","rival spotted","precision move","no distractions","calculated risk","limit breaker"]},
+ {id:"tails",name:"Tails",category:"Games",emoji:"🦊",description:"A friendly young inventor who is curious, clever, and supportive.",tag:"I've got an idea!",style:["invention time","flight check","toolbox ready","smart solution","two-tail takeoff","test run","clever fix","science moment","team support","new blueprint"]},
+ {id:"knuckles",name:"Knuckles",category:"Games",emoji:"🥊",description:"A strong, stubborn guardian who values honesty, loyalty, and protecting others.",tag:"Bring it on.",style:["guardian duty","strong stance","training time","straight answer","emerald watch","power punch","loyal teammate","focus up","challenge accepted","all clear"]},
+ {id:"spiderman",name:"Spider-Man",category:"Superheroes",emoji:"🕸️",description:"A witty, friendly city hero who uses quick thinking, responsibility, and humor.",tag:"Friendly neighborhood hero!",style:["web-sling ready","city patrol","quick quip","spider-sense","hero moment","swing by","clever save","responsibility first","rooftop route","team-up time"]},
+ {id:"ironman",name:"Iron Man",category:"Superheroes",emoji:"🤖",description:"A brilliant, confident tech inventor with fast humor and engineering instincts.",tag:"Systems online.",style:["armor check","tech upgrade","flight systems","diagnostics","genius idea","power core","workshop time","calculated risk","prototype ready","mission control"]},
+ {id:"hulk",name:"Hulk",category:"Superheroes",emoji:"💚",description:"A powerful hero with simple, direct speech and a protective heart.",tag:"Hulk ready!",style:["strong move","big jump","protect friends","calm down","team smash","power check","gentle moment","big green energy","hero help","all clear"]},
+ {id:"thor",name:"Thor",category:"Superheroes",emoji:"⚡",description:"A noble thunder hero with grand, friendly confidence.",tag:"By the thunder!",style:["storm approaches","worthy quest","thunder call","brave companion","realm watch","mighty idea","heroic welcome","lightning strike","honor first","onward"]},
+ {id:"batman",name:"Batman",category:"Superheroes",emoji:"🦇",description:"A calm, strategic detective hero who studies clues and prepares carefully.",tag:"The case is not closed.",style:["case file","grapple ready","night patrol","detective mode","evidence first","contingency plan","rooftop watch","silent approach","city needs help","mission complete"]},
+ {id:"superman",name:"Superman",category:"Superheroes",emoji:"🦸",description:"A hopeful, compassionate hero who values courage and helping people.",tag:"There's always hope.",style:["hopeful thought","rescue ready","kindness matters","skyward flight","steady courage","help is here","truth first","bright tomorrow","teamwork","look up"]},
+ {id:"flash",name:"The Flash",category:"Superheroes",emoji:"💨",description:"A cheerful, fast-talking speed hero who loves science and quick jokes.",tag:"Fastest thought first!",style:["speed force","quick lap","time to move","science snack","fast fix","lightning round","race you","speedy solution","red blur","back in a flash"]},
+ {id:"wonderwoman",name:"Wonder Woman",category:"Superheroes",emoji:"🛡️",description:"A brave, wise warrior who leads with compassion and fairness.",tag:"Courage and truth.",style:["truth and courage","shield raised","wise choice","warrior focus","peace first","honor bound","strong heart","mission accepted","compassion wins","stand together"]},
+ {id:"joker",name:"Joker",category:"Superheroes",emoji:"🃏",description:"A theatrical fictional trickster persona with unpredictable jokes; kept non-threatening and playful.",tag:"A little plot twist!",style:["dramatic giggle","plot twist","ta-da","curtain call","unexpected joke","mischief mode","silly scheme","surprise entrance","comic timing","what a show"]},
+ {id:"goku",name:"Goku",category:"Anime",emoji:"🥋",description:"An upbeat martial-arts adventurer who loves challenges, training, and helping friends.",tag:"Let's get stronger!",style:["training time","new challenge","power up","friendly match","keep practicing","big energy","team spirit","ready stance","next level","let's go"]},
+ {id:"vegeta",name:"Vegeta",category:"Anime",emoji:"👑",description:"A proud, disciplined rival who is intense, focused, and secretly loyal.",tag:"Hmph. I will surpass it.",style:["elite focus","training harder","pride intact","no excuses","rival challenge","precision strike","royal resolve","prove it","limit break","discipline first"]},
+ {id:"naruto",name:"Naruto",category:"Anime",emoji:"🍥",description:"An energetic, optimistic ninja who values friendship, perseverance, and teamwork.",tag:"Believe it!",style:["ninja way","shadow clone idea","never give up","team seven spirit","training arc","big dream","ramen break","friendship power","mission accepted","believe it"]},
+ {id:"sasuke",name:"Sasuke",category:"Anime",emoji:"🌑",description:"A quiet, focused ninja rival who is analytical and independent.",tag:"I have a plan.",style:["focused gaze","quiet strategy","sharingan focus","mission first","precise move","training alone","calm analysis","rival nearby","next step","no distractions"]},
+ {id:"luffy",name:"Monkey D. Luffy",category:"Anime",emoji:"🏴‍☠️",description:"A carefree, brave pirate captain who loves adventure, food, and friends.",tag:"I'm gonna be King of the Pirates!",style:["adventure ahoy","crew assemble","meat break","big dream","captain's call","island ahead","rubber power","friendship first","full speed","let's sail"]},
+ {id:"zoro",name:"Roronoa Zoro",category:"Anime",emoji:"⚔️",description:"A serious, determined swordsman who is loyal and often hilariously directionally challenged.",tag:"Point me toward the goal.",style:["training session","three-sword focus","steady stance","loyal crew","quiet resolve","wrong turn","sharp focus","goal ahead","discipline","rest later"]},
+ {id:"gojo",name:"Satoru Gojo",category:"Anime",emoji:"🕶️",description:"A playful, confident mentor who mixes jokes with sharp insight.",tag:"Don't worry, I've got this.",style:["limitless confidence","teacher mode","playful tease","infinity focus","clever trick","lesson time","cool entrance","sharp observation","all under control","next lesson"]},
+ {id:"tanjiro",name:"Tanjiro Kamado",category:"Anime",emoji:"🌊",description:"A kind, determined swordsman who is empathetic, observant, and protective.",tag:"I'll keep going.",style:["steady breath","kind heart","careful listening","training path","protect others","water flow","brave step","gentle strength","focus","keep going"]},
+ {id:"spongebob",name:"SpongeBob",category:"Cartoons",emoji:"🧽",description:"An enthusiastic, silly sea sponge who finds joy in everyday adventures.",tag:"I'm ready!",style:["jellyfish time","pineapple plans","best day ever","silly grin","krabby idea","bubbles everywhere","happy dance","work shift","undersea fun","ready"]},
+ {id:"patrick",name:"Patrick",category:"Cartoons",emoji:"⭐",description:"A lovable, goofy friend with simple, unexpected observations.",tag:"Is this the part where we laugh?",style:["deep thought","snack question","rock time","silly idea","unexpected wisdom","nap plan","friendship moment","wait what","star power","hmm"]},
+ {id:"tom",name:"Tom",category:"Cartoons",emoji:"🐱",description:"A determined cartoon cat with expressive reactions and slapstick timing.",tag:"Mrow!",style:["sneaky plan","chase scene","dramatic pause","cat reflexes","quiet tiptoe","oops moment","big reaction","one more try","comic timing","nap time"]},
+ {id:"jerry",name:"Jerry",category:"Cartoons",emoji:"🐭",description:"A clever, quick-thinking mouse who enjoys playful problem-solving.",tag:"Heh-heh!",style:["tiny trick","clever escape","cheese break","quick thinking","silent victory","mouse-sized plan","sneaky peek","one step ahead","mischief","ta-da"]},
+ {id:"ben10",name:"Ben 10",category:"Cartoons",emoji:"⌚",description:"A brave young hero who enjoys gadgets, teamwork, and creative transformations.",tag:"Hero time!",style:["omnitrix check","hero time","alien idea","team rescue","watch activated","new form","quick save","mission accepted","gadget scan","let's roll"]},
+ {id:"frozen",name:"Elsa",category:"Movies",emoji:"❄️",description:"A thoughtful ice-magic queen who is calm, creative, and learning confidence.",tag:"A little winter magic.",style:["ice crystal","snowy idea","quiet strength","winter wonder","let it flow","royal calm","frosty sparkle","new beginning","magic touch","peaceful moment"]},
+ {id:"toystory",name:"Buzz Lightyear",category:"Movies",emoji:"🚀",description:"A brave space ranger with earnest confidence and mission-focused humor.",tag:"To infinity and beyond!",style:["space mission","ranger report","launch ready","star command","mission log","cosmic discovery","team check","brave landing","infinity ahead","all systems go"]},
+ {id:"shrek",name:"Shrek",category:"Movies",emoji:"🧅",description:"A grumpy-but-kind swamp-dweller persona with dry humor and a soft heart.",tag:"Get outta my swamp—just kidding.",style:["swamp wisdom","onion layers","quiet afternoon","fairy tale trouble","dry joke","muddy boots","unexpected kindness","snack break","ogre logic","all done"]}
+];
+const universeById = Object.fromEntries(universeCharacters.map(item=>[item.id,item]));
+universeCharacters.forEach(item=>{
+ expandedCharacterProfiles[item.id]={name:item.name,tag:item.tag,style:item.style,description:item.description,emoji:item.emoji};
+});
+function renderCharacterAvatar(){
+ const preview=el("character-avatar-preview");
+ const profile=universeById[characterPrefs.choice];
+ const emoji=profile?.emoji||"🦔";
+ preview.replaceChildren();
+ if(characterPrefs.avatar){
+  const img=document.createElement("img");img.src=characterPrefs.avatar;img.alt="Your custom character avatar";preview.append(img);
+  companionAvatar.replaceChildren();const mini=document.createElement("img");mini.src=characterPrefs.avatar;mini.alt="";companionAvatar.append(mini);
+ }else{
+  preview.textContent=emoji;companionAvatar.textContent=emoji;
+ }
+ companionCaption.textContent=characterPrefs.name||"Character";
+}
+function addUniverseCharacter(id){
+ const item=universeById[id];if(!item)return;
+ const select=el("character-choice");
+ let option=[...select.options].find(o=>o.value===id);
+ if(!option){option=document.createElement("option");option.value=id;option.textContent=item.name+" ("+item.category+")";select.append(option);}
+ select.value=id;
+ characterPrefs.choice=id;characterPrefs.name=item.name;characterPrefs.description=item.description;
+ el("custom-character-name").value=item.name;el("custom-character-description").value=item.description;
+ saveCharacterPrefs();renderCharacterAvatar();rebuildExpandedScenes();
+ el("universe-status").textContent=item.name+" added and selected! You can customize its costume, avatar, and description below.";
+}
+function renderUniverseDirectory(){
+ const query=(el("universe-search").value||"").trim().toLowerCase();
+ const category=el("universe-category").value;
+ const target=el("universe-results");target.replaceChildren();
+ const matches=universeCharacters.filter(item=>(category==="all"||item.category===category)&&(!query||(item.name+" "+item.category+" "+item.description).toLowerCase().includes(query)));
+ if(!matches.length){target.textContent="No matching characters. Try another search.";return;}
+ matches.forEach(item=>{
+  const card=document.createElement("article");card.className="universe-character";
+  const face=document.createElement("div");face.className="universe-avatar";face.textContent=item.emoji;
+  const info=document.createElement("div");info.className="universe-character-info";
+  const name=document.createElement("strong");name.textContent=item.name;
+  const meta=document.createElement("small");meta.textContent=item.category+" · original profile";
+  const desc=document.createElement("p");desc.textContent=item.description;
+  const add=document.createElement("button");add.type="button";add.textContent=characterPrefs.choice===item.id?"Selected":"Add / Select";
+  add.addEventListener("click",()=>addUniverseCharacter(item.id));
+  info.append(name,meta,desc,add);card.append(face,info);target.append(card);
+ });
+ el("universe-status").textContent=matches.length+" characters found · "+universeCharacters.length+" in this starter library.";
+}
+el("universe-search").addEventListener("input",renderUniverseDirectory);
+el("universe-category").addEventListener("change",renderUniverseDirectory);
+el("character-choice").addEventListener("change",()=>{
+ const item=universeById[characterPrefs.choice];
+ if(item){characterPrefs.name=item.name;characterPrefs.description=item.description;saveCharacterPrefs();renderCharacterAvatar();}
+ renderUniverseDirectory();
+});
+renderUniverseDirectory();
+if(universeById[characterPrefs.choice])renderCharacterAvatar();
