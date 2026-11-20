@@ -36,6 +36,24 @@ function csrf(req,res,next){const supplied=req.get('x-csrf-token')||'';const a=B
 const provider=v=>v==='openai'||v==='gemini'?v:null;
 function messagesOk(items){if(!Array.isArray(items)||!items.length||items.length>40)return null;const out=[];for(const m of items){if(!m||!['user','assistant','system'].includes(m.role)||typeof m.content!=='string'||m.content.length>12000)return null;out.push({role:m.role,content:m.content});}return out;}
 app.disable('x-powered-by');app.use(cookieParser());app.use(helmet({crossOriginResourcePolicy:{policy:'same-origin'},contentSecurityPolicy:{directives:{'style-src':["'self'","'unsafe-inline'"],'img-src':["'self'",'data:','blob:']}}}));app.use(express.json({limit:'24kb',strict:true}));
+const DEMO_ACCESS_PASSWORD=process.env.BROKENGPT_DEMO_ACCESS_PASSWORD||'';
+function demoAccessGate(req,res,next){
+  if(!DEMO_ACCESS_PASSWORD||req.path==='/api/health')return next();
+  const header=req.get('authorization')||'';
+  const match=header.match(/^Basic\\s+(.+)$/i);
+  let supplied='';
+  if(match){try{supplied=Buffer.from(match[1],'base64').toString('utf8');}catch{}}
+  const expected=Buffer.from('demo:'+DEMO_ACCESS_PASSWORD);
+  const actual=Buffer.from(supplied);
+  const valid=actual.length===expected.length&&crypto.timingSafeEqual(actual,expected);
+  if(!valid){
+    res.setHeader('WWW-Authenticate','Basic realm="BrokenGPT private demo", charset="UTF-8"');
+    res.setHeader('Cache-Control','no-store');
+    return res.status(401).type('text/plain').send('This BrokenGPT demo is private. Enter the demo access credentials.');
+  }
+  next();
+}
+app.use(demoAccessGate);
 app.use((req,res,next)=>/^\/(?:backend|node_modules|\.env|package\.json)(?:\/|$)/i.test(req.path)?res.sendStatus(404):next());
 const authLimit=rateLimit({windowMs:15*60*1000,limit:8,standardHeaders:'draft-7',legacyHeaders:false});
 const apiLimit=rateLimit({windowMs:60*1000,limit:30,standardHeaders:'draft-7',legacyHeaders:false});
