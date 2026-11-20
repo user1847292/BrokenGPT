@@ -477,7 +477,7 @@ for(const id of ["battle-provider-a","battle-provider-b"]){
  });
 }
 function addChatMessage(label,content){
-  const card=document.createElement("article");card.className="message";
+  const card=document.createElement("article");card.className="message "+(label==="YOU"?"user-message":"assistant-message");
   const heading=document.createElement("b");heading.textContent=label;
   const body=document.createElement("p");body.textContent=content;
   card.append(heading,body);messages.append(card);return card;
@@ -487,6 +487,7 @@ async function sendChatMessage(value){
   const provider=apiEl("active-provider").value,model=apiEl("active-model").value.trim();
   if(!currentUser){addChatMessage("BrokenGPT · SETUP","Sign in and connect an AI provider in Settings to get real AI replies. This is a local prototype until the backend is deployed.");return;}
   const button=document.getElementById("send-message");button.disabled=true;
+  const typing=addChatMessage("BrokenGPT","Thinking…");typing.classList.add("typing-message");
   try{
     liveConversation.push({role:"user",content:value});
     const personality=prefs.personality||"BrokenGPT Default";
@@ -495,11 +496,11 @@ async function sendChatMessage(value){
     const data=await apiRequest("/api/chat",{method:"POST",csrf:true,body:{provider,model,messages:[{role:"system",content:system},...liveConversation]}});
     const answer=data.reply||"(The provider returned an empty response.)";
     liveConversation.push({role:"assistant",content:answer});
-    addChatMessage("BrokenGPT · "+data.provider.toUpperCase()+" / "+data.model,answer);speakAIReply(answer);
+    typing.remove();addChatMessage("BrokenGPT",answer);speakAIReply(answer);
     const hist=readList("brokengpt-history");hist.push({title:value.slice(0,48),preview:"You: "+value+"\nBrokenGPT: "+answer.slice(0,700),time:new Date().toISOString()});writeList("brokengpt-history",hist);renderHistory();
   }catch(error){
     if(liveConversation.at(-1)?.role==="user")liveConversation.pop();
-    addChatMessage("BrokenGPT · CONNECTION",error.message);
+    typing.remove();addChatMessage("BrokenGPT · CONNECTION",error.message);
   }finally{button.disabled=false;}
 }
 restoreAccount();
