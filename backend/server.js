@@ -4,7 +4,7 @@ const crypto=require('node:crypto'),path=require('node:path'),fs=require('node:f
 const express=require('express'),helmet=require('helmet'),cookieParser=require('cookie-parser'),Database=require('better-sqlite3');
 const {rateLimit}=require('express-rate-limit');
 const app=express(),PORT=Number(process.env.PORT||3000),ROOT=path.resolve(__dirname,'..');
-const DATA=path.join(__dirname,'data'),DBFILE=path.join(DATA,'brokengpt.sqlite');
+const DATA=path.resolve(process.env.BROKENGPT_DATA_DIR||path.join(__dirname,'data')),DBFILE=path.join(DATA,'brokengpt.sqlite');
 const SESSION_MS=30*24*60*60*1000,COOKIE='brokengpt_session',PROD=process.env.NODE_ENV==='production';
 if(process.env.TRUST_PROXY==='1')app.set('trust proxy',1);
 fs.mkdirSync(DATA,{recursive:true,mode:0o700});
