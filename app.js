@@ -473,3 +473,41 @@ async function sendChatMessage(value){
 }
 restoreAccount();
 
+
+
+/* Stage 4B: independent model comparison and synthesis */
+function battleUsage(usage){if(!usage)return"Usage details not provided by provider.";const inTokens=usage.prompt_tokens??usage.promptTokenCount,outTokens=usage.completion_tokens??usage.candidatesTokenCount;return [inTokens!=null?"Input: "+inTokens+" tokens":"",outTokens!=null?"Output: "+outTokens+" tokens":""].filter(Boolean).join(" · ")||"Usage details returned.";}
+function battleRender(slot,title,answer,usage){apiEl("battle-"+slot+"-title").textContent=title;apiEl("battle-"+slot+"-result").textContent=answer;apiEl("battle-"+slot+"-usage").textContent=usage||"";}
+apiEl("run-battle").addEventListener("click",async()=>{
+  const prompt=apiEl("battle-prompt").value.trim();
+  if(!prompt){apiEl("battle-status").textContent="Enter a prompt first.";return;}
+  if(!currentUser){apiEl("battle-status").textContent="Sign in and connect your provider keys in Settings first.";return;}
+  const a={provider:apiEl("battle-provider-a").value,model:apiEl("battle-model-a").value.trim()};
+  const b={provider:apiEl("battle-provider-b").value,model:apiEl("battle-model-b").value.trim()};
+  const synth=apiEl("battle-synthesizer").value==="a"?a:b;
+  if(!a.model||!b.model){apiEl("battle-status").textContent="Enter a model ID for both models.";return;}
+  const button=apiEl("run-battle");button.disabled=true;button.textContent="Battle running…";
+  battleRender("a",a.provider.toUpperCase()+" · "+a.model,"Waiting for response…","");
+  battleRender("b",b.provider.toUpperCase()+" · "+b.model,"Waiting for response…","");
+  apiEl("battle-final-result").textContent="Waiting for both models…";
+  apiEl("battle-status").textContent="Sending the same prompt to both models…";
+  try{
+    const ask=(slot,config)=>apiRequest("/api/chat",{method:"POST",body:{provider:config.provider,model:config.model,messages:[{role:"system",content:"You are an independent AI participant in BROKENGPT AI Battle. Answer the user's prompt carefully and clearly. Do not refer to another model's answer because you cannot see it."},{role:"user",content:prompt}]}});
+    const results=await Promise.allSettled([ask("a",a),ask("b",b)]);
+    const first=results[0].status==="fulfilled"?results[0].value:null;
+    const second=results[1].status==="fulfilled"?results[1].value:null;
+    battleRender("a",a.provider.toUpperCase()+" · "+a.model,first?.reply||("Request failed: "+results[0].reason.message),first?battleUsage(first.usage):"");
+    battleRender("b",b.provider.toUpperCase()+" · "+b.model,second?.reply||("Request failed: "+results[1].reason.message),second?battleUsage(second.usage):"");
+    if(!first&&!second){apiEl("battle-final-result").textContent="Neither model returned an answer. Check your provider connections and model IDs.";apiEl("battle-status").textContent="Battle failed.";return;}
+    if(!first||!second){apiEl("battle-final-result").textContent="Only one model responded. The individual answer is shown above; synthesis was skipped because two answers are needed.";apiEl("battle-status").textContent="Partial result: one model request failed.";return;}
+    apiEl("battle-status").textContent="Both models answered. Comparing and synthesizing…";
+    const synthesis=await apiRequest("/api/chat",{method:"POST",body:{provider:synth.provider,model:synth.model,messages:[
+      {role:"system",content:"You are the BROKENGPT AI Battle judge. Compare two independent answers to the same prompt. Identify agreement, meaningful differences, unsupported claims, and omissions. Then produce one clear, accurate, useful combined answer. Do not automatically prefer either model. Be honest about uncertainty and do not claim external verification."},
+      {role:"user",content:"Original prompt:\n"+prompt+"\n\nModel A ("+a.provider+" / "+a.model+") answer:\n"+first.reply+"\n\nModel B ("+b.provider+" / "+b.model+") answer:\n"+second.reply+"\n\nCompare them briefly, then give the strongest combined answer."}
+    ]}});
+    apiEl("battle-final-result").textContent=synthesis.reply||"The synthesis model returned an empty response.";
+    apiEl("battle-status").textContent="Battle complete. Two independent answers and one synthesis were generated.";
+  }catch(error){apiEl("battle-final-result").textContent="Synthesis could not be completed: "+error.message;apiEl("battle-status").textContent="The battle stopped during synthesis.";}
+  finally{button.disabled=false;button.textContent="⚔ Run AI Battle";}
+});
+
