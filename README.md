@@ -1,6 +1,6 @@
 # BrokenGPT
 
-BROKENGPT is a dark, blood-red AI workspace with a browser interface and a Node.js backend starter.
+BrokenGPT is a dark, blood-red AI workspace with a browser interface and a Node.js backend starter.
 
 ## Current project status
 
