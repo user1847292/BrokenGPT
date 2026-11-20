@@ -212,3 +212,23 @@ header b{color:var(--blood)!important}
 .tool-card p{color:var(--muted);font-size:13px}
 .tool-tag{display:inline-block;border:1px solid #6c3035;border-radius:20px;padding:2px 8px;color:#ff9a9e;font-size:10px;letter-spacing:.5px}
 @media(max-width:720px){.ai-connection-bar,.battle-model-grid,.tool-directory{grid-template-columns:1fr}}
+
+/* BrokenGPT default assistant and chat-first crimson interface */
+.assistant-profile{max-width:700px;margin:0 auto 14px;padding:13px 16px;display:flex;align-items:center;gap:12px;background:linear-gradient(110deg,#16090c,#101010 62%);border:1px solid #54232a;border-radius:10px}
+.assistant-profile-kicker{font-size:9px;letter-spacing:1.5px;color:#d46b74;font-weight:800}
+.assistant-profile strong{font-size:15px;letter-spacing:.3px;color:#fff}
+.assistant-profile small{margin-left:auto;color:#888;font-size:10px;text-align:right}
+.ai-connection-bar{max-width:700px;margin:0 auto 14px;padding:13px;background:#101010;border:1px solid #292929;border-radius:10px}
+#messages{display:flex;flex-direction:column;gap:12px;max-width:760px;min-height:110px;padding:12px 4px 18px}
+.message{width:fit-content;max-width:min(88%,680px);padding:13px 16px;margin:0;border-radius:13px;background:#151515;border:1px solid #292929;box-shadow:0 5px 18px #0005}
+.message b{display:block;margin-bottom:5px;color:#ff777c;font-size:11px;letter-spacing:.7px}
+.message p{margin:0;color:#eee;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.65}
+.user-message{align-self:flex-end;background:#241014;border-color:#63242d;border-bottom-right-radius:4px}
+.user-message b{color:#ff9ca2}
+.assistant-message{align-self:flex-start;border-bottom-left-radius:4px}
+.typing-message p{color:#e58b91;animation:typing-pulse 1.2s ease-in-out infinite alternate}
+@keyframes typing-pulse{from{opacity:.45}to{opacity:1}}
+#chat-form{position:sticky;bottom:8px;background:#101010f2;backdrop-filter:blur(12px);box-shadow:0 8px 28px #0009}
+#chat-form textarea{min-height:54px;resize:vertical}
+@media(max-width:720px){.assistant-profile{gap:8px;flex-wrap:wrap}.assistant-profile small{width:100%;margin-left:0;text-align:left}.message{max-width:94%}#chat-form{bottom:5px}}
+@media(prefers-reduced-motion:reduce){.typing-message p{animation:none}}
