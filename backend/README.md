@@ -1,6 +1,6 @@
 # BROKENGPT backend (starter)
 
-Adds username-based accounts, server-side sessions, encrypted provider-key storage, and authenticated OpenAI/Gemini chat requests.
+Adds username-based accounts, server-side sessions, encrypted provider-key storage, and authenticated chat requests for 12 provider integrations.
 
 ## Requirements
 - Node.js 20+
@@ -23,13 +23,13 @@ Keep `.env` and `backend/data/` private. Back up the database securely. If the e
 - `GET /api/auth/me`
 - `POST /api/auth/logout` (CSRF token required)
 - `GET /api/providers`
-- `PUT /api/providers/openai/key` or `/api/providers/gemini/key` (CSRF token required)
+- `PUT /api/providers/:provider/key` for a supported provider (CSRF token required)
 - `DELETE /api/providers/:provider/key` (CSRF token required)
 - `POST /api/chat`
 
 Passwords use Node scrypt. Sessions use HttpOnly, SameSite=Strict cookies. Provider keys are encrypted with AES-256-GCM. The browser must use same-origin requests and send `X-CSRF-Token` for state-changing requests.
 
 ## Limitations
-This starter is not deployed. Online use requires a private HTTPS deployment with persistent storage and a private encryption key. Provider usage and costs are controlled by the provider account and model limits; BROKENGPT does not unlock paid models for free. Only OpenAI and Gemini are supported in this first backend stage.
+This starter is not deployed. Online use requires a private HTTPS deployment with persistent storage and a private encryption key. Provider usage, age requirements, model availability, and costs are controlled by each provider account; BROKENGPT does not unlock paid models for free. Use an adult-managed account with the account owner's permission where required. Model IDs in the UI are examples and may change. Chat supports OpenAI, Google Gemini, Anthropic Claude, xAI, DeepSeek, Mistral, OpenRouter, Groq, Qwen (DashScope), Perplexity, Together AI, and Fireworks AI. Several integrations use OpenAI-compatible chat APIs. Study Mode image input remains limited to OpenAI and Gemini.
 
 Media generation is limited to five requests per hour per client IP in this starter. Image and video generation may cost money; some models or video features may require provider approval or organization verification. The app asks for confirmation before starting media jobs. Use an adult-managed provider account with the account owner's permission.
