@@ -20,6 +20,6 @@ This project is not yet fully built, deployed, or production-tested. The backend
 
 
 ## Recent interface update
-The chat composer now includes a plus menu for creative actions, a separate microphone button, and a send arrow. Plain-text file attachment is supported in the composer (8 KB maximum). Creative shortcuts open the existing image/video tools; 3D and game shortcuts are clearly marked as planned rather than functional generators. Family Studio provides a Study Mode shortcut and a Future Vision image-prompt shortcut. Iraqi Arabic has been added; Malay was already included.
+The chat composer now includes a plus menu for creative actions, a separate microphone button, and a send arrow. Plain-text file attachment is supported in the composer (8 KB maximum). Creative shortcuts open the existing image/video tools; 3D and game shortcuts are clearly marked as planned rather than functional generators. Iraqi Arabic has been added; Malay was already included.
 
 OAuth sign-in, a server-managed guest AI service, 3D generation, and game export still require additional backend/provider configuration and testing. The app does not promise unlimited model or media usage.
