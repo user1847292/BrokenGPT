@@ -1,0 +1,11 @@
+{
+  "appId": "com.brokengpt.app",
+  "appName": "BrokenGPT",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": false
+  }
+}
