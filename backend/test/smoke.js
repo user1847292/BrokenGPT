@@ -115,6 +115,8 @@ async function main() {
 
     const me = await request('/api/auth/me');
     assert.equal(me.status, 200, 'logged-in session should be recognized');
+    const refreshedSession = await me.json();
+    csrf = refreshedSession.csrfToken;
 
     const removedKey = await request('/api/providers/openai/key', { method: 'DELETE', csrf: true });
     assert.equal(removedKey.status, 200, 'provider key should be removable');
