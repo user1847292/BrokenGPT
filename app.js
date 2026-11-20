@@ -43,3 +43,48 @@ function renderHistory(){const target=document.getElementById("history-list");ta
 document.getElementById("export-chats").addEventListener("click",()=>{const blob=new Blob([JSON.stringify(readList("brokengpt-history"),null,2)],{type:"application/json"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="brokengpt-chat-history.json";a.click();URL.revokeObjectURL(url)});
 document.getElementById("clear-history").addEventListener("click",()=>{if(confirm("Clear locally saved chat history?")){writeList("brokengpt-history",[]);renderHistory()}});
 renderHistory();
+
+/* RGB Color Effects Studio controls and live preview */
+const rgbIds=["rgb-mode","rgb-transition","rgb-speed-range","rgb-color-a","rgb-color-b","rgb-color-c","rgb-color-d","rgb-color-e","rgb-target-background","rgb-target-text","rgb-target-borders","rgb-target-bubbles","rgb-target-buttons"];
+const rgbDefaults={rgbMode:"rainbow",rgbTransition:"smooth",rgbSpeedSeconds:8,rgbColors:["#080808","#df2028","#7b1020","#ff5259","#400814"],rgbTargets:{background:true,text:false,borders:true,bubbles:true,buttons:false}};
+prefs={...rgbDefaults,...prefs,rgbColors:Array.isArray(prefs.rgbColors)?prefs.rgbColors:rgbDefaults.rgbColors,rgbTargets:{...rgbDefaults.rgbTargets,...(prefs.rgbTargets||{})}};
+let rgbRandomTimer=null;
+function rgbSetValue(id,value){const node=el(id);if(node)node.value=value}
+function rgbReadControls(){
+  prefs.rgbMode=el("rgb-mode").value;
+  prefs.rgbTransition=el("rgb-transition").value;
+  prefs.rgbSpeedSeconds=Number(el("rgb-speed-range").value);
+  prefs.rgbColors=["a","b","c","d","e"].map((key)=>el("rgb-color-"+key).value);
+  prefs.rgbTargets={background:el("rgb-target-background").checked,text:el("rgb-target-text").checked,borders:el("rgb-target-borders").checked,bubbles:el("rgb-target-bubbles").checked,buttons:el("rgb-target-buttons").checked};
+  el("rgb-speed-label").textContent=prefs.rgbSpeedSeconds+" seconds";
+}
+function rgbPalette(){
+  if(prefs.rgbMode==="rainbow")return ["#ff0000","#ff8c00","#ffee00","#18d45a","#00cfff","#3155ff","#a735e8","#ff0000"];
+  if(prefs.rgbMode==="two")return prefs.rgbColors.slice(0,2);
+  if(prefs.rgbMode==="multi")return prefs.rgbColors;
+  return Array.from({length:5},()=>"#"+Math.floor(Math.random()*16777215).toString(16).padStart(6,"0"));
+}
+function applyRGBStudio(){
+  if(rgbRandomTimer){clearInterval(rgbRandomTimer);rgbRandomTimer=null}
+  document.body.classList.remove("rgb-bg-active","rgb-text-active","rgb-border-active","rgb-bubble-active","rgb-buttons-active","rgb-direct-switch");
+  const enabled=el("rainbow-enabled").checked;
+  if(!enabled){document.body.style.removeProperty("--rgb-gradient");return}
+  const targets=prefs.rgbTargets||rgbDefaults.rgbTargets;
+  const applyTarget=(key,cls)=>document.body.classList.toggle(cls,!!targets[key]);
+  applyTarget("background","rgb-bg-active");applyTarget("text","rgb-text-active");applyTarget("borders","rgb-border-active");applyTarget("bubbles","rgb-bubble-active");applyTarget("buttons","rgb-buttons-active");
+  document.body.classList.toggle("rgb-direct-switch",prefs.rgbTransition==="switch");
+  document.body.style.setProperty("--rgb-duration",Math.max(.5,Number(prefs.rgbSpeedSeconds)||8)+"s");
+  const updateGradient=()=>{const colors=rgbPalette();document.body.style.setProperty("--rgb-gradient","linear-gradient(110deg,"+colors.join(",")+")");document.body.style.setProperty("--rgb-color-a",colors[0]);document.body.style.setProperty("--rgb-color-b",colors[1]||colors[0])};
+  updateGradient();
+  if(prefs.rgbMode==="random")rgbRandomTimer=setInterval(updateGradient,Math.max(500,Number(prefs.rgbSpeedSeconds)*1000));
+}
+function loadRGBStudio(){
+  rgbSetValue("rgb-mode",prefs.rgbMode);rgbSetValue("rgb-transition",prefs.rgbTransition);rgbSetValue("rgb-speed-range",prefs.rgbSpeedSeconds);
+  ["a","b","c","d","e"].forEach((key,index)=>rgbSetValue("rgb-color-"+key,prefs.rgbColors[index]));
+  Object.entries(prefs.rgbTargets).forEach(([key,value])=>{const node=el("rgb-target-"+key);if(node)node.checked=!!value});
+  el("rainbow-enabled").checked=!!prefs.rgb;
+  rgbReadControls();applyRGBStudio();
+}
+rgbIds.forEach(id=>el(id).addEventListener("input",()=>{rgbReadControls();applyRGBStudio()}));
+el("rainbow-enabled").addEventListener("change",()=>{prefs.rgb=el("rainbow-enabled").checked;applyRGBStudio()});
+loadRGBStudio();
