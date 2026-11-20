@@ -602,6 +602,7 @@ async function checkForUpdates(){
 }
 apiEl("check-updates")?.addEventListener("click",checkForUpdates);
 apiEl("open-latest-release")?.addEventListener("click",()=>{if(latestReleaseUrl)window.open(latestReleaseUrl,"_blank","noopener,noreferrer");});
+checkForUpdates();
 
 
 
