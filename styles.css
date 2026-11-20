@@ -120,3 +120,6 @@ body.rgb-direct-switch{--rgb-easing:steps(1,end)}
 .wifi-device-note small,.offline-item small{color:#999}
 .wifi-device-note button,.offline-item button{margin-top:8px}
 @media(max-width:650px){.tool-directory{grid-template-columns:1fr}.hacking-tabs{display:grid;grid-template-columns:1fr 1fr}}
+
+/* Long-term memory manager */
+.memory-card input,.memory-card select,.memory-card textarea{width:100%;margin:5px 0 12px;padding:11px;background:#090909;color:#fff;border:1px solid var(--line);border-radius:7px}.memory-list{display:grid;gap:10px;margin-top:14px}.memory-content{white-space:pre-wrap;overflow-wrap:anywhere;max-height:240px;overflow:auto;color:#ddd}.memory-card .saved-item{background:#0d0d0d;border:1px solid var(--line);border-radius:9px;padding:12px}.memory-card .saved-item h3{font-size:14px;margin:0 0 8px;color:#ff9ba0}
