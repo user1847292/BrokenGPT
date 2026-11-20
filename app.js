@@ -691,3 +691,61 @@ apiEl("download-video").addEventListener("click",async()=>{
  });
  renderOffline();
 })();
+
+
+/* Approved BROKENGPT update: composer actions, file attachment, and family shortcuts */
+(()=>{
+  const plus=document.getElementById("composer-plus");
+  const menu=document.getElementById("composer-menu");
+  const fileInput=document.getElementById("chat-file-input");
+  const prompt=document.getElementById("prompt");
+  if(!plus||!menu||!fileInput||!prompt)return;
+  const closeMenu=()=>{menu.classList.add("hidden");plus.setAttribute("aria-expanded","false");};
+  plus.addEventListener("click",()=>{
+    const opening=menu.classList.contains("hidden");
+    menu.classList.toggle("hidden",!opening);
+    plus.setAttribute("aria-expanded",String(opening));
+  });
+  document.addEventListener("click",event=>{
+    if(!event.target.closest(".composer-plus-wrap"))closeMenu();
+  });
+  menu.querySelectorAll("[data-composer-action]").forEach(button=>button.addEventListener("click",()=>{
+    const action=button.dataset.composerAction;
+    closeMenu();
+    if(action==="image"){show("studio");document.getElementById("image-prompt")?.focus();return;}
+    if(action==="video"){show("studio");document.getElementById("video-prompt")?.focus();return;}
+    if(action==="upload"){fileInput.click();return;}
+    if(action==="code"){setMode("Developer");show("chat");prompt.value=prompt.value||"Help me write and understand code for: ";prompt.focus();return;}
+    if(action==="model3d"||action==="game"){
+      show("studio");
+      const status=document.getElementById("studio-feature-status");
+      if(status)status.textContent=action==="model3d"?"3D generation and downloadable model export are not connected yet. This section is planned and is not a working generator.":"Game project generation and export are not connected yet. This section is planned and is not a working game builder.";
+    }
+  }));
+  fileInput.addEventListener("change",async()=>{
+    const file=fileInput.files?.[0];if(!file)return;
+    if(file.size>150000){voiceStatus("That file is too large for the text attachment preview (limit: 150 KB).");fileInput.value="";return;}
+    try{
+      const text=await file.text();
+      prompt.value=(prompt.value?prompt.value+"\n\n":"")+"[Attached text file: "+file.name+"]\n"+text;
+      prompt.focus();
+      voiceStatus("Text from "+file.name+" was added to your message. Review it before sending.");
+    }catch{voiceStatus("Could not read that file. Try a plain-text file.");}
+    fileInput.value="";
+  });
+  document.querySelectorAll("[data-family-action]").forEach(button=>button.addEventListener("click",()=>{
+    if(button.dataset.familyAction==="study"){
+      setMode("Study");show("chat");
+      prompt.value=prompt.value||"Help me study this lesson. Explain it simply, summarize the important points, then give me a few practice questions.";
+      prompt.focus();
+      return;
+    }
+    if(button.dataset.familyAction==="future"){
+      show("studio");
+      const field=document.getElementById("image-prompt");
+      if(field){field.value="Create a hopeful, imaginative, clearly fictional visualization of one possible future. Use a warm, realistic cinematic style. This is an artistic possibility, not a prediction.";field.focus();}
+      const status=document.getElementById("image-status");
+      if(status)status.textContent="Edit the prompt to describe the future scene you want, then use Generate image if an eligible provider is connected.";
+    }
+  }));
+})();
