@@ -720,7 +720,7 @@ apiEl("download-video").addEventListener("click",async()=>{
   }));
   fileInput.addEventListener("change",async()=>{
     const file=fileInput.files?.[0];if(!file)return;
-    if(file.size>150000){voiceStatus("That file is too large for the text attachment preview (limit: 150 KB).");fileInput.value="";return;}
+    if(file.size>8000){voiceStatus("That file is too large for the text attachment preview (limit: 8 KB).");fileInput.value="";return;}
     try{
       const text=await file.text();
       prompt.value=(prompt.value?prompt.value+"\n\n":"")+"[Attached text file: "+file.name+"]\n"+text;
