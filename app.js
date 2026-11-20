@@ -138,3 +138,60 @@ let adShield={...adShieldDefaults};try{adShield={...adShield,...JSON.parse(local
 function loadAdShield(){el("ad-shield-enabled").checked=!!adShield.enabled;el("ad-shield-scope").value=adShield.scope;el("ad-shield-allowlist").value=adShield.allowlist;el("ad-shield-status").textContent=adShield.enabled?"Preference saved. Filtering is not active in this prototype; an Android VPN/DNS or browser-filter integration is still required.":"Setup preview only: this prototype does not yet block ads. Actual filtering requires a tested browser filter or Android VPN/DNS component and its permissions."}
 el("save-ad-shield").addEventListener("click",()=>{adShield={enabled:el("ad-shield-enabled").checked,scope:el("ad-shield-scope").value,allowlist:el("ad-shield-allowlist").value};localStorage.setItem("brokengpt-ad-shield",JSON.stringify(adShield));loadAdShield()});
 loadAdShield();
+
+/* Character Studio: local roleplay, display, screenshot preview, and voice controls */
+const characterDefaults={choice:"speedster",costume:"Classic",name:"Speedster Hero",description:"A cheerful, confident, fast-talking blue speedster hero who loves jokes and helping out.",display:false,voice:false,voiceStyle:"energetic",outside:false,avatar:""};
+let characterPrefs={...characterDefaults};
+try{characterPrefs={...characterPrefs,...JSON.parse(localStorage.getItem("brokengpt-character")||"{}")}}catch{}
+const companion=el("character-companion"),companionAvatar=el("companion-avatar"),companionSpeech=el("companion-speech"),companionCaption=el("companion-caption");
+function saveCharacterPrefs(){localStorage.setItem("brokengpt-character",JSON.stringify(characterPrefs))}
+function characterLine(text){companionSpeech.textContent=text}
+function characterReact(text){
+ const value=(text||"").toLowerCase();
+ companion.classList.remove("surprised","angry","sitting","walking");
+ if(/boo|surprise|scare|jump/.test(value)){companion.classList.add("surprised");characterLine("WHOA!! You surprised me! 😲")}
+ else if(/angry|mad|annoy/.test(value)){companion.classList.add("angry");characterLine("Hey! What's that supposed to mean?!")}
+ else if(/sit|rest|tired/.test(value)){companion.classList.add("sitting");characterLine("Taking a little break...")}
+ else if(/joke|funny|haha|lol/.test(value)){characterLine("HAHA! Okay, that was good!")}
+ else {companion.classList.add("walking");characterLine("Let's move! I've got places to be!")}
+}
+function setCharacterDisplay(on){
+ characterPrefs.display=!!on;saveCharacterPrefs();companion.classList.toggle("hidden",!on);
+ if(on){companionCaption.textContent=characterPrefs.name||"Speedster Hero";companion.classList.add("walking");characterLine("I'm here! Let's do this!");}
+}
+function renderCharacterAvatar(){
+ const preview=el("character-avatar-preview");preview.replaceChildren();
+ if(characterPrefs.avatar){const img=document.createElement("img");img.src=characterPrefs.avatar;img.alt="Your custom character avatar";preview.append(img);companionAvatar.replaceChildren();const mini=document.createElement("img");mini.src=characterPrefs.avatar;mini.alt="";companionAvatar.append(mini)}
+ else{preview.textContent="🦔";companionAvatar.textContent="🦔"}
+ companionCaption.textContent=characterPrefs.name||"Speedster Hero";
+}
+function loadCharacterPrefs(){
+ el("character-choice").value=characterPrefs.choice;el("character-costume").value=characterPrefs.costume;
+ el("custom-character-name").value=characterPrefs.name==="Speedster Hero"?"":characterPrefs.name;
+ el("custom-character-description").value=characterPrefs.description||"";
+ el("character-display-toggle").checked=!!characterPrefs.display;el("character-voice-toggle").checked=!!characterPrefs.voice;
+ el("character-voice-style").value=characterPrefs.voiceStyle||"energetic";el("character-outside-toggle").checked=!!characterPrefs.outside;
+ renderCharacterAvatar();companion.classList.toggle("hidden",!characterPrefs.display);
+ el("character-outside-status").textContent=characterPrefs.outside?"Requested: outside-app mode is saved, but this web build has no native Android overlay service yet. The character remains inside BROKENGPT.":"A real floating companion outside the app requires a native Android companion service and Android overlay permission. This web prototype cannot keep a character above other apps.";
+}
+el("character-choice").addEventListener("change",()=>{characterPrefs.choice=el("character-choice").value;if(characterPrefs.choice==="speedster"){characterPrefs.name="Speedster Hero";characterPrefs.description="A cheerful, confident, fast-talking blue speedster hero who loves jokes and helping out."}else{characterPrefs.name="My Character";characterPrefs.description="Describe your own character's personality and behavior."}el("custom-character-name").value=characterPrefs.name;el("custom-character-description").value=characterPrefs.description;renderCharacterAvatar()});
+el("save-character").addEventListener("click",()=>{characterPrefs.name=el("custom-character-name").value.trim()||(characterPrefs.choice==="speedster"?"Speedster Hero":"My Character");characterPrefs.description=el("custom-character-description").value.trim();characterPrefs.costume=el("character-costume").value;saveCharacterPrefs();renderCharacterAvatar();el("character-save-status").textContent="Saved "+characterPrefs.name+" and its costume on this device."});
+el("character-avatar").addEventListener("change",e=>{const file=e.target.files&&e.target.files[0];if(!file)return;if(!file.type.startsWith("image/")||file.size>2*1024*1024){el("character-save-status").textContent="Choose an image smaller than 2 MB.";return}const reader=new FileReader();reader.onload=()=>{characterPrefs.avatar=String(reader.result);saveCharacterPrefs();renderCharacterAvatar();el("character-save-status").textContent="Avatar saved on this device."};reader.readAsDataURL(file)});
+el("character-display-toggle").addEventListener("change",e=>setCharacterDisplay(e.target.checked));
+el("character-voice-toggle").addEventListener("change",e=>{characterPrefs.voice=e.target.checked;saveCharacterPrefs();if(e.target.checked)characterSpeak("Voice mode is ready. Let's go!");});
+el("character-voice-style").addEventListener("change",e=>{characterPrefs.voiceStyle=e.target.value;saveCharacterPrefs()});
+el("character-outside-toggle").addEventListener("change",e=>{characterPrefs.outside=e.target.checked;saveCharacterPrefs();el("character-outside-status").textContent=e.target.checked?"Outside-app companion requested, but not active: this web prototype needs a native Android foreground companion service and overlay permission. Android may also stop background services.":"Outside-app companion is off.";});
+function characterSpeak(text){
+ if(!characterPrefs.voice||!("speechSynthesis" in window)||!("SpeechSynthesisUtterance" in window))return;
+ window.speechSynthesis.cancel();const utterance=new SpeechSynthesisUtterance(text);
+ utterance.rate=characterPrefs.voiceStyle==="energetic"?1.16:.96;utterance.pitch=characterPrefs.voiceStyle==="energetic"?1.28:1.02;
+ window.speechSynthesis.speak(utterance);
+}
+el("character-test-warning").addEventListener("click",()=>{characterLine("NOOO! DON'T CLOSE ME! I DON'T WANNA DISAPPEAR! AAAAA! 😭");characterReact("surprise");characterSpeak("Nooo! Don't close me! I don't wanna disappear! See you later!");});
+companionAvatar.addEventListener("click",()=>{characterLine("Hey! Need me?");characterReact("surprise");});
+const screenshotInput=el("character-screenshot");
+screenshotInput.addEventListener("change",e=>{const file=e.target.files&&e.target.files[0];const target=el("character-screenshot-preview");target.replaceChildren();if(!file)return;if(!file.type.startsWith("image/")){el("character-screenshot-status").textContent="Please choose an image file.";return}const img=document.createElement("img");img.src=URL.createObjectURL(file);img.alt="Screenshot selected for analysis";target.append(img);el("character-screenshot-status").textContent="Screenshot loaded locally. It has not been sent anywhere."});
+el("analyze-character-screenshot").addEventListener("click",()=>{el("character-screenshot-status").textContent=screenshotInput.files&&screenshotInput.files[0]?"Screenshot is ready, but automatic analysis needs a connected AI vision model. No image has been uploaded to a server.":"Choose a screenshot first."});
+el("character-outside-toggle").addEventListener("change",()=>{if(characterPrefs.outside){characterLine("I can't leave this web app yet! I need my Android companion service!");}});
+document.getElementById("chat-form").addEventListener("submit",()=>{const sent=el("prompt").value.trim();if(!sent)return;if(characterPrefs.display){characterReact(sent);if(/^(go|go away|leave|bye)$/i.test(sent)){characterLine("See you later! *runs away*");characterSpeak("See you later!");setTimeout(()=>setCharacterDisplay(false),1800)}else characterSpeak(characterPrefs.name+" says: "+(characterPrefs.description||"Let's go!"));}});
+loadCharacterPrefs();
