@@ -129,10 +129,10 @@ button,form button,.settings-card button{background:#26090d!important;border-col
 input::placeholder,textarea::placeholder{color:#c94b53!important;opacity:1}
 
 
-/* Deep blood-red theme refinement */
-:root{--red:#C00000;--text-red:#C00000}
-body,body *{color:#C00000!important}
-.brand:first-letter,.brand b,em,.message b,.tile>b,.rgb-studio h3,.mode-bar label,.label,section>small,.settings-card label,.battle-controls label,.creative-options label,.ai-connection-bar label{color:#C00000!important}
-button,form button,.settings-card button{background:#260000!important;border-color:#8B0000!important;color:#C00000!important}
-nav button:hover,nav button.selected,.hacking-tab.selected{background:#240000!important;border-color:#8B0000!important;color:#C00000!important}
-input::placeholder,textarea::placeholder{color:#8B0000!important}
+/* True blood-red theme: deep crimson text with clear red accents */
+:root{--red:#B00000;--text-red:#B00000}
+body,body *{color:var(--text-red)!important}
+.brand:first-letter,.brand b,em,.message b,.tile>b,.rgb-studio h3,.mode-bar label,.label,section>small,.settings-card label,.battle-controls label,.creative-options label,.ai-connection-bar label{color:#B00000!important}
+button,form button,.settings-card button{background:#300000!important;border-color:#8A0303!important;color:#B00000!important}
+nav button:hover,nav button.selected,.hacking-tab.selected{background:#3A0000!important;border-color:#B00000!important;color:#D00000!important}
+input::placeholder,textarea::placeholder{color:#8A0303!important}
