@@ -951,3 +951,35 @@ apiEl("download-video").addEventListener("click",async()=>{
  const drawer=document.getElementById("app-drawer"),toggle=document.getElementById("drawer-toggle");
  if(drawer&&toggle){toggle.setAttribute("aria-controls","app-drawer");toggle.setAttribute("aria-label","Open tools drawer");}
 })();
+
+
+/* Offline toolbox: local-only utilities; no API or network requests. */
+(()=>{
+ const byId=id=>document.getElementById(id);
+ const calcInput=byId("offline-calc-input");
+ const calcResult=byId("offline-calc-result");
+ function calculate(expression){
+  const tokens=expression.match(/\d+(?:\.\d+)?|[()+*/^%-]|\s+/g);
+  if(!tokens||tokens.join("").replace(/\s+/g,"")!==expression.replace(/\s+/g,""))throw new Error("Use numbers and + − × ÷ ( ) ^ only.");
+  const t=tokens.filter(x=>!/^\s+$/.test(x));let i=0;
+  function primary(){const x=t[i++];if(x==="("){const v=sum();if(t[i++]!==")")throw new Error("Missing closing bracket.");return v;}if(x==="-" )return -primary();if(x==="+")return primary();const n=Number(x);if(!Number.isFinite(n))throw new Error("Invalid number.");return n;}
+  function power(){let v=primary();if(t[i]==="^"){i++;v=Math.pow(v,power());}return v;}
+  function product(){let v=power();while(["*","/","%"].includes(t[i])){const op=t[i++],n=power();if((op==="/"||op==="%")&&n===0)throw new Error("Cannot divide by zero.");v=op==="*"?v*n:op==="/"?v/n:v%n;}return v;}
+  function sum(){let v=product();while(["+","-"].includes(t[i])){const op=t[i++],n=product();v=op==="+"?v+n:v-n;}return v;}
+  const result=sum();if(i!==t.length||!Number.isFinite(result))throw new Error("Check your expression.");return result;
+ }
+ byId("offline-calc-run")?.addEventListener("click",()=>{try{calcResult.textContent="Result: "+calculate(calcInput.value.trim());}catch(e){calcResult.textContent=e.message;}});
+ byId("offline-password-generate")?.addEventListener("click",()=>{
+  const length=Number(byId("offline-password-length").value);
+  if(!Number.isInteger(length)||length<12||length>64){byId("offline-password-status").textContent="Choose a length from 12 to 64.";return;}
+  const chars="ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%^&*_-+=";
+  const random=new Uint32Array(length);crypto.getRandomValues(random);
+  byId("offline-password-result").value=Array.from(random,n=>chars[n%chars.length]).join("");
+  byId("offline-password-status").textContent="Generated on this device. Copy and store it securely.";
+ });
+ byId("offline-password-copy")?.addEventListener("click",async()=>{const value=byId("offline-password-result").value;if(!value)return;try{await navigator.clipboard.writeText(value);byId("offline-password-status").textContent="Copied.";}catch{byId("offline-password-status").textContent="Clipboard unavailable. Select and copy it manually.";}});
+ const encoder=new TextEncoder(),decoder=new TextDecoder();
+ byId("offline-base64-encode")?.addEventListener("click",()=>{try{const bytes=encoder.encode(byId("offline-base64-input").value);let binary="";bytes.forEach(b=>binary+=String.fromCharCode(b));byId("offline-base64-input").value=btoa(binary);byId("offline-base64-status").textContent="Encoded locally.";}catch{byId("offline-base64-status").textContent="Could not encode this text.";}});
+ byId("offline-base64-decode")?.addEventListener("click",()=>{try{const binary=atob(byId("offline-base64-input").value.trim());const bytes=Uint8Array.from(binary,c=>c.charCodeAt(0));byId("offline-base64-input").value=decoder.decode(bytes);byId("offline-base64-status").textContent="Decoded locally.";}catch{byId("offline-base64-status").textContent="Invalid Base64 or unsupported text.";}});
+ byId("offline-hash-run")?.addEventListener("click",async()=>{try{if(!crypto.subtle)throw new Error("Secure local crypto is unavailable in this browser.");const digest=await crypto.subtle.digest("SHA-256",encoder.encode(byId("offline-hash-input").value));byId("offline-hash-result").value=Array.from(new Uint8Array(digest),b=>b.toString(16).padStart(2,"0")).join("");byId("offline-hash-status").textContent="Calculated locally.";}catch(e){byId("offline-hash-status").textContent=e.message;}});
+})();
