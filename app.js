@@ -255,6 +255,6 @@ function playCharacterScene(key){
  characterLine(scene.line);characterSpeak(scene.line);el("character-scene-status").textContent="Playing: "+scene.line;
  if(key==="goodbye")companion.classList.add("walking");
 }
-el("character-choice").addEventListener("change",rebuildExpandedScenes);
+el("character-choice").addEventListener("change",()=>{const profile=expandedCharacterProfiles[characterPrefs.choice];if(profile){characterPrefs.name=profile.name;characterPrefs.description=profile.description;el("custom-character-name").value=profile.name;el("custom-character-description").value=profile.description;renderCharacterAvatar();saveCharacterPrefs();}rebuildExpandedScenes();});
 rebuildExpandedScenes();
-if(characterPrefs.display){characterLine("Ooo, look! We are back!");}
+if(characterPrefs.display){characterLine("Ooo, look! We are back!");characterSpeak("Ooo, look! We are back!");}
