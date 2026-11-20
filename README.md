@@ -17,3 +17,9 @@ Follow [`backend/README.md`](backend/README.md). The backend serves the web inte
 ## Important
 
 This project is not yet fully built, deployed, or production-tested. The backend needs HTTPS, persistent storage, and a private `BROKENGPT_ENCRYPTION_KEY`. Provider usage may cost money and is controlled by the provider account and its limits. Media generation may require provider access or organization verification. Never commit `.env` files, API keys, or database files.
+
+
+## Recent interface update
+The chat composer now includes a plus menu for creative actions, a separate microphone button, and a send arrow. Plain-text file attachment is supported in the composer (150 KB maximum). Creative shortcuts open the existing image/video tools; 3D and game shortcuts are clearly marked as planned rather than functional generators. Family Studio provides a Study Mode shortcut and a Future Vision image-prompt shortcut. Iraqi Arabic has been added; Malay was already included.
+
+OAuth sign-in, a server-managed guest AI service, 3D generation, and game export still require additional backend/provider configuration and testing. The app does not promise unlimited model or media usage.
