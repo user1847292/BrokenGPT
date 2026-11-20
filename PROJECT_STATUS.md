@@ -71,14 +71,17 @@ This file tracks the current repository state. “Implemented in code” does no
 - [ ] Install backend dependencies successfully
 - [x] Backend integration tests for health, registration, duplicate usernames, CSRF, provider-key save/removal, logout, login, password change, and account deletion
 - [ ] Additional negative-path, concurrency, and production configuration tests
-- [ ] Browser/device functional testing and real screenshot capture
+- [x] Desktop Chromium UI smoke test across Chat, AI Battle, Creative Studio, Hacking Center, Character Studio, and Settings
+- [x] Automated capture of six real screenshots from the running app (GitHub Actions artifact)
+- [ ] Full browser/device functional testing, including Android screen sizes and lifecycle
 - [ ] Full security review, privacy review, and dependency audit
 - [ ] Final Android/web packaging and release preparation
 - [ ] Create a versioned GitHub Release only after the full app is complete and tested
 
 ## Current build branch
 - `build/core-hardening` contains the first account-security and automated-test improvements.
-- A GitHub Actions backend check has passed for the account and provider integration tests.
+- GitHub Actions backend integration checks have passed for account and provider flows.
+- The Chromium UI smoke test and six-screen screenshot capture workflow have passed; screenshot artifacts are retained for 30 days.
 - The changes are in draft pull request #1 and have not been merged into `main`.
 
 ## Important limitations
