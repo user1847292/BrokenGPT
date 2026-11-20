@@ -387,10 +387,14 @@ if(universeById[characterPrefs.choice])addUniverseCharacter(characterPrefs.choic
 /* Stage 4A: account sessions and real provider chat */
 let csrfToken="",currentUser=null,liveConversation=[];
 const apiEl=id=>document.getElementById(id);
+function backendBaseUrl(){
+  return (localStorage.getItem("brokengpt-backend-url")||"").trim().replace(/\\/+$/,"");
+}
+function apiUrl(url){const base=backendBaseUrl();return base?base+url:url;}
 async function apiRequest(url,options={}){
   const headers={"Content-Type":"application/json",...(options.headers||{})};
   if(options.csrf)headers["X-CSRF-Token"]=csrfToken;
-  const response=await fetch(url,{method:options.method||"GET",credentials:"same-origin",headers,body:options.body?JSON.stringify(options.body):undefined});
+  const response=await fetch(apiUrl(url),{method:options.method||"GET",credentials:"include",headers,body:options.body?JSON.stringify(options.body):undefined});
   const type=response.headers.get("content-type")||"";
   if(!type.includes("application/json"))throw new Error("BrokenGPT backend is not connected to this website yet.");
   const data=await response.json();
@@ -416,6 +420,33 @@ async function refreshProviderStatus(){
     apiEl("active-provider-status").textContent=info?.connected?chosen.toUpperCase()+" is connected. Ready to chat.":"Connect "+chosen.toUpperCase()+" in Settings to enable real AI replies.";
   }catch(error){providerMessage(error.message);apiEl("active-provider-status").textContent=error.message;}
 }
+function backendMessage(message){const node=apiEl("backend-url-status");if(node)node.textContent=message;}
+function validateBackendUrl(value){
+  if(!value)return "";
+  let parsed;try{parsed=new URL(value);}catch{return null;}
+  if(!["http:","https:"].includes(parsed.protocol)||parsed.username||parsed.password||parsed.search||parsed.hash)return null;
+  if(location.protocol==="https:"&&parsed.protocol!=="https:"&&!["localhost","127.0.0.1"].includes(parsed.hostname))return null;
+  return parsed.origin;
+}
+apiEl("backend-url-save")?.addEventListener("click",()=>{
+  const raw=apiEl("backend-url").value.trim(),clean=validateBackendUrl(raw);
+  if(clean===null){backendMessage("Enter a valid backend URL. Use HTTPS for a public server.");return;}
+  if(clean)localStorage.setItem("brokengpt-backend-url",clean);else localStorage.removeItem("brokengpt-backend-url");
+  apiEl("backend-url").value=clean;
+  backendMessage(clean?"Backend address saved on this device. Checking connection…":"Using the current website address for the backend.");
+  restoreAccount();
+});
+apiEl("backend-url-test")?.addEventListener("click",async()=>{
+  const raw=apiEl("backend-url").value.trim(),clean=validateBackendUrl(raw);
+  if(clean===null){backendMessage("Enter a valid backend URL first.");return;}
+  try{
+    const response=await fetch((clean||"")+"/api/health",{credentials:"include"});
+    const data=await response.json();
+    if(!response.ok||!data.ok)throw Error(data.error||"Backend health check failed.");
+    backendMessage("Connected to "+(data.service||"BrokenGPT backend")+" · version "+(data.version||"unknown")+".");
+  }catch(error){backendMessage("Could not reach the backend: "+error.message);}
+});
+apiEl("backend-url").value=backendBaseUrl();
 async function restoreAccount(){
   try{
     const data=await apiRequest("/api/auth/me");
