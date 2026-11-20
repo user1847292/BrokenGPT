@@ -544,3 +544,66 @@ function speakAIReply(text){
 }
 apiEl("voice-stop").addEventListener("click",()=>{if(speechRecognition)try{speechRecognition.stop();}catch{}if("speechSynthesis" in window)window.speechSynthesis.cancel();apiEl("voice-stop").disabled=true;voiceStatus("Voice stopped.");});
 
+
+
+/* Stage 4D: OpenAI image and Sora video generation */
+let latestImageDataUrl="",activeVideoId="",videoPollTimer=null,videoPollCount=0;
+apiEl("generate-image").addEventListener("click",async()=>{
+  const prompt=apiEl("image-prompt").value.trim();
+  if(prompt.length<3){apiEl("image-status").textContent="Write a more detailed image prompt first.";return;}
+  if(!currentUser){apiEl("image-status").textContent="Sign in and connect OpenAI in Settings first.";return;}
+  if(!confirm("Image generation may use paid API credits. Continue only with permission from the account owner or parent/guardian."))return;
+  const button=apiEl("generate-image");button.disabled=true;button.textContent="Generating…";apiEl("image-status").textContent="Sending your prompt to the image provider…";
+  try{
+    const data=await apiRequest("/api/creative/image",{method:"POST",csrf:true,body:{prompt,model:apiEl("image-model").value,size:apiEl("image-size").value,quality:apiEl("image-quality").value}});
+    latestImageDataUrl=data.imageDataUrl;apiEl("generated-image").src=latestImageDataUrl;apiEl("image-output").classList.remove("hidden");
+    apiEl("image-status").textContent="Image generated with "+data.model+". Review it before downloading.";
+  }catch(error){apiEl("image-status").textContent=error.message;}
+  finally{button.disabled=false;button.textContent="Generate image";}
+});
+apiEl("download-image").addEventListener("click",()=>{
+  if(!latestImageDataUrl)return;const a=document.createElement("a");a.href=latestImageDataUrl;a.download="brokengpt-image.png";document.body.append(a);a.click();a.remove();
+});
+apiEl("video-model").addEventListener("change",()=>{
+  const model=apiEl("video-model").value,size=apiEl("video-size");
+  const values=model==="sora-2"?[["1280x720","Landscape 720p"],["720x1280","Portrait 720p"]]:[["1280x720","Landscape 720p"],["720x1280","Portrait 720p"],["1920x1080","Landscape 1080p"],["1080x1920","Portrait 1080p"],["1792x1024","Wide"],["1024x1792","Tall"]];
+  size.replaceChildren(...values.map(([value,label])=>{const option=document.createElement("option");option.value=value;option.textContent=label;return option;}));
+});
+async function pollCreativeVideo(id){
+  if(activeVideoId!==id)return;
+  try{
+    const data=await apiRequest("/api/creative/video/"+encodeURIComponent(id));
+    apiEl("video-status").textContent="Video job "+data.status+" · "+Math.round(data.progress||0)+"%";
+    if(data.status==="completed"){apiEl("video-status").textContent="Video is ready. You can download it now.";apiEl("download-video").disabled=false;return;}
+    if(data.status==="failed"){apiEl("video-status").textContent="Video generation failed: "+(data.error||"The provider did not complete the job.");return;}
+    videoPollCount++;
+    if(videoPollCount<60)videoPollTimer=setTimeout(()=>pollCreativeVideo(id),5000);
+    else apiEl("video-status").textContent="Still processing. Press Start only once; wait a little and check again later.";
+  }catch(error){apiEl("video-status").textContent=error.message;}
+}
+apiEl("generate-video").addEventListener("click",async()=>{
+  const prompt=apiEl("video-prompt").value.trim();
+  if(prompt.length<3){apiEl("video-status").textContent="Write a video prompt first.";return;}
+  if(!currentUser){apiEl("video-status").textContent="Sign in and connect OpenAI in Settings first.";return;}
+  if(!confirm("Video generation may be costly and requires provider access. Continue only with permission from the adult account owner or parent/guardian?"))return;
+  const button=apiEl("generate-video");button.disabled=true;button.textContent="Starting job…";apiEl("download-video").disabled=true;
+  if(videoPollTimer)clearTimeout(videoPollTimer);activeVideoId="";videoPollCount=0;
+  try{
+    const data=await apiRequest("/api/creative/video",{method:"POST",csrf:true,body:{prompt,model:apiEl("video-model").value,size:apiEl("video-size").value,seconds:apiEl("video-seconds").value}});
+    activeVideoId=data.id;apiEl("video-status").textContent="Video job created: "+data.status+". Checking progress…";
+    pollCreativeVideo(activeVideoId);
+  }catch(error){apiEl("video-status").textContent=error.message;}
+  finally{button.disabled=false;button.textContent="Start video generation";}
+});
+apiEl("download-video").addEventListener("click",async()=>{
+  if(!activeVideoId)return;
+  const button=apiEl("download-video");button.disabled=true;apiEl("video-status").textContent="Preparing video download…";
+  try{
+    const response=await fetch("/api/creative/video/"+encodeURIComponent(activeVideoId)+"/content",{credentials:"same-origin"});
+    if(!response.ok){const data=await response.json().catch(()=>({}));throw new Error(data.error||"Video download failed.");}
+    const blob=await response.blob(),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="brokengpt-video.mp4";document.body.append(a);a.click();a.remove();URL.revokeObjectURL(url);
+    apiEl("video-status").textContent="Video download started.";
+  }catch(error){apiEl("video-status").textContent=error.message;}
+  finally{button.disabled=false;}
+});
+
