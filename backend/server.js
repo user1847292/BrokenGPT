@@ -24,7 +24,21 @@ function decrypt(row){const k=key();if(!k)throw Error('Encryption is not configu
 function newSession(userId,res){const token=crypto.randomBytes(32).toString('base64url'),csrf=crypto.randomBytes(24).toString('base64url'),now=Date.now();db.prepare('INSERT INTO sessions VALUES(?,?,?,?,?)').run(sha(token),userId,sha(csrf),now+SESSION_MS,now);res.cookie(COOKIE,token,cookieOptions());return csrf;}
 function auth(req,res,next){const token=req.cookies?.[COOKIE];if(!token)return fail(res,401,'Please sign in first.');const row=db.prepare('SELECT s.token_hash,s.user_id,s.csrf_hash,s.expires_at,u.username FROM sessions s JOIN users u ON u.id=s.user_id WHERE s.token_hash=?').get(sha(token));if(!row||row.expires_at<Date.now()){if(row)db.prepare('DELETE FROM sessions WHERE token_hash=?').run(row.token_hash);res.clearCookie(COOKIE,cookieOptions());return fail(res,401,'Your session expired. Please sign in again.');}req.auth=row;next();}
 function csrf(req,res,next){const supplied=req.get('x-csrf-token')||'';const a=Buffer.from(sha(supplied)),b=Buffer.from(req.auth.csrf_hash);if(!supplied||a.length!==b.length||!crypto.timingSafeEqual(a,b))return fail(res,403,'Security check failed. Refresh the page and try again.');next();}
-const provider=v=>v==='openai'||v==='gemini'?v:null;
+const PROVIDERS=Object.freeze({
+  openai:{kind:'openai',url:'https://api.openai.com/v1/chat/completions'},
+  gemini:{kind:'gemini'},
+  anthropic:{kind:'anthropic',url:'https://api.anthropic.com/v1/messages'},
+  xai:{kind:'compatible',url:'https://api.x.ai/v1/chat/completions'},
+  deepseek:{kind:'compatible',url:'https://api.deepseek.com/chat/completions'},
+  mistral:{kind:'compatible',url:'https://api.mistral.ai/v1/chat/completions'},
+  openrouter:{kind:'compatible',url:'https://openrouter.ai/api/v1/chat/completions'},
+  groq:{kind:'compatible',url:'https://api.groq.com/openai/v1/chat/completions'},
+  qwen:{kind:'compatible',url:'https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions'},
+  perplexity:{kind:'compatible',url:'https://api.perplexity.ai/chat/completions'},
+  together:{kind:'compatible',url:'https://api.together.xyz/v1/chat/completions'},
+  fireworks:{kind:'compatible',url:'https://api.fireworks.ai/inference/v1/chat/completions'}
+});
+const provider=v=>typeof v==='string'&&Object.prototype.hasOwnProperty.call(PROVIDERS,v)?v:null;
 function messagesOk(items){if(!Array.isArray(items)||!items.length||items.length>40)return null;const out=[];for(const m of items){if(!m||!['user','assistant','system'].includes(m.role)||typeof m.content!=='string'||m.content.length>12000)return null;out.push({role:m.role,content:m.content});}return out;}
 app.disable('x-powered-by');app.use(cookieParser());app.use(helmet({crossOriginResourcePolicy:{policy:'same-origin'},contentSecurityPolicy:{directives:{'style-src':["'self'","'unsafe-inline'"],'img-src':["'self'",'data:','blob:']}}}));app.use(express.json({limit:'28mb',strict:true}));
 app.use((req,res,next)=>/^\/(?:backend|node_modules|\.env|package\.json)(?:\/|$)/i.test(req.path)?res.sendStatus(404):next());
@@ -35,7 +49,7 @@ app.post('/api/auth/register',authLimit,(req,res)=>{const username=typeof req.bo
 app.post('/api/auth/login',authLimit,(req,res)=>{const username=typeof req.body?.username==='string'?req.body.username.trim():'';const password=typeof req.body?.password==='string'?req.body.password:'';const u=db.prepare('SELECT id,username,password_salt,password_hash FROM users WHERE username=? COLLATE NOCASE').get(username);const salt=u?Buffer.from(u.password_salt,'hex'):Buffer.alloc(16),expected=u?Buffer.from(u.password_hash,'hex'):Buffer.alloc(64),actual=crypto.scryptSync(password.slice(0,128),salt,64);if(!u||!crypto.timingSafeEqual(actual,expected))return fail(res,401,'Username or password is incorrect.');res.json({user:{id:u.id,username:u.username},csrfToken:newSession(u.id,res)});});
 app.get('/api/auth/me',auth,(req,res)=>{const token=crypto.randomBytes(24).toString('base64url');db.prepare('UPDATE sessions SET csrf_hash=? WHERE token_hash=?').run(sha(token),req.auth.token_hash);res.json({user:{id:req.auth.user_id,username:req.auth.username},csrfToken:token});});
 app.post('/api/auth/logout',auth,csrf,(req,res)=>{db.prepare('DELETE FROM sessions WHERE token_hash=?').run(req.auth.token_hash);res.clearCookie(COOKIE,cookieOptions());res.json({ok:true});});
-app.get('/api/providers',auth,(req,res)=>{const rows=db.prepare('SELECT provider,updated_at FROM provider_keys WHERE user_id=?').all(req.auth.user_id),map=Object.fromEntries(rows.map(r=>[r.provider,{connected:true,updatedAt:r.updated_at}]));res.json({providers:{openai:map.openai||{connected:false},gemini:map.gemini||{connected:false}}});});
+app.get('/api/providers',auth,(req,res)=>{const rows=db.prepare('SELECT provider,updated_at FROM provider_keys WHERE user_id=?').all(req.auth.user_id),map=Object.fromEntries(rows.map(r=>[r.provider,{connected:true,updatedAt:r.updated_at}]));res.json({providers:Object.fromEntries(Object.keys(PROVIDERS).map(name=>[name,map[name]||{connected:false}]))});});
 app.put('/api/providers/:provider/key',auth,csrf,(req,res)=>{const p=provider(req.params.provider),apiKey=typeof req.body?.apiKey==='string'?req.body.apiKey.trim():'';if(!p)return fail(res,404,'Provider is not supported yet.');if(apiKey.length<12||apiKey.length>500||/\s/.test(apiKey))return fail(res,400,'Enter a valid provider API key.');let secret;try{secret=encrypt(apiKey);}catch{return fail(res,503,'Provider key storage is not configured on this server yet.');}db.prepare('INSERT INTO provider_keys(user_id,provider,encrypted_value,iv,auth_tag,updated_at) VALUES(@user_id,@provider,@encrypted_value,@iv,@auth_tag,@updated_at) ON CONFLICT(user_id,provider) DO UPDATE SET encrypted_value=excluded.encrypted_value,iv=excluded.iv,auth_tag=excluded.auth_tag,updated_at=excluded.updated_at').run({user_id:req.auth.user_id,provider:p,...secret,updated_at:Date.now()});res.json({ok:true,provider:p,message:'Provider key encrypted and saved on this server.'});});
 app.delete('/api/providers/:provider/key',auth,csrf,(req,res)=>{const p=provider(req.params.provider);if(!p)return fail(res,404,'Provider is not supported yet.');db.prepare('DELETE FROM provider_keys WHERE user_id=? AND provider=?').run(req.auth.user_id,p);res.json({ok:true,provider:p});});
 
@@ -57,7 +71,7 @@ app.post('/api/study',auth,csrf,apiLimit,async(req,res)=>{
   const grade=typeof req.body?.grade==='string'?req.body.grade.slice(0,80):'Not specified';
   const subject=typeof req.body?.subject==='string'?req.body.subject.slice(0,100):'Not specified';
   const images=studyImagesOk(req.body?.images);
-  if(!p)return fail(res,400,'Choose OpenAI or Gemini.');
+  if(!['openai','gemini'].includes(p))return fail(res,400,'Study Mode image requests currently support OpenAI or Gemini only.');
   if(!/^[a-zA-Z0-9._:-]{2,100}$/.test(model))return fail(res,400,'Enter a valid model identifier.');
   if(prompt.length<3||prompt.length>9000)return fail(res,400,'Your study question must be 3–9,000 characters.');
   if(!images)return fail(res,400,'Use up to 8 supported images (JPEG, PNG, or WebP), with a total upload size under 22 MB.');
@@ -85,7 +99,51 @@ app.post('/api/study',auth,csrf,apiLimit,async(req,res)=>{
   }catch(error){return fail(res,502,error.name==='TimeoutError'?'The tutor took too long to respond. Try a smaller attachment or another model.':'Could not reach the AI provider. Try again later.');}
 });
 
-app.post('/api/chat',auth,csrf,apiLimit,async(req,res)=>{const p=provider(req.body?.provider),model=typeof req.body?.model==='string'?req.body.model.trim():'',msgs=messagesOk(req.body?.messages);if(!p)return fail(res,400,'Choose OpenAI or Gemini.');if(!/^[a-zA-Z0-9._:-]{2,100}$/.test(model))return fail(res,400,'Enter a valid model identifier.');if(!msgs)return fail(res,400,'Messages must contain 1–40 valid entries, each under 12,000 characters.');const row=db.prepare('SELECT * FROM provider_keys WHERE user_id=? AND provider=?').get(req.auth.user_id,p);if(!row)return fail(res,400,'Connect this provider in Settings first.');let secret;try{secret=decrypt(row);}catch{return fail(res,503,'The server cannot decrypt the saved provider key. Check its encryption configuration.');}try{let response,data;if(p==='openai'){response=await fetch('https://api.openai.com/v1/chat/completions',{method:'POST',headers:{Authorization:'Bearer '+secret,'Content-Type':'application/json'},body:JSON.stringify({model,messages:msgs,max_tokens:1800}),signal:AbortSignal.timeout(60000)});data=await response.json().catch(()=>({}));if(!response.ok)return fail(res,response.status===401?401:502,data.error?.message||'OpenAI request failed. Check the key, model, and usage limits.');return res.json({provider:p,model,reply:data.choices?.[0]?.message?.content||'',usage:data.usage||null});}const contents=msgs.filter(m=>m.role!=='system').map(m=>({role:m.role==='assistant'?'model':'user',parts:[{text:m.content}]})),system=msgs.filter(m=>m.role==='system').map(m=>m.content).join('\n\n'),body={contents,generationConfig:{maxOutputTokens:1800}};if(system)body.systemInstruction={parts:[{text:system}]};response=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(model)+':generateContent',{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':secret},body:JSON.stringify(body),signal:AbortSignal.timeout(60000)});data=await response.json().catch(()=>({}));if(!response.ok)return fail(res,[401,403].includes(response.status)?401:502,data.error?.message||'Gemini request failed. Check the key, model, and usage limits.');const reply=(data.candidates?.[0]?.content?.parts||[]).map(x=>x.text||'').join('\n');res.json({provider:p,model,reply,usage:data.usageMetadata||null});}catch(e){fail(res,502,e.name==='TimeoutError'?'The provider took too long to respond. Try again.':'Could not reach the AI provider. Try again later.');}});
+app.post('/api/chat',auth,csrf,apiLimit,async(req,res)=>{
+  const p=provider(req.body?.provider),model=typeof req.body?.model==='string'?req.body.model.trim():'',msgs=messagesOk(req.body?.messages);
+  if(!p)return fail(res,400,'Choose a supported AI provider.');
+  if(!/^[a-zA-Z0-9._:/-]{2,160}$/.test(model))return fail(res,400,'Enter a valid model identifier.');
+  if(!msgs)return fail(res,400,'Messages must contain 1–40 valid entries, each under 12,000 characters.');
+  const row=db.prepare('SELECT * FROM provider_keys WHERE user_id=? AND provider=?').get(req.auth.user_id,p);
+  if(!row)return fail(res,400,'Connect this provider in Settings first.');
+  let secret;try{secret=decrypt(row);}catch{return fail(res,503,'The server cannot decrypt the saved provider key. Check its encryption configuration.');}
+  try{
+    let response,data,reply='';
+    if(p==='openai'){
+      response=await fetch(PROVIDERS.openai.url,{method:'POST',headers:{Authorization:'Bearer '+secret,'Content-Type':'application/json'},body:JSON.stringify({model,messages:msgs,max_tokens:1800}),signal:AbortSignal.timeout(60000)});
+      data=await response.json().catch(()=>({}));
+      if(!response.ok)return fail(res,[401,403].includes(response.status)?401:502,data.error?.message||'OpenAI request failed. Check the key, model, and usage limits.');
+      return res.json({provider:p,model,reply:data.choices?.[0]?.message?.content||'',usage:data.usage||null});
+    }
+    if(p==='gemini'){
+      const contents=msgs.filter(m=>m.role!=='system').map(m=>({role:m.role==='assistant'?'model':'user',parts:[{text:m.content}]})),system=msgs.filter(m=>m.role==='system').map(m=>m.content).join('\n\n'),body={contents,generationConfig:{maxOutputTokens:1800}};
+      if(system)body.systemInstruction={parts:[{text:system}]};
+      response=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(model)+':generateContent',{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':secret},body:JSON.stringify(body),signal:AbortSignal.timeout(60000)});
+      data=await response.json().catch(()=>({}));
+      if(!response.ok)return fail(res,[401,403].includes(response.status)?401:502,data.error?.message||'Gemini request failed. Check the key, model, and usage limits.');
+      reply=(data.candidates?.[0]?.content?.parts||[]).map(x=>x.text||'').join('\n');
+      return res.json({provider:p,model,reply,usage:data.usageMetadata||null});
+    }
+    if(p==='anthropic'){
+      const system=msgs.filter(m=>m.role==='system').map(m=>m.content).join('\n\n');
+      const body={model,max_tokens:1800,messages:msgs.filter(m=>m.role!=='system').map(m=>({role:m.role,content:m.content}))};
+      if(system)body.system=system;
+      response=await fetch(PROVIDERS.anthropic.url,{method:'POST',headers:{'x-api-key':secret,'anthropic-version':'2023-06-01','Content-Type':'application/json'},body:JSON.stringify(body),signal:AbortSignal.timeout(60000)});
+      data=await response.json().catch(()=>({}));
+      if(!response.ok)return fail(res,[401,403].includes(response.status)?401:502,data.error?.message||'Claude request failed. Check the key, model, and usage limits.');
+      reply=(data.content||[]).filter(x=>x.type==='text').map(x=>x.text||'').join('\n');
+      return res.json({provider:p,model,reply,usage:data.usage||null});
+    }
+    const config=PROVIDERS[p];
+    response=await fetch(config.url,{method:'POST',headers:{Authorization:'Bearer '+secret,'Content-Type':'application/json'},body:JSON.stringify({model,messages:msgs,max_tokens:1800}),signal:AbortSignal.timeout(60000)});
+    data=await response.json().catch(()=>({}));
+    if(!response.ok)return fail(res,[401,403].includes(response.status)?401:502,data.error?.message||p.toUpperCase()+' request failed. Check the key, model ID, and provider usage limits.');
+    reply=data.choices?.[0]?.message?.content||'';
+    return res.json({provider:p,model,reply,usage:data.usage||null});
+  }catch(e){
+    return fail(res,502,e.name==='TimeoutError'?'The provider took too long to respond. Try again.':'Could not reach the AI provider. Try again later.');
+  }
+});
 
 const mediaLimit=rateLimit({windowMs:60*60*1000,limit:5,standardHeaders:'draft-7',legacyHeaders:false});
 function openAIKeyFor(userId){const row=db.prepare('SELECT * FROM provider_keys WHERE user_id=? AND provider=?').get(userId,'openai');if(!row)return null;return decrypt(row);}
