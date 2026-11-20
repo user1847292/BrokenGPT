@@ -129,3 +129,6 @@ body.rgb-direct-switch{--rgb-easing:steps(1,end)}
 .update-card h2,.owner-card h2{color:#ff858b}
 .update-changelog{max-height:300px;overflow:auto;border:1px solid var(--line);border-radius:8px;padding:12px;margin:10px 0;background:#0b0b0b}
 .update-changelog p{white-space:pre-wrap;overflow-wrap:anywhere}
+
+/* Owner verification and moderation dashboard */
+.owner-verify,.owner-dashboard{border:1px solid #743238;border-radius:9px;padding:14px;margin-top:14px}.owner-dashboard{border-color:#743238}.admin-overview,.admin-conversations,.admin-audit{display:grid;gap:8px;margin:12px 0}.admin-conversations .saved-item{overflow-wrap:anywhere}.owner-dashboard select,.owner-verify input{width:100%;min-height:44px;padding:10px;background:#101010;color:#fff;border:1px solid var(--line);border-radius:7px}
