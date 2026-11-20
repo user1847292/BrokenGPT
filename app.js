@@ -146,14 +146,34 @@ try{characterPrefs={...characterPrefs,...JSON.parse(localStorage.getItem("broken
 const companion=el("character-companion"),companionAvatar=el("companion-avatar"),companionSpeech=el("companion-speech"),companionCaption=el("companion-caption");
 function saveCharacterPrefs(){localStorage.setItem("brokengpt-character",JSON.stringify(characterPrefs))}
 function characterLine(text){companionSpeech.textContent=text}
+const characterScenes={
+ welcome:{line:"You're back! I was waiting for our next adventure!",mood:"walking"},
+ happy:{line:"YES! This is going to be AWESOME!",mood:"walking"},
+ surprised:{line:"WHOA!! You nearly made me jump out of my shoes!",mood:"surprised"},
+ angry:{line:"Hey! Watch it! I'm not THAT easy to annoy!",mood:"angry"},
+ sleepy:{line:"Five more minutes... I'm recharging my speed.",mood:"sitting"},
+ joke:{line:"HAHA! Okay, that was actually a good one!",mood:"happy"},
+ ready:{line:"Let's move! I've got places to be!",mood:"walking"},
+ goodbye:{line:"See you later! *runs off screen*",mood:"walking"},
+ "dont-close":{line:"NOOO! DON'T CLOSE ME! I DON'T WANNA DISAPPEAR! AAAAA! 😭",mood:"surprised"}
+};
+function playCharacterScene(key){
+ const scene=characterScenes[key];if(!scene)return;
+ companion.classList.remove("surprised","angry","sitting","walking","happy");
+ companion.classList.add(scene.mood);
+ characterLine(scene.line);characterSpeak(scene.line);
+ el("character-scene-status").textContent="Playing: "+scene.line;
+ if(key==="goodbye"){companion.classList.add("walking");}
+}
 function characterReact(text){
  const value=(text||"").toLowerCase();
- companion.classList.remove("surprised","angry","sitting","walking");
- if(/boo|surprise|scare|jump/.test(value)){companion.classList.add("surprised");characterLine("WHOA!! You surprised me! 😲")}
- else if(/angry|mad|annoy/.test(value)){companion.classList.add("angry");characterLine("Hey! What's that supposed to mean?!")}
- else if(/sit|rest|tired/.test(value)){companion.classList.add("sitting");characterLine("Taking a little break...")}
- else if(/joke|funny|haha|lol/.test(value)){characterLine("HAHA! Okay, that was good!")}
- else {companion.classList.add("walking");characterLine("Let's move! I've got places to be!")}
+ if(/\b(hi|hello|hey|im back|i'm back)\b/.test(value)){playCharacterScene("welcome");return}
+ if(/boo|surprise|scare|jump/.test(value)){playCharacterScene("surprised");return}
+ if(/angry|mad|annoy/.test(value)){playCharacterScene("angry");return}
+ if(/sit|rest|tired|sleep/.test(value)){playCharacterScene("sleepy");return}
+ if(/joke|funny|haha|lol/.test(value)){playCharacterScene("joke");return}
+ if(/bye|goodbye|see you|go away/.test(value)){playCharacterScene("goodbye");return}
+ playCharacterScene("ready");
 }
 function setCharacterDisplay(on){
  characterPrefs.display=!!on;saveCharacterPrefs();companion.classList.toggle("hidden",!on);
@@ -188,6 +208,7 @@ function characterSpeak(text){
  window.speechSynthesis.speak(utterance);
 }
 el("character-test-warning").addEventListener("click",()=>{characterLine("NOOO! DON'T CLOSE ME! I DON'T WANNA DISAPPEAR! AAAAA! 😭");characterReact("surprise");characterSpeak("Nooo! Don't close me! I don't wanna disappear! See you later!");});
+el("play-character-scene").addEventListener("click",()=>playCharacterScene(el("character-scene").value));
 companionAvatar.addEventListener("click",()=>{characterLine("Hey! Need me?");characterReact("surprise");});
 const screenshotInput=el("character-screenshot");
 screenshotInput.addEventListener("change",e=>{const file=e.target.files&&e.target.files[0];const target=el("character-screenshot-preview");target.replaceChildren();if(!file)return;if(!file.type.startsWith("image/")){el("character-screenshot-status").textContent="Please choose an image file.";return}const img=document.createElement("img");img.src=URL.createObjectURL(file);img.alt="Screenshot selected for analysis";target.append(img);el("character-screenshot-status").textContent="Screenshot loaded locally. It has not been sent anywhere."});
