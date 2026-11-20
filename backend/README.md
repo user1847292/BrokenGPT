@@ -31,3 +31,5 @@ Passwords use Node scrypt. Sessions use HttpOnly, SameSite=Strict cookies. Provi
 
 ## Limitations
 This starter is not deployed. Online use requires a private HTTPS deployment with persistent storage and a private encryption key. Provider usage and costs are controlled by the provider account and model limits; BROKENGPT does not unlock paid models for free. Only OpenAI and Gemini are supported in this first backend stage.
+
+Media generation is limited to five requests per hour per client IP in this starter. Image and video generation may cost money; some models or video features may require provider approval or organization verification. The app asks for confirmation before starting media jobs. Use an adult-managed provider account with the account owner's permission.
