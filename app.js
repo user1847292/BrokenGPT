@@ -376,7 +376,7 @@ if(universeById[characterPrefs.choice])addUniverseCharacter(characterPrefs.choic
 
 
 /* Stage 4A: account sessions and real provider chat */
-let csrfToken="",currentUser=null,liveConversation=[];
+let csrfToken="",currentUser=null,liveConversation=[],pendingOwnerChallenge=null;
 const apiEl=id=>document.getElementById(id);
 async function apiRequest(url,options={}){
   const headers={"Content-Type":"application/json",...(options.headers||{})};
@@ -394,7 +394,7 @@ function updateAccountUI(){
   apiEl("account-logout").disabled=!currentUser;
   apiEl("account-register").disabled=!!currentUser;
   apiEl("account-login").disabled=!!currentUser;
-  apiEl("account-status").textContent=currentUser?"Signed in as "+currentUser.username+".":"Not signed in.";
+  apiEl("account-status").textContent=currentUser?"Signed in as "+currentUser.username+".":"Not signed in.";apiEl("owner-dashboard")?.classList.toggle("hidden",!currentUser?.isOwner);
   apiEl("active-provider-status").textContent=currentUser?"Signed in. Checking provider connection…":"Sign in and connect a provider in Settings to use real AI.";
 }
 async function refreshProviderStatus(){
@@ -409,7 +409,7 @@ async function refreshProviderStatus(){
 async function restoreAccount(){
   try{
     const data=await apiRequest("/api/auth/me");
-    currentUser=data.user;csrfToken=data.csrfToken;updateAccountUI();await refreshProviderStatus();await refreshMemories();
+    currentUser={...data.user,isOwner:!!data.user.isOwner};csrfToken=data.csrfToken;updateAccountUI();await refreshProviderStatus();await refreshMemories();if(currentUser.isOwner)await loadAdminOverview();
   }catch(error){
     currentUser=null;csrfToken="";updateAccountUI();
     accountMessage(error.message.includes("not connected")?"Backend not connected. Run or deploy the BROKENGPT backend to enable accounts.":"No active account session. Create an account or sign in.");
@@ -420,10 +420,57 @@ async function submitAccount(action){
   if(!username||!password){accountMessage("Enter your username and password.");return;}
   try{
     const data=await apiRequest(action==="register"?"/api/auth/register":"/api/auth/login",{method:"POST",body:{username,password}});
-    currentUser=data.user;csrfToken=data.csrfToken;apiEl("account-password").value="";updateAccountUI();await refreshProviderStatus();await refreshMemories();
+    apiEl("account-password").value="";
+    if(data.requiresOwnerVerification){pendingOwnerChallenge=data.challengeId;apiEl("owner-verify").classList.remove("hidden");accountMessage("Owner verification required. Check the configured Gmail inbox for your code.");return;}
+    currentUser={...data.user,isOwner:!!data.user.isOwner};csrfToken=data.csrfToken;updateAccountUI();await refreshProviderStatus();await refreshMemories();
+    if(currentUser.isOwner)await loadAdminOverview();
     accountMessage((action==="register"?"Account created. ":"Signed in. ")+"Welcome, "+currentUser.username+".");
   }catch(error){accountMessage(error.message);}
 }
+apiEl("owner-verify-submit")?.addEventListener("click",async()=>{
+  const code=apiEl("owner-code").value.trim();
+  if(!pendingOwnerChallenge||!/^\d{6}$/.test(code)){accountMessage("Enter the 6-digit verification code.");return;}
+  try{
+    const data=await apiRequest("/api/auth/verify-owner",{method:"POST",body:{challengeId:pendingOwnerChallenge,code}});
+    pendingOwnerChallenge=null;apiEl("owner-code").value="";apiEl("owner-verify").classList.add("hidden");
+    currentUser={...data.user,isOwner:true};csrfToken=data.csrfToken;updateAccountUI();
+    await refreshProviderStatus();await refreshMemories();await loadAdminOverview();
+    accountMessage("Owner email verified. Admin access enabled.");
+  }catch(error){accountMessage(error.message);}
+});
+async function loadAdminOverview(){
+  if(!currentUser?.isOwner)return;
+  try{
+    const data=await apiRequest("/api/admin/overview"),target=apiEl("admin-overview"),select=apiEl("admin-user-select");
+    target.replaceChildren();
+    const summary=document.createElement("p");summary.textContent=data.users.length+" accounts · "+data.usage.reduce((n,x)=>n+x.count,0)+" recorded feature uses";target.append(summary);
+    select.replaceChildren(new Option("All users",""));
+    data.users.forEach(user=>{const option=new Option(user.username+" · "+user.chatCount+" chats",user.id);select.append(option);});
+    const usage=document.createElement("p");usage.textContent="Feature usage: "+(data.usage.map(x=>x.feature+" ("+x.count+")").join(" · ")||"No usage recorded yet.");target.append(usage);
+    await loadAdminAudit();
+  }catch(error){apiEl("admin-overview").textContent=error.message;}
+}
+async function loadAdminConversations(){
+  if(!currentUser?.isOwner)return;
+  try{
+    const query=apiEl("admin-user-select").value, data=await apiRequest("/api/admin/conversations"+(query?"?userId="+encodeURIComponent(query):""));
+    const target=apiEl("admin-conversations");target.replaceChildren();
+    if(!data.entries.length){target.textContent="No server-stored conversations yet.";return;}
+    data.entries.forEach(item=>{
+      const card=document.createElement("article");card.className="saved-item";
+      card.append(safeText("h3",item.username+" · "+new Date(item.created_at).toLocaleString()));
+      card.append(safeText("p","User: "+item.user_prompt));card.append(safeText("p","BrokenGPT: "+item.assistant_reply));target.append(card);
+    });
+    await loadAdminAudit();
+  }catch(error){apiEl("admin-conversations").textContent=error.message;}
+}
+async function loadAdminAudit(){
+  if(!currentUser?.isOwner)return;
+  try{const data=await apiRequest("/api/admin/audit"),target=apiEl("admin-audit");target.replaceChildren();data.events.forEach(event=>target.append(safeText("p",event.action+" · "+(event.target_username||"all users")+" · "+new Date(event.created_at).toLocaleString())));}
+  catch(error){apiEl("admin-audit").textContent=error.message;}
+}
+apiEl("admin-refresh")?.addEventListener("click",loadAdminOverview);
+apiEl("admin-review")?.addEventListener("click",loadAdminConversations);
 apiEl("account-register").addEventListener("click",()=>submitAccount("register"));
 apiEl("account-login").addEventListener("click",()=>submitAccount("login"));
 apiEl("account-logout").addEventListener("click",async()=>{
