@@ -729,19 +729,5 @@ apiEl("download-video").addEventListener("click",async()=>{
     }catch{voiceStatus("Could not read that file. Try a plain-text file.");}
     fileInput.value="";
   });
-  document.querySelectorAll("[data-family-action]").forEach(button=>button.addEventListener("click",()=>{
-    if(button.dataset.familyAction==="study"){
-      setMode("Study");show("chat");
-      prompt.value=prompt.value||"Help me study this lesson. Explain it simply, summarize the important points, then give me a few practice questions.";
-      prompt.focus();
-      return;
-    }
-    if(button.dataset.familyAction==="future"){
-      show("studio");
-      const field=document.getElementById("image-prompt");
-      if(field){field.value="Create a hopeful, imaginative, clearly fictional visualization of one possible future. Use a warm, realistic cinematic style. This is an artistic possibility, not a prediction.";field.focus();}
-      const status=document.getElementById("image-status");
-      if(status)status.textContent="Edit the prompt to describe the future scene you want, then use Generate image if an eligible provider is connected.";
-    }
-  }));
+
 })();
