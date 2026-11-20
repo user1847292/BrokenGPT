@@ -607,3 +607,87 @@ apiEl("download-video").addEventListener("click",async()=>{
   finally{button.disabled=false;}
 });
 
+
+/* Hacking Center: local UI, honest capability boundaries, and offline notes */
+(()=>{
+ const $=id=>document.getElementById(id);
+ const hackTabs=[...document.querySelectorAll("[data-hack-tab]")];
+ hackTabs.forEach(tab=>tab.addEventListener("click",()=>{
+   hackTabs.forEach(x=>x.classList.toggle("selected",x===tab));
+   document.querySelectorAll(".hack-panel").forEach(panel=>panel.classList.toggle("active",panel.id==="hack-panel-"+tab.dataset.hackTab));
+ }));
+ function updateConnection(){
+   const node=$("wifi-connection-status");if(!node)return;
+   const online=navigator.onLine;
+   const conn=navigator.connection||navigator.mozConnection||navigator.webkitConnection;
+   const details=[];
+   if(conn?.effectiveType)details.push("browser estimate: "+conn.effectiveType);
+   if(typeof conn?.downlink==="number")details.push("estimated downlink: "+conn.downlink+" Mbps");
+   node.textContent=(online?"Browser reports internet connectivity.":"Browser reports offline.")+(details.length?" · "+details.join(" · "):"")+" This is not a Wi-Fi signal or speed test.";
+ }
+ $("wifi-check-connection")?.addEventListener("click",updateConnection);
+ window.addEventListener("online",updateConnection);window.addEventListener("offline",updateConnection);updateConnection();
+ const deviceKey="brokengpt-wifi-device-notes";
+ function read(key){try{return JSON.parse(localStorage.getItem(key)||"[]")}catch{return[]}}
+ function write(key,value){localStorage.setItem(key,JSON.stringify(value))}
+ function renderDeviceNotes(){
+   const box=$("wifi-device-notes");if(!box)return;box.replaceChildren();
+   read(deviceKey).forEach((item,index)=>{
+     const card=document.createElement("div");card.className="wifi-device-note";
+     const name=document.createElement("b");name.textContent=item.name;
+     const detail=document.createElement("small");detail.textContent=item.detail||"Manual note · not discovered by a network scan";
+     const remove=document.createElement("button");remove.type="button";remove.className="secondary";remove.textContent="Remove note";
+     remove.addEventListener("click",()=>{const list=read(deviceKey);list.splice(index,1);write(deviceKey,list);renderDeviceNotes()});
+     card.append(name,detail,remove);box.append(card);
+   });
+ }
+ $("wifi-add-device-note")?.addEventListener("click",()=>{
+   const name=$("wifi-device-name").value.trim(),detail=$("wifi-device-detail").value.trim();
+   if(!name){$("wifi-device-status").textContent="Enter a device label first.";return;}
+   const list=read(deviceKey);list.push({name,detail});write(deviceKey,list);
+   $("wifi-device-name").value="";$("wifi-device-detail").value="";
+   $("wifi-device-status").textContent="Saved as a manual note. It was not detected by BROKENGPT.";
+   renderDeviceNotes();
+ });
+ renderDeviceNotes();
+ $("wifi-security-check")?.addEventListener("click",()=>{
+   const mode=$("wifi-security-mode").value,result=$("wifi-security-result");
+   const advice={
+    wpa3:"Good choice: WPA3-Personal is the strongest common home Wi-Fi option. Use a unique router password and keep firmware updated.",
+    wpa2:"WPA2-AES is generally acceptable for home use. Avoid TKIP and use a long, unique router password.",
+    mixed:"WPA2/WPA3 mixed mode can help older devices connect. Prefer WPA3-only when all your devices support it.",
+    wep:"This is outdated and unsafe. Ask the router administrator to change it to WPA2-AES or WPA3.",
+    open:"An open network has no Wi-Fi password protection. Avoid using it for private activity and ask the administrator to enable modern security.",
+    unknown:"Check the wireless security section in your router's official admin interface or ask the network administrator."
+   };
+   result.textContent=advice[mode]||"Choose a security setting first.";
+ });
+ $("remote-pair-preview")?.addEventListener("click",()=>{
+   const name=$("remote-device-name").value.trim(),consent=$("remote-consent").checked,status=$("remote-status");
+   if(!name){status.textContent="Enter a device name.";return;}
+   if(!consent){status.textContent="Permission confirmation is required before any pairing request.";return;}
+   status.textContent="Pairing preview for "+name+": a native companion app, authenticated encrypted connection, and approval on the target device are still required. No connection was made.";
+ });
+ const offlineKey="brokengpt-offline-notes";
+ function renderOffline(){
+   const box=$("offline-items");if(!box)return;box.replaceChildren();
+   read(offlineKey).forEach((item,index)=>{
+     const card=document.createElement("article");card.className="offline-item";
+     const title=document.createElement("b");title.textContent=item.title;
+     const body=document.createElement("p");body.textContent=item.content;body.style.whiteSpace="pre-wrap";
+     const meta=document.createElement("small");meta.textContent="Saved on this device";
+     const remove=document.createElement("button");remove.type="button";remove.className="secondary";remove.textContent="Delete";
+     remove.addEventListener("click",()=>{const list=read(offlineKey);list.splice(index,1);write(offlineKey,list);renderOffline()});
+     card.append(title,body,meta,remove);box.append(card);
+   });
+ }
+ $("offline-save")?.addEventListener("click",()=>{
+   const title=$("offline-title").value.trim()||"Offline note",content=$("offline-content").value.trim();
+   if(!content){$("offline-status").textContent="Add some text before saving.";return;}
+   const list=read(offlineKey);list.push({title,content,createdAt:new Date().toISOString()});write(offlineKey,list);
+   $("offline-title").value="";$("offline-content").value="";
+   $("offline-status").textContent="Saved. This note is stored locally and can be read offline in this browser.";
+   renderOffline();
+ });
+ renderOffline();
+})();
