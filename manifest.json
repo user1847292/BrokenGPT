@@ -1,6 +1,6 @@
 {
-  "name":"BROKENGPT",
-  "short_name":"BROKENGPT",
+  "name":"BrokenGPT",
+  "short_name":"BrokenGPT",
   "description":"Your AI workspace for ideas, learning and building.",
   "start_url":"./",
   "display":"standalone",
