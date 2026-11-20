@@ -59,3 +59,8 @@ The repository workflow runs `npm run check` and starts the backend on a tempora
 - Enable HTTPS and configure trusted proxy settings only when the host is actually behind its documented proxy.
 - Configure owner dashboard variables only after verifying the owner account and email sender.
 - Restrict demo access before sharing a public URL. The current account registration endpoint is open by default; do not assume a login screen makes the service private.
+
+
+## Private demo access gate
+
+Set `BROKENGPT_DEMO_ACCESS_PASSWORD` to a long random value in the hosting provider's private environment settings before sharing a demo URL. When set, the app requires HTTP Basic Auth with username `demo` for the website and all API routes. The health endpoint remains available to the hosting platform. Use HTTPS only; never put the access password in GitHub or in the frontend. If the variable is empty, this extra gate is disabled, so do not expose an unprotected demo.
