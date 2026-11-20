@@ -455,7 +455,7 @@ async function sendChatMessage(value){
   addChatMessage("YOU",value);
   const provider=apiEl("active-provider").value,model=apiEl("active-model").value.trim();
   if(!currentUser){addChatMessage("BROKENGPT · SETUP","Sign in and connect an AI provider in Settings to get real AI replies. This is a local prototype until the backend is deployed.");return;}
-  const button=document.querySelector("#chat-form button");button.disabled=true;
+  const button=document.getElementById("send-message");button.disabled=true;
   try{
     liveConversation.push({role:"user",content:value});
     const personality=prefs.personality||"BROKENGPT Default";
