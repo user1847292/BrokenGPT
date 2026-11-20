@@ -838,3 +838,77 @@ apiEl("download-video").addEventListener("click",async()=>{
     finally{submit.disabled=false;submit.textContent=" Start studying";}
   });
 })();
+
+
+/* BrokenGPT premium interaction layer: message actions, long-press tools, and local feedback. */
+(()=>{
+ const host=document.getElementById("messages"),prompt=document.getElementById("prompt");
+ if(!host||!prompt)return;
+ const iconPaths={
+  copy:'<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/>',
+  volume:'<path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7m3-10a9 9 0 0 1 0 13"/>',
+  share:'<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.7 10.7 6.6-4.4m-6.6 7 6.6 4.4"/>',
+  bookmark:'<path d="M6 4h12v17l-6-4-6 4z"/>',
+  like:'<path d="M7 10v11H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2zm0 0 5-8a3 3 0 0 1 2 3l-1 5h6a3 3 0 0 1 3 4l-2 6a3 3 0 0 1-3 2H7"/>',
+  dislike:'<path d="M7 14V3H4a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2zm0 0 5 8a3 3 0 0 0 2-3l-1-5h6a3 3 0 0 0 3-4l-2-6a3 3 0 0 0-3-2H7"/>',
+  more:'<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>',
+  edit:'<path d="m15 5 4 4M4 20l4-.8L19 8a2.8 2.8 0 0 0-4-4L4 15z"/>',
+  flag:'<path d="M5 21V4m0 1h13l-2 4 2 4H5"/>',
+  refresh:'<path d="M20 7v5h-5M4 17v-5h5"/><path d="M5.5 9A7 7 0 0 1 18 6l2 6M4 12l2 6a7 7 0 0 0 12.5-3"/>'
+ };
+ function makeIcon(name){const svg=document.createElementNS("http://www.w3.org/2000/svg","svg");svg.setAttribute("viewBox","0 0 24 24");svg.setAttribute("width","18");svg.setAttribute("height","18");svg.setAttribute("fill","none");svg.setAttribute("stroke","currentColor");svg.setAttribute("stroke-width","1.8");svg.setAttribute("stroke-linecap","round");svg.setAttribute("stroke-linejoin","round");svg.innerHTML=iconPaths[name]||iconPaths.more;return svg;}
+ function iconButton(action,label,icon){const b=document.createElement("button");b.type="button";b.className="message-action";b.dataset.action=action;b.setAttribute("aria-label",label);b.title=label;b.append(makeIcon(icon));return b;}
+ function messageText(card){return card.querySelector(".message-content")?.textContent||card.querySelector("p")?.textContent||"";}
+ async function copyText(value){try{await navigator.clipboard.writeText(value);announce("Copied to clipboard.");}catch{const field=document.createElement("textarea");field.value=value;field.style.position="fixed";field.style.opacity="0";document.body.append(field);field.select();const ok=document.execCommand("copy");field.remove();announce(ok?"Copied to clipboard.":"Copy is unavailable in this browser.");}}
+ function announce(value){let node=document.getElementById("message-action-status");if(!node){node=document.createElement("div");node.id="message-action-status";node.className="visually-hidden";node.setAttribute("aria-live","polite");document.body.append(node);}node.textContent=value;}
+ function readAloud(value){if(!("speechSynthesis" in window)||!("SpeechSynthesisUtterance" in window)){announce("Read aloud is not supported on this device.");return;}window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(value);u.lang=document.documentElement.lang||"en";u.rate=Number(document.getElementById("voice-rate")?.value)||1;u.onstart=()=>announce("Reading message aloud.");u.onend=()=>announce("Finished reading.");u.onerror=()=>announce("Speech playback is unavailable.");window.speechSynthesis.speak(u);}
+ async function shareText(value){if(navigator.share){try{await navigator.share({title:"BrokenGPT message",text:value});}catch(error){if(error.name!=="AbortError")announce("Sharing was not available.");}}else{await copyText(value);announce("Sharing is unavailable here; message copied instead.");}}
+ function saveMessage(value){const saved=readList("brokengpt-favorites");if(!saved.some(x=>x.body===value)){saved.push({title:"Saved AI response",body:value,time:new Date().toISOString()});writeList("brokengpt-favorites",saved);if(typeof renderSaved==="function")renderSaved("brokengpt-favorites","favorites-list","favorite");}announce("Saved to your favorites.");}
+ function closeMenus(){document.querySelectorAll(".message-action-menu").forEach(x=>x.remove());}
+ function showMenu(card,kind){closeMenus();const menu=document.createElement("div");menu.className="message-action-menu";const actions=kind==="user"?[["volume","Read aloud"],["share","Share"],["copy","Copy"],["edit","Edit"],["more","More"]]:[["copy","Copy"],["volume","Read aloud"],["like","Like"],["dislike","Dislike"],["more","More"]];
+ actions.forEach(([icon,label])=>{const b=iconButton(label.toLowerCase().replaceAll(" ","-"),label,icon);b.classList.add("menu-action");b.append(document.createTextNode(""));b.setAttribute("aria-label",label);b.title=label;menu.append(b);});
+ menu.dataset.kind=kind;card.append(menu);menu.addEventListener("click",e=>{const b=e.target.closest("[data-action]");if(!b)return;perform(b.dataset.action,card);});
+ }
+ function perform(action,card){
+  const value=messageText(card),user=card.classList.contains("user-message");
+  if(action==="copy")copyText(value);
+  else if(action==="volume"||action==="read-aloud")readAloud(value);
+  else if(action==="share")shareText(value);
+  else if(action==="save")saveMessage(value);
+  else if(action==="like"||action==="dislike"){const prior=card.dataset.feedback||"";card.dataset.feedback=prior===action?"":action;card.querySelectorAll('[data-action="like"],[data-action="dislike"]').forEach(b=>b.classList.toggle("is-active",b.dataset.action===card.dataset.feedback));announce(card.dataset.feedback==="like"?"Feedback saved: liked.":card.dataset.feedback==="dislike"?"Feedback saved: disliked.":"Feedback cleared.");}
+  else if(action==="edit"&&user){const index=[...host.children].indexOf(card);prompt.value=value;[...host.children].slice(index).forEach(node=>node.remove());if(Array.isArray(window.__brokenGPTConversation)){window.__brokenGPTConversation.splice(index); }if(typeof liveConversation!=="undefined")liveConversation=liveConversation.slice(0,index);prompt.focus();announce("Message ready to edit.");}
+  else if(action==="regenerate"){const cards=[...host.children],lastUser=[...cards].reverse().find(x=>x.classList.contains("user-message"));if(lastUser){const text=messageText(lastUser),idx=cards.indexOf(lastUser);cards.slice(idx+1).forEach(x=>x.remove());if(typeof liveConversation!=="undefined")liveConversation=liveConversation.slice(0,Math.max(0,idx));sendChatMessage(text);}}
+  else if(action==="more"){const menu=card.querySelector(".message-action-menu");if(menu){menu.replaceChildren();const extras=user?[["share","Share"],["copy","Copy"],["volume","Read aloud"]]:[["share","Share"],["save","Save"],["refresh","Regenerate"],["flag","Report"]];extras.forEach(([ico,label])=>{const b=iconButton(label.toLowerCase(),label,ico);b.classList.add("menu-action");menu.append(b);});menu.addEventListener("click",e=>{const b=e.target.closest("[data-action]");if(b)perform(b.dataset.action,card);},{once:true});}}
+  else if(action==="flag")announce("Thanks. Feedback reporting will be added with the account moderation service.");
+  closeMenus();
+ }
+ const originalAdd=window.addChatMessage;
+ if(typeof originalAdd==="function"){
+  window.addChatMessage=function(label,content){
+   const card=originalAdd(label,content),isUser=label==="YOU",p=card.querySelector("p");
+   if(p){p.classList.add("message-content");}
+   card.dataset.messageRole=isUser?"user":"assistant";
+   const bar=document.createElement("div");bar.className="message-toolbar";
+   if(isUser){bar.append(iconButton("more","Message options","more"));}
+   else{bar.append(iconButton("copy","Copy","copy"),iconButton("volume","Read aloud","volume"),iconButton("like","Like","like"),iconButton("dislike","Dislike","dislike"),iconButton("more","More options","more"));}
+   card.append(bar);
+   bar.addEventListener("click",e=>{const b=e.target.closest("[data-action]");if(b)perform(b.dataset.action,card);});
+   let holdTimer=null,didHold=false;
+   card.addEventListener("pointerdown",e=>{if(e.pointerType==="mouse"&&e.button!==0)return;didHold=false;holdTimer=setTimeout(()=>{didHold=true;showMenu(card,isUser?"user":"assistant");},520);});
+   ["pointerup","pointerleave","pointercancel"].forEach(type=>card.addEventListener(type,()=>{if(holdTimer)clearTimeout(holdTimer);}));
+   card.addEventListener("contextmenu",e=>{e.preventDefault();showMenu(card,isUser?"user":"assistant");});
+   card.addEventListener("click",e=>{if(didHold){e.preventDefault();e.stopPropagation();didHold=false;}});
+   return card;
+  };
+ }
+ document.addEventListener("click",e=>{if(!e.target.closest(".message-action-menu")&&!e.target.closest(".message-toolbar"))closeMenus();});
+ document.addEventListener("keydown",e=>{if(e.key==="Escape")closeMenus();});
+})();
+
+/* Monster-machine identity: accessible industrial emblem and polished navigation behavior. */
+(()=>{
+ const header=document.querySelector("header"),brand=document.querySelector(".header-brand");
+ if(brand&&!document.querySelector(".monster-emblem")){const mark=document.createElement("span");mark.className="monster-emblem";mark.setAttribute("aria-hidden","true");mark.innerHTML='<svg viewBox="0 0 40 40"><path d="M7 14 3 4l12 6 5-4 5 4 12-6-4 13 2 13-8-4-5 7-5-7-8 4 2-13Z"/><path d="m12 20 5 2m11-2-5 2M17 28l3 2 3-2"/></svg>';brand.before(mark);}
+ const drawer=document.getElementById("app-drawer"),toggle=document.getElementById("drawer-toggle");
+ if(drawer&&toggle){toggle.setAttribute("aria-controls","app-drawer");toggle.setAttribute("aria-label","Open tools drawer");}
+})();
