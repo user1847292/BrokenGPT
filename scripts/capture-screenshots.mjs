@@ -6,7 +6,7 @@ await mkdir(out, { recursive: true });
 const browser = await chromium.launch({ headless: true });
 const page = await browser.newPage({ viewport: { width: 412, height: 915 }, deviceScaleFactor: 1 });
 await page.goto("http://127.0.0.1:4173", { waitUntil: "networkidle" });
-await page.screenshot({ path: out + "/01-command-center.png", fullPage: true });
+await page.screenshot({ path: out + "/01-chat-home.png", fullPage: true });
 const views = [
   ["chat", "02-chat.png"],
   ["battle", "03-ai-battle.png"],
@@ -21,7 +21,7 @@ const views = [
 for (const [view, filename] of views) {
   const button = page.locator('[data-view="' + view + '"]').first();
   if (await button.count()) {
-    await button.click();
+    await page.evaluate((id) => document.querySelector('[data-view="' + id + '"]').click(), view);
     await page.waitForTimeout(250);
     await page.screenshot({ path: out + "/" + filename, fullPage: true });
   }
