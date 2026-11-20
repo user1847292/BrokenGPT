@@ -372,4 +372,4 @@ el("character-choice").addEventListener("change",()=>{
  renderUniverseDirectory();
 });
 renderUniverseDirectory();
-if(universeById[characterPrefs.choice])renderCharacterAvatar();
+if(universeById[characterPrefs.choice])addUniverseCharacter(characterPrefs.choice);
