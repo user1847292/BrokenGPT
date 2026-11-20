@@ -530,44 +530,80 @@ restoreAccount();
 
 
 
-/* Stage 4B: independent model comparison and synthesis */
-function battleUsage(usage){if(!usage)return"Usage details not provided by provider.";const inTokens=usage.prompt_tokens??usage.promptTokenCount,outTokens=usage.completion_tokens??usage.candidatesTokenCount;return [inTokens!=null?"Input: "+inTokens+" tokens":"",outTokens!=null?"Output: "+outTokens+" tokens":""].filter(Boolean).join(" · ")||"Usage details returned.";}
-function battleRender(slot,title,answer,usage){apiEl("battle-"+slot+"-title").textContent=title;apiEl("battle-"+slot+"-result").textContent=answer;apiEl("battle-"+slot+"-usage").textContent=usage||"";}
+/* Stage 4B: configurable multi-model AI Battle */
+function battleUsage(usage){if(!usage)return"Usage details not provided by provider.";const input=usage.prompt_tokens??usage.promptTokenCount,output=usage.completion_tokens??usage.candidatesTokenCount;return [input!=null?"Input: "+input+" tokens":"",output!=null?"Output: "+output+" tokens":""].filter(Boolean).join(" · ")||"Usage details returned.";}
+const battleDefaults=[{provider:"openai",model:"gpt-4o-mini"},{provider:"gemini",model:"gemini-2.5-flash"}];
+function battleParticipantConfig(){return [...document.querySelectorAll(".battle-participant")].map((card,index)=>({provider:card.querySelector("[data-battle-provider]").value,model:card.querySelector("[data-battle-model]").value.trim(),index}));}
+function renderBattleParticipants(){
+  const count=Number(apiEl("battle-count").value)||2,container=apiEl("battle-participants"),synth=apiEl("battle-synthesizer");
+  const previous=battleParticipantConfig(),configs=Array.from({length:count},(_,i)=>previous[i]||battleDefaults[i]||{provider:i%2?"gemini":"openai",model:i%2?"gemini-2.5-flash":"gpt-4o-mini"});
+  container.replaceChildren();synth.replaceChildren();
+  configs.forEach((config,i)=>{
+    const card=document.createElement("div");card.className="battle-participant";
+    const heading=document.createElement("h3");heading.textContent="AI Participant "+(i+1);card.append(heading);
+    const providerLabel=document.createElement("label");providerLabel.textContent="Provider";card.append(providerLabel);
+    const provider=document.createElement("select");provider.dataset.battleProvider="";provider.setAttribute("aria-label","Provider for participant "+(i+1));
+    [["openai","OpenAI"],["gemini","Google Gemini"]].forEach(([value,label])=>{const option=document.createElement("option");option.value=value;option.textContent=label;provider.append(option)});provider.value=config.provider;card.append(provider);
+    const modelLabel=document.createElement("label");modelLabel.textContent="Model ID";card.append(modelLabel);
+    const model=document.createElement("input");model.dataset.battleModel="";model.value=config.model;model.spellcheck=false;model.placeholder="Enter model ID";model.setAttribute("aria-label","Model ID for participant "+(i+1));card.append(model);
+    container.append(card);
+    const option=document.createElement("option");option.value=String(i);option.textContent="Participant "+(i+1)+" · "+(config.provider==="openai"?"OpenAI":"Gemini");synth.append(option);
+    provider.addEventListener("change",()=>{synth.options[i].textContent="Participant "+(i+1)+" · "+(provider.value==="openai"?"OpenAI":"Gemini")});
+  });
+  synth.value="0";
+}
+apiEl("battle-count").addEventListener("change",renderBattleParticipants);
+renderBattleParticipants();
 apiEl("run-battle").addEventListener("click",async()=>{
   const prompt=apiEl("battle-prompt").value.trim();
   if(!prompt){apiEl("battle-status").textContent="Enter a prompt first.";return;}
   if(!currentUser){apiEl("battle-status").textContent="Sign in and connect your provider keys in Settings first.";return;}
-  const a={provider:apiEl("battle-provider-a").value,model:apiEl("battle-model-a").value.trim()};
-  const b={provider:apiEl("battle-provider-b").value,model:apiEl("battle-model-b").value.trim()};
-  const synth=apiEl("battle-synthesizer").value==="a"?a:b;
-  if(!a.model||!b.model){apiEl("battle-status").textContent="Enter a model ID for both models.";return;}
+  const participants=battleParticipantConfig();
+  const invalid=participants.findIndex(p=>!p.model);
+  if(invalid!==-1){apiEl("battle-status").textContent="Enter a model ID for participant "+(invalid+1)+".";return;}
+  const synth=participants[Number(apiEl("battle-synthesizer").value)||0];
   const button=apiEl("run-battle");button.disabled=true;button.textContent="Battle running…";
-  battleRender("a",a.provider.toUpperCase()+" · "+a.model,"Waiting for response…","");
-  battleRender("b",b.provider.toUpperCase()+" · "+b.model,"Waiting for response…","");
-  apiEl("battle-final-result").textContent="Waiting for both models…";
-  apiEl("battle-status").textContent="Sending the same prompt to both models…";
+  const resultsRoot=apiEl("battle-results");resultsRoot.replaceChildren();
+  const cards=participants.map((p,i)=>{
+    const card=document.createElement("article");card.className="tile";
+    const heading=document.createElement("b");heading.textContent="PARTICIPANT "+(i+1);
+    const title=document.createElement("h3");title.textContent=(p.provider==="openai"?"OPENAI":"GEMINI")+" · "+p.model;
+    const answer=document.createElement("p");answer.textContent="Waiting for response…";
+    const usage=document.createElement("small");
+    card.append(heading,title,answer,usage);resultsRoot.append(card);return{card,answer,usage};
+  });
+  const combined=document.createElement("article");combined.className="tile battle-combined";
+  const combinedLabel=document.createElement("b");combinedLabel.textContent="COMBINED RESPONSE";
+  const combinedTitle=document.createElement("h3");combinedTitle.textContent="Best combined answer";
+  const combinedAnswer=document.createElement("p");combinedAnswer.id="battle-final-result";combinedAnswer.textContent="Waiting for all participants…";
+  combined.append(combinedLabel,combinedTitle,combinedAnswer);resultsRoot.append(combined);
+  apiEl("battle-status").textContent="Sending the same prompt to "+participants.length+" AI participants…";
   try{
-    const ask=(slot,config)=>apiRequest("/api/chat",{method:"POST",csrf:true,body:{provider:config.provider,model:config.model,messages:[{role:"system",content:"You are an independent AI participant in BROKENGPT AI Battle. Answer the user's prompt carefully and clearly. Do not refer to another model's answer because you cannot see it."},{role:"user",content:prompt}]}});
-    const results=await Promise.allSettled([ask("a",a),ask("b",b)]);
-    const first=results[0].status==="fulfilled"?results[0].value:null;
-    const second=results[1].status==="fulfilled"?results[1].value:null;
-    battleRender("a",a.provider.toUpperCase()+" · "+a.model,first?.reply||("Request failed: "+results[0].reason.message),first?battleUsage(first.usage):"");
-    battleRender("b",b.provider.toUpperCase()+" · "+b.model,second?.reply||("Request failed: "+results[1].reason.message),second?battleUsage(second.usage):"");
-    if(!first&&!second){apiEl("battle-final-result").textContent="Neither model returned an answer. Check your provider connections and model IDs.";apiEl("battle-status").textContent="Battle failed.";return;}
-    if(!first||!second){apiEl("battle-final-result").textContent="Only one model responded. The individual answer is shown above; synthesis was skipped because two answers are needed.";apiEl("battle-status").textContent="Partial result: one model request failed.";return;}
-    apiEl("battle-status").textContent="Both models answered. Comparing and synthesizing…";
+    const requests=participants.map(config=>apiRequest("/api/chat",{method:"POST",csrf:true,body:{provider:config.provider,model:config.model,messages:[
+      {role:"system",content:"You are an independent AI participant in BROKENGPT AI Battle. Answer the user's prompt carefully and clearly. Do not refer to other participants' answers because you cannot see them."},
+      {role:"user",content:prompt}
+    ]}}));
+    const settled=await Promise.allSettled(requests);
+    const successful=[];
+    settled.forEach((result,i)=>{
+      if(result.status==="fulfilled"){
+        const data=result.value;cards[i].answer.textContent=data.reply||"(The provider returned an empty response.)";cards[i].usage.textContent=battleUsage(data.usage);successful.push({config:participants[i],reply:data.reply||""});
+      }else{cards[i].answer.textContent="Request failed: "+(result.reason?.message||"Unknown provider error");}
+    });
+    if(!successful.length){combinedAnswer.textContent="No participant returned an answer. Check provider connections and model IDs.";apiEl("battle-status").textContent="Battle failed.";return;}
+    if(successful.length===1){combinedAnswer.textContent="Only one participant responded. Its answer is shown above; synthesis needs at least two successful answers.";apiEl("battle-status").textContent="Partial result: only one participant responded.";return;}
+    apiEl("battle-status").textContent=successful.length+" of "+participants.length+" participants answered. Comparing and synthesizing…";
+    const comparison=successful.map((item,i)=>"Participant "+(i+1)+" ("+item.config.provider+" / "+item.config.model+") answer:\n"+item.reply).join("\n\n");
     const synthesis=await apiRequest("/api/chat",{method:"POST",csrf:true,body:{provider:synth.provider,model:synth.model,messages:[
-      {role:"system",content:"You are the BROKENGPT AI Battle judge. Compare two independent answers to the same prompt. Identify agreement, meaningful differences, unsupported claims, and omissions. Then produce one clear, accurate, useful combined answer. Do not automatically prefer either model. Be honest about uncertainty and do not claim external verification."},
-      {role:"user",content:"Original prompt:\n"+prompt+"\n\nModel A ("+a.provider+" / "+a.model+") answer:\n"+first.reply+"\n\nModel B ("+b.provider+" / "+b.model+") answer:\n"+second.reply+"\n\nCompare them briefly, then give the strongest combined answer."}
+      {role:"system",content:"You are the BROKENGPT AI Battle judge. Compare all independent answers to the same prompt. Identify agreement, meaningful differences, unsupported claims, and omissions. Do not automatically prefer any participant. Produce one clear, accurate, useful combined answer. Be honest about uncertainty and do not claim external verification."},
+      {role:"user",content:"Original prompt:\n"+prompt+"\n\n"+comparison+"\n\nCompare all answers briefly, then give the strongest combined answer."}
     ]}});
-    apiEl("battle-final-result").textContent=synthesis.reply||"The synthesis model returned an empty response.";
-    apiEl("battle-status").textContent="Battle complete. Two independent answers and one synthesis were generated.";
-  }catch(error){apiEl("battle-final-result").textContent="Synthesis could not be completed: "+error.message;apiEl("battle-status").textContent="The battle stopped during synthesis.";}
+    combinedAnswer.textContent=synthesis.reply||"The synthesis participant returned an empty response.";
+    apiEl("battle-status").textContent="Battle complete: "+successful.length+" independent answers and one synthesis generated.";
+  }catch(error){combinedAnswer.textContent="Synthesis could not be completed: "+error.message;apiEl("battle-status").textContent="The battle stopped during synthesis.";}
   finally{button.disabled=false;button.textContent="◆ Run AI Battle";}
 });
-
-
-
+ 
 /* Stage 4C: optional device speech input and output */
 const SpeechRecognitionAPI=window.SpeechRecognition||window.webkitSpeechRecognition;
 let speechRecognition=null;
