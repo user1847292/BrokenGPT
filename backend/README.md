@@ -27,7 +27,7 @@ Keep `.env` and `backend/data/` private. Back up the database securely. If the e
 - `DELETE /api/providers/:provider/key` (CSRF token required)
 - `POST /api/chat`
 
-Passwords use Node scrypt. Sessions use HttpOnly, SameSite=Strict cookies. Provider keys are encrypted with AES-256-GCM. The browser must use same-origin requests and send `X-CSRF-Token` for state-changing requests.
+Passwords use Node scrypt. Sessions use HttpOnly cookies and provider keys are encrypted with AES-256-GCM. For a separately hosted Android/mobile backend, set `CORS_ORIGINS` to the exact app origins (comma-separated), including the Capacitor origins used by your build, and keep HTTPS enabled in production. Production cookies use `SameSite=None; Secure` so credentialed app requests can carry the session. The app's Settings screen accepts the deployed backend HTTPS URL. State-changing requests include `X-CSRF-Token`.
 
 ## Limitations
 This starter is not deployed. Online use requires a private HTTPS deployment with persistent storage and a private encryption key. Provider usage, age requirements, model availability, and costs are controlled by each provider account; BrokenGPT does not unlock paid models for free. Use an adult-managed account with the account owner's permission where required. Model IDs in the UI are examples and may change. Chat supports OpenAI, Google Gemini, Anthropic Claude, xAI, DeepSeek, Mistral, OpenRouter, Groq, Qwen (DashScope), Perplexity, Together AI, and Fireworks AI. Several integrations use OpenAI-compatible chat APIs. Study Mode image input remains limited to OpenAI and Gemini.
