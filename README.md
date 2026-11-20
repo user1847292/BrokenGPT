@@ -25,6 +25,10 @@ This branch is a **work in progress**, not a finished or production-approved rel
 
 See [backend/README.md](backend/README.md). The backend serves the browser interface from the same origin.
 
+## Hosting setup
+
+A Render Blueprint is included in `render.yaml`. It configures the backend, HTTPS health check, a persistent 1 GB disk, a generated encryption key, and a required private demo password. The configured `starter` web-service plan and persistent disk are paid resources; an adult should review the account, costs, and deployment before creating the service. The Blueprint does not deploy anything automatically (`autoDeploy: false`).
+
 ## Automated checks
 
 The `.github/workflows/demo-preview-checks.yml` workflow checks JavaScript syntax, installs backend dependencies, starts the backend, and checks `GET /api/health` on pushes and pull requests targeting `demo-preview`.
