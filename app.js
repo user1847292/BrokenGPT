@@ -321,7 +321,7 @@ const universeById = Object.fromEntries(universeCharacters.map(item=>[item.id,it
 universeCharacters.forEach(item=>{
  expandedCharacterProfiles[item.id]={name:item.name,tag:item.tag,style:item.style,description:item.description,emoji:item.emoji};
 });
-function renderCharacterAvatar(){
+function renderUniverseCharacterAvatar(){
  const preview=el("character-avatar-preview");
  const profile=universeById[characterPrefs.choice];
  const emoji=profile?.emoji||"🦔";
@@ -342,7 +342,7 @@ function addUniverseCharacter(id){
  select.value=id;
  characterPrefs.choice=id;characterPrefs.name=item.name;characterPrefs.description=item.description;
  el("custom-character-name").value=item.name;el("custom-character-description").value=item.description;
- saveCharacterPrefs();renderCharacterAvatar();rebuildExpandedScenes();
+ saveCharacterPrefs();renderUniverseCharacterAvatar();rebuildExpandedScenes();
  el("universe-status").textContent=item.name+" added and selected! You can customize its costume, avatar, and description below.";
 }
 function renderUniverseDirectory(){
@@ -368,7 +368,7 @@ el("universe-search").addEventListener("input",renderUniverseDirectory);
 el("universe-category").addEventListener("change",renderUniverseDirectory);
 el("character-choice").addEventListener("change",()=>{
  const item=universeById[characterPrefs.choice];
- if(item){characterPrefs.name=item.name;characterPrefs.description=item.description;saveCharacterPrefs();renderCharacterAvatar();}
+ if(item){characterPrefs.name=item.name;characterPrefs.description=item.description;saveCharacterPrefs();renderUniverseCharacterAvatar();}
  renderUniverseDirectory();
 });
 renderUniverseDirectory();
