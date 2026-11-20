@@ -29,7 +29,7 @@ const modeSelect=document.getElementById("mode-select"),modeDescription=document
 function setMode(mode){if(!modeInfo[mode])return;modeSelect.value=mode;modeDescription.textContent=modeInfo[mode];localStorage.setItem("brokengpt-mode",mode);document.querySelectorAll("[data-mode]").forEach(b=>b.classList.toggle("active",b.dataset.mode===mode))}
 setMode(localStorage.getItem("brokengpt-mode")||"Balanced");
 modeSelect.addEventListener("change",()=>setMode(modeSelect.value));
-document.querySelectorAll("[data-mode]").forEach(b=>b.addEventListener("click",()=>{setMode(b.dataset.mode);show("chat")}));
+document.querySelectorAll("[data-mode]").forEach(b=>b.addEventListener("click",()=>{setMode(b.dataset.mode);show(b.dataset.mode==="Study"?"study":"chat")}));
 document.querySelectorAll("[data-go]").forEach(b=>b.addEventListener("click",()=>show(b.dataset.go)));
 function readList(key){try{return JSON.parse(localStorage.getItem(key)||"[]")}catch{return[]}}
 function writeList(key,list){localStorage.setItem(key,JSON.stringify(list))}
@@ -730,4 +730,70 @@ apiEl("download-video").addEventListener("click",async()=>{
     fileInput.value="";
   });
 
+})();
+
+
+/* Study Mode: grade-aware tutoring with image and sampled-video-frame input. */
+(()=>{
+  const imageInput=apiEl("study-images"),videoInput=apiEl("study-video"),submit=apiEl("study-submit");
+  if(!imageInput||!videoInput||!submit)return;
+  const status=apiEl("study-status"),filesStatus=apiEl("study-files-status"),result=apiEl("study-result");
+  const MAX_IMAGE_BYTES=12*1024*1024,MAX_VIDEO_BYTES=30*1024*1024;
+  function dataUrlParts(dataUrl){const comma=dataUrl.indexOf(",");return{mimeType:(dataUrl.slice(5,comma).split(";")[0]||"image/jpeg"),data:dataUrl.slice(comma+1)};}
+  function canvasAttachment(canvas,label){return{...dataUrlParts(canvas.toDataURL("image/jpeg",0.78)),label};}
+  async function imageAttachment(file){
+    if(file.size>MAX_IMAGE_BYTES)throw Error(file.name+" is larger than 12 MB.");
+    const bitmap=await createImageBitmap(file),scale=Math.min(1,1600/Math.max(bitmap.width,bitmap.height));
+    const canvas=document.createElement("canvas");canvas.width=Math.max(1,Math.round(bitmap.width*scale));canvas.height=Math.max(1,Math.round(bitmap.height*scale));
+    canvas.getContext("2d").drawImage(bitmap,0,0,canvas.width,canvas.height);bitmap.close?.();
+    return canvasAttachment(canvas,"Image: "+file.name);
+  }
+  function waitEvent(target,event){return new Promise((resolve,reject)=>{const done=()=>{cleanup();resolve();},bad=()=>{cleanup();reject(Error("Could not read the selected video."));},cleanup=()=>{target.removeEventListener(event,done);target.removeEventListener("error",bad);};target.addEventListener(event,done,{once:true});target.addEventListener("error",bad,{once:true});});}
+  async function videoAttachments(file){
+    if(file.size>MAX_VIDEO_BYTES)throw Error("The selected video is larger than 30 MB.");
+    const url=URL.createObjectURL(file),video=document.createElement("video");video.preload="metadata";video.muted=true;video.playsInline=true;video.src=url;
+    try{
+      await waitEvent(video,"loadedmetadata");
+      if(!Number.isFinite(video.duration)||video.duration<=0)throw Error("This video could not be opened.");
+      const frames=[],times=[0.08,0.34,0.66,0.92].map(p=>Math.min(Math.max(0,video.duration*p),Math.max(0,video.duration-0.05)));
+      for(let i=0;i<times.length;i++){
+        const ready=waitEvent(video,"seeked");video.currentTime=times[i];await ready;
+        const scale=Math.min(1,1280/Math.max(video.videoWidth,video.videoHeight));
+        const canvas=document.createElement("canvas");canvas.width=Math.max(1,Math.round(video.videoWidth*scale));canvas.height=Math.max(1,Math.round(video.videoHeight*scale));
+        canvas.getContext("2d").drawImage(video,0,0,canvas.width,canvas.height);
+        frames.push(canvasAttachment(canvas,"Video frame "+(i+1)+" from "+file.name+" at "+times[i].toFixed(1)+" seconds"));
+      }
+      return frames;
+    }finally{URL.revokeObjectURL(url);video.removeAttribute("src");video.load();}
+  }
+  function refreshFilesStatus(){
+    const pics=[...imageInput.files],video=videoInput.files[0];
+    filesStatus.textContent=(pics.length?pics.length+" image(s): "+pics.map(f=>f.name).join(", "):"No images")+(video?" · Video: "+video.name:"")+". Video is analysed using sampled frames; audio is not processed.";
+  }
+  imageInput.addEventListener("change",()=>{if(imageInput.files.length>4){status.textContent="Choose up to 4 images per question.";imageInput.value="";}refreshFilesStatus();});
+  videoInput.addEventListener("change",refreshFilesStatus);
+  submit.addEventListener("click",async()=>{
+    const prompt=apiEl("study-prompt").value.trim(),pics=[...imageInput.files],video=videoInput.files[0];
+    if(!prompt&&!pics.length&&!video){status.textContent="Tell your tutor what you want to learn, or attach a lesson page/video.";return;}
+    if(!currentUser){status.textContent="Please sign in first, then connect OpenAI or Gemini in Settings.";return;}
+    submit.disabled=true;submit.textContent="Preparing your lesson…";result.classList.add("hidden");status.textContent="Preparing your attachments…";
+    try{
+      const attachments=[];
+      for(const file of pics)attachments.push(await imageAttachment(file));
+      if(video)attachments.push(...await videoAttachments(video));
+      if(attachments.length>8)throw Error("This question contains too many images. Use up to 4 pictures and one short video.");
+      const provider=apiEl("active-provider").value,model=apiEl("active-model").value.trim();
+      const grade=apiEl("study-grade").value,subject=apiEl("study-subject").value.trim()||"Not specified",task=apiEl("study-task").value;
+      const promptText=[task+".", "Student level: "+grade+".", "Subject: "+subject+".", "Student's question: "+(prompt||"Please explain the attached material.")].join("\n");
+      status.textContent="Your tutor is working on it…";
+      const data=await apiRequest("/api/study",{method:"POST",csrf:true,body:{provider,model,grade,subject,task,prompt:promptText,images:attachments}});
+      result.replaceChildren();
+      const heading=document.createElement("h2");heading.textContent="Your study explanation";
+      const answer=document.createElement("p");answer.className="study-answer";answer.textContent=data.reply||"The tutor returned an empty answer.";
+      result.append(heading,answer);result.classList.remove("hidden");
+      status.textContent="Lesson ready · "+data.provider.toUpperCase()+" / "+data.model+". Ask another question whenever you're ready.";
+      const history=readList("brokengpt-study-history");history.push({title:subject+" · "+grade,preview:promptText+"\n"+answer.textContent.slice(0,800),time:new Date().toISOString()});writeList("brokengpt-study-history",history);
+    }catch(error){status.textContent=error.message;}
+    finally{submit.disabled=false;submit.textContent="🚀 Start studying";}
+  });
 })();
