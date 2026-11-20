@@ -44,6 +44,8 @@ jobs:
           cat /tmp/brokengpt-preview.log
           exit 1
       - name: Capture actual app screenshots
+        env:
+          NODE_PATH: backend/node_modules
         run: node scripts/capture-screenshots.cjs
       - name: Upload screenshot preview gallery
         if: always()
