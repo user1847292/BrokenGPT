@@ -461,7 +461,7 @@ async function sendChatMessage(value){
     const personality=prefs.personality||"BROKENGPT Default";
     const mode=apiEl("mode-select").value||"Balanced";
     const system="You are BROKENGPT, a helpful AI assistant. Personality: "+personality+". Mode: "+mode+". Explanation level: "+(prefs.explanationLevel||"Adaptive")+". Response length: "+(prefs.responseLength||"Balanced")+". Be clear, safe, honest about uncertainty, and adapt explanations to the user's level.";
-    const data=await apiRequest("/api/chat",{method:"POST",body:{provider,model,messages:[{role:"system",content:system},...liveConversation]}});
+    const data=await apiRequest("/api/chat",{method:"POST",csrf:true,body:{provider,model,messages:[{role:"system",content:system},...liveConversation]}});
     const answer=data.reply||"(The provider returned an empty response.)";
     liveConversation.push({role:"assistant",content:answer});
     addChatMessage("BROKENGPT · "+data.provider.toUpperCase()+" / "+data.model,answer);
@@ -492,7 +492,7 @@ apiEl("run-battle").addEventListener("click",async()=>{
   apiEl("battle-final-result").textContent="Waiting for both models…";
   apiEl("battle-status").textContent="Sending the same prompt to both models…";
   try{
-    const ask=(slot,config)=>apiRequest("/api/chat",{method:"POST",body:{provider:config.provider,model:config.model,messages:[{role:"system",content:"You are an independent AI participant in BROKENGPT AI Battle. Answer the user's prompt carefully and clearly. Do not refer to another model's answer because you cannot see it."},{role:"user",content:prompt}]}});
+    const ask=(slot,config)=>apiRequest("/api/chat",{method:"POST",csrf:true,body:{provider:config.provider,model:config.model,messages:[{role:"system",content:"You are an independent AI participant in BROKENGPT AI Battle. Answer the user's prompt carefully and clearly. Do not refer to another model's answer because you cannot see it."},{role:"user",content:prompt}]}});
     const results=await Promise.allSettled([ask("a",a),ask("b",b)]);
     const first=results[0].status==="fulfilled"?results[0].value:null;
     const second=results[1].status==="fulfilled"?results[1].value:null;
@@ -501,7 +501,7 @@ apiEl("run-battle").addEventListener("click",async()=>{
     if(!first&&!second){apiEl("battle-final-result").textContent="Neither model returned an answer. Check your provider connections and model IDs.";apiEl("battle-status").textContent="Battle failed.";return;}
     if(!first||!second){apiEl("battle-final-result").textContent="Only one model responded. The individual answer is shown above; synthesis was skipped because two answers are needed.";apiEl("battle-status").textContent="Partial result: one model request failed.";return;}
     apiEl("battle-status").textContent="Both models answered. Comparing and synthesizing…";
-    const synthesis=await apiRequest("/api/chat",{method:"POST",body:{provider:synth.provider,model:synth.model,messages:[
+    const synthesis=await apiRequest("/api/chat",{method:"POST",csrf:true,body:{provider:synth.provider,model:synth.model,messages:[
       {role:"system",content:"You are the BROKENGPT AI Battle judge. Compare two independent answers to the same prompt. Identify agreement, meaningful differences, unsupported claims, and omissions. Then produce one clear, accurate, useful combined answer. Do not automatically prefer either model. Be honest about uncertainty and do not claim external verification."},
       {role:"user",content:"Original prompt:\n"+prompt+"\n\nModel A ("+a.provider+" / "+a.model+") answer:\n"+first.reply+"\n\nModel B ("+b.provider+" / "+b.model+") answer:\n"+second.reply+"\n\nCompare them briefly, then give the strongest combined answer."}
     ]}});
