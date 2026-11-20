@@ -6,7 +6,8 @@
   "scripts": {
     "build:web": "node scripts/prepare-web.mjs",
     "build:android": "npm run build:web && cap sync android",
-    "test:syntax": "node --check app.js && node --check languages.js && node --check backend/server.js && node --check scripts/prepare-web.mjs && node --check scripts/capture-screenshots.mjs"
+    "test:syntax": "node --check app.js && node --check languages.js && node --check backend/server.js && node --check scripts/prepare-web.mjs && node --check scripts/capture-screenshots.mjs",
+    "test:smoke": "node scripts/smoke-test.mjs"
   },
   "dependencies": {
     "@capacitor/android": "7.4.3",
