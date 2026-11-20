@@ -1,10 +1,17 @@
 {
-  "name":"BROKENGPT",
-  "short_name":"BROKENGPT",
-  "description":"Your AI workspace for ideas, learning and building.",
-  "start_url":"./",
-  "display":"standalone",
-  "background_color":"#080808",
-  "theme_color":"#080808",
-  "icons":[{"src":"file_00000000a7b481f4ac6329d53b247deb.png","sizes":"512x512","type":"image/png","purpose":"any"}]
+  "name": "BrokenGPT",
+  "short_name": "BrokenGPT",
+  "description": "Your AI workspace for ideas, learning and building.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#080808",
+  "theme_color": "#080808",
+  "icons": [
+    {
+      "src": "file_00000000a7b481f4ac6329d53b247deb.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
 }
