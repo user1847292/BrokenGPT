@@ -690,11 +690,7 @@ apiEl("download-video").addEventListener("click",async()=>{
    renderOffline();
  });
  renderOffline();
-})();
-
-
 /* Approved BROKENGPT update: composer actions, file attachment, and family shortcuts */
-(()=>{
   const plus=document.getElementById("composer-plus");
   const menu=document.getElementById("composer-menu");
   const fileInput=document.getElementById("chat-file-input");
