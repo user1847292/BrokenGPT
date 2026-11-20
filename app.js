@@ -498,6 +498,8 @@ async function sendChatMessage(value){
   if(!currentUser){addChatMessage("BROKENGPT · SETUP","Sign in and connect an AI provider in Settings to get real AI replies. This is a local prototype until the backend is deployed.");return;}
   const button=document.querySelector("#chat-form button");button.disabled=true;
   try{
+    const rememberMatch=value.match(/^remember this\s*:\s*([\s\S]{1,12000})$/i);
+    if(rememberMatch){const note=rememberMatch[1].trim();await apiRequest("/api/memories",{method:"POST",csrf:true,body:{title:"Remembered from chat",kind:"note",content:note}});}
     liveConversation.push({role:"user",content:value});
     const personality=prefs.personality||"BROKENGPT Default";
     const mode=apiEl("mode-select").value||"Balanced";
