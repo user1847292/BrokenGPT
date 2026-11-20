@@ -1,7 +1,7 @@
 'use strict';
 require('dotenv').config();
 const crypto=require('node:crypto'),path=require('node:path'),fs=require('node:fs');
-const express=require('express'),helmet=require('helmet'),Database=require('better-sqlite3');
+const express=require('express'),helmet=require('helmet'),cookieParser=require('cookie-parser'),Database=require('better-sqlite3');
 const {rateLimit}=require('express-rate-limit');
 const app=express(),PORT=Number(process.env.PORT||3000),ROOT=path.resolve(__dirname,'..');
 const DATA=path.join(__dirname,'data'),DBFILE=path.join(DATA,'brokengpt.sqlite');
@@ -26,7 +26,7 @@ function auth(req,res,next){const token=req.cookies?.[COOKIE];if(!token)return f
 function csrf(req,res,next){const supplied=req.get('x-csrf-token')||'';const a=Buffer.from(sha(supplied)),b=Buffer.from(req.auth.csrf_hash);if(!supplied||a.length!==b.length||!crypto.timingSafeEqual(a,b))return fail(res,403,'Security check failed. Refresh the page and try again.');next();}
 const provider=v=>v==='openai'||v==='gemini'?v:null;
 function messagesOk(items){if(!Array.isArray(items)||!items.length||items.length>40)return null;const out=[];for(const m of items){if(!m||!['user','assistant','system'].includes(m.role)||typeof m.content!=='string'||m.content.length>12000)return null;out.push({role:m.role,content:m.content});}return out;}
-app.disable('x-powered-by');app.use(helmet({crossOriginResourcePolicy:{policy:'same-origin'},contentSecurityPolicy:{directives:{'style-src':["'self'","'unsafe-inline'"],'img-src':["'self'",'data:','blob:']}}}));app.use(express.json({limit:'24kb',strict:true}));
+app.disable('x-powered-by');app.use(cookieParser());app.use(helmet({crossOriginResourcePolicy:{policy:'same-origin'},contentSecurityPolicy:{directives:{'style-src':["'self'","'unsafe-inline'"],'img-src':["'self'",'data:','blob:']}}}));app.use(express.json({limit:'24kb',strict:true}));
 app.use((req,res,next)=>/^\/(?:backend|node_modules|\.env|package\.json)(?:\/|$)/i.test(req.path)?res.sendStatus(404):next());
 const authLimit=rateLimit({windowMs:15*60*1000,limit:8,standardHeaders:'draft-7',legacyHeaders:false});
 const apiLimit=rateLimit({windowMs:60*1000,limit:30,standardHeaders:'draft-7',legacyHeaders:false});
