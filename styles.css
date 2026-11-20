@@ -306,3 +306,34 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
  .view{padding:28px 15px}
 }
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+
+
+/* BrokenGPT icon-first message controls and long-press menus */
+.message{position:relative}
+.message-toolbar{display:flex;align-items:center;gap:5px;margin-top:11px;opacity:.78}
+.user-message .message-toolbar{justify-content:flex-end}
+.message-action{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;min-width:34px;min-height:34px;padding:0;border:1px solid transparent!important;border-radius:9px;background:transparent!important;color:#aaa!important}
+.message-action:hover,.message-action:focus-visible{background:#251116!important;border-color:#6e2631!important;color:#fff!important}
+.message-action.is-active{color:#ff5968!important;background:#321219!important;border-color:#85303b!important}
+.message-action svg{display:block;pointer-events:none}
+.message-action-menu{position:absolute;z-index:75;left:12px;bottom:54px;display:flex;flex-wrap:wrap;gap:4px;max-width:min(300px,calc(100vw - 48px));padding:7px;background:#101010;border:1px solid #70232f;border-radius:13px;box-shadow:0 14px 38px #000c}
+.user-message .message-action-menu{left:auto;right:10px}
+.message-action-menu .menu-action{width:auto;min-width:38px;padding:0 10px;gap:6px}
+.message-action-menu .menu-action::after{content:attr(title);font-size:11px;white-space:nowrap}
+.visually-hidden{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
+.message-content{user-select:text;-webkit-user-select:text;touch-action:pan-y}
+.message-toolbar{user-select:none;-webkit-user-select:none}
+.message-action:focus-visible{outline:2px solid #f05a68!important;outline-offset:2px}
+.monster-emblem{display:inline-grid;place-items:center;width:34px;height:34px;margin-right:2px;border:1px solid #71303a;border-radius:10px;background:linear-gradient(145deg,#281016,#0e0e0e);box-shadow:inset 0 0 12px #a4142833,0 0 16px #a4142820}
+.monster-emblem svg{width:25px;height:25px;fill:#d21d32;stroke:#ff7883;stroke-width:1.1;stroke-linejoin:round}
+#chat .hero{position:relative}
+#chat .hero::before{content:"";display:block;width:54px;height:54px;margin:0 auto 20px;border:1px solid #70232f;border-radius:16px;background:linear-gradient(145deg,#260d13,#090909);box-shadow:0 0 35px #b000202b,inset 0 0 18px #b0002022;clip-path:polygon(0 0,28% 15%,50% 0,72% 15%,100% 0,90% 100%,10% 100%)}
+#chat .hero::after{content:"";position:absolute;top:calc(8vh + 14px);left:50%;width:25px;height:16px;transform:translateX(-50%);background:linear-gradient(90deg,#ff4656 0 35%,transparent 35% 65%,#ff4656 65%);filter:drop-shadow(0 0 6px #ff263d)}
+/* The tools drawer always enters from the left, including right-to-left languages. */
+.sidebar{left:0!important;right:auto!important;border-left:0!important;border-right:1px solid #70202b!important;transform:translateX(-105%)!important}
+.sidebar.drawer-open{transform:translateX(0)!important}
+[dir=rtl] .sidebar{left:0!important;right:auto!important;transform:translateX(-105%)!important}
+[dir=rtl] .sidebar.drawer-open{transform:translateX(0)!important}
+[dir=rtl] main{margin:0!important}
+@media(max-width:720px){.sidebar{left:0!important;right:auto!important;transform:translateX(-105%)!important}.sidebar.drawer-open{transform:translateX(0)!important}}
+@media(prefers-reduced-motion:reduce){.message-action,.sidebar,.monster-emblem{transition:none!important}}
