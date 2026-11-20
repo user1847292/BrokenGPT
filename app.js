@@ -446,7 +446,7 @@ async function loadAdminOverview(){
     const summary=document.createElement("p");summary.textContent=data.users.length+" accounts · "+data.usage.reduce((n,x)=>n+x.count,0)+" recorded feature uses";target.append(summary);
     select.replaceChildren(new Option("All users",""));
     data.users.forEach(user=>{const option=new Option(user.username+" · "+user.chatCount+" chats",user.id);select.append(option);});
-    const usage=document.createElement("p");usage.textContent="Feature usage: "+(data.usage.map(x=>x.feature+" ("+x.count+")").join(" · ")||"No usage recorded yet.");target.append(usage);
+    const usage=document.createElement("p");usage.textContent="Feature usage: "+(data.usage.map(x=>x.feature+" ("+x.count+")").join(" · ")||"No usage recorded yet.");target.append(usage);const feedback=document.createElement("p");feedback.textContent="User feedback: "+(data.feedback.map(x=>x.feature.replace("feedback:","")+" ("+x.count+")").join(" · ")||"No feedback received yet.");target.append(feedback);
     await loadAdminAudit();
   }catch(error){apiEl("admin-overview").textContent=error.message;}
 }
@@ -496,7 +496,17 @@ function addChatMessage(label,content){
   const card=document.createElement("article");card.className="message";
   const heading=document.createElement("b");heading.textContent=label;
   const body=document.createElement("p");body.textContent=content;
-  card.append(heading,body);messages.append(card);return card;
+  card.append(heading,body);
+  if(label.startsWith("BROKENGPT ·")){
+    const actions=document.createElement("div");actions.className="message-feedback";
+    [["positive","👍 Helpful"],["negative","👎 Not helpful"]].forEach(([rating,title])=>{
+      const button=document.createElement("button");button.type="button";button.textContent=title;
+      button.addEventListener("click",async()=>{try{await apiRequest("/api/feedback",{method:"POST",csrf:true,body:{rating}});actions.querySelectorAll("button").forEach(x=>x.disabled=true);button.textContent="Feedback saved";}catch(error){button.textContent=error.message;}});
+      actions.append(button);
+    });
+    card.append(actions);
+  }
+  messages.append(card);return card;
 }
 
 /* Stage 7: encrypted long-term memory */
