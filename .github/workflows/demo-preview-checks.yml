@@ -23,3 +23,17 @@ jobs:
       - name: Check backend and browser JavaScript syntax
         working-directory: backend
         run: npm run check
+      - name: Start backend and verify health endpoint
+        working-directory: backend
+        run: |
+          PORT=3100 NODE_ENV=test npm start > /tmp/brokengpt.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill "$SERVER_PID" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 20); do
+            if curl --fail --silent http://127.0.0.1:3100/api/health; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/brokengpt.log
+          exit 1
