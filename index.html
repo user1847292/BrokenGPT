@@ -25,7 +25,14 @@
 <section id="characters" class="view">
 <small>YOUR INTERACTIVE COMPANION</small><h1>Character <em>Studio</em></h1>
 <p>Choose a character personality, customize its look, and control when its companion appears.</p>
-<div class="settings-card character-card"><h2>🎭 Character selection</h2>
+<div class="settings-card character-universe-card">
+<h2>🌌 Character Universe</h2>
+<p>Browse popular characters from games, superheroes, anime, cartoons, and movies. Select a profile to add it to your character selector. Original placeholder art and voice styles are used unless you provide licensed assets.</p>
+<label for="universe-search">Search characters</label><input id="universe-search" type="search" placeholder="Search Luigi, Spider-Man, Naruto...">
+<label for="universe-category">Filter category</label><select id="universe-category"><option value="all">All categories</option><option value="Games">Games</option><option value="Superheroes">Superheroes</option><option value="Anime">Anime</option><option value="Cartoons">Cartoons</option><option value="Movies">Movies</option></select>
+<div id="universe-results" class="universe-results" aria-live="polite"></div>
+<p id="universe-status" class="status" aria-live="polite">Choose a character to add it to your selector.</p>
+</div><div class="settings-card character-card"><h2>🎭 Character selection</h2>
 <label for="character-choice">Choose a character</label><select id="character-choice"><option value="speedster">Speedster Hero (fast, bold, playful)</option><option value="robot">Logic Bot (precise, dry-humored)</option><option value="cat">Mischief Cat (curious, cheeky)</option><option value="knight">Royal Knight (brave, noble)</option><option value="wizard">Star Wizard (wise, whimsical)</option><option value="dragon">Sleepy Dragon (gentle, cozy)</option><option value="detective">Pixel Detective (observant, clever)</option><option value="trickster">Jester Sprite (mischievous, dramatic)</option><option value="pipePlumber">Pipe Plumber (pipe-jump exit)</option><option value="grappleHero">Grapple Hero (hook-swing exit)</option><option value="custom">My custom character</option></select>
 <label for="character-costume">Costume</label><select id="character-costume"><option>Classic</option><option>Dark Knight</option><option>Cyber Suit</option><option>Casual</option><option>Royal</option><option>Custom outfit description</option></select>
 <label for="character-avatar">Upload character avatar (optional)</label><input id="character-avatar" type="file" accept="image/*">
