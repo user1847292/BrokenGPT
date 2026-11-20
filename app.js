@@ -227,7 +227,9 @@ const expandedCharacterProfiles = {
  wizard:{name:"Star Wizard",tag:"By starlight!",style:["a curious spell","stars have spoken","arcane wonder","a little magic","wisdom spark","the cosmos agrees","mystery unfolds","spell complete","wonder awaits","stardust idea"]},
  dragon:{name:"Sleepy Dragon",tag:"Hrrmm...",style:["cozy cave","warm little puff","nap-powered","soft rumble","comfy clouds","tiny yawn","gentle fire","blanket time","snuggle mode","dreamy thoughts"]},
  detective:{name:"Pixel Detective",tag:"Case noted.",style:["clue spotted","case update","evidence suggests","sharp eyes","mystery solved","one more clue","deduction time","pattern found","noted in my log","case remains open"]},
- trickster:{name:"Jester Sprite",tag:"Ta-da!",style:["plot twist","dramatic entrance","tiny prank","behold","mischief achieved","what a twist","cue the music","suspense","surprise performance","ta-da"]}
+ trickster:{name:"Jester Sprite",tag:"Ta-da!",style:["plot twist","dramatic entrance","tiny prank","behold","mischief achieved","what a twist","cue the music","suspense","surprise performance","ta-da"]},
+ pipePlumber:{name:"Pipe Plumber",tag:"Here we go!",style:["pipe-hop","power-up","mushroom dash","coin-chase","jump time","plumbing pro","level clear","super jump","warp-pipe","bonus stage"]},
+ grappleHero:{name:"Grapple Hero",tag:"The night is calling.",style:["grapple ready","rooftop route","silent landing","watchful eyes","mission accepted","city patrol","utility belt","shadow approach","case closed","night watch"]}
 };
 const expandedFeelings = [
  {name:"Joy",mood:"happy",lines:["That made my day!","I am grinning already!","What a lovely surprise!","This is wonderful!","My mood just zoomed up!","That feels fantastic!","I could celebrate!","What a bright moment!","I am delighted!","Best little moment ever!"]},
@@ -258,3 +260,18 @@ function playCharacterScene(key){
 el("character-choice").addEventListener("change",()=>{const profile=expandedCharacterProfiles[characterPrefs.choice];if(profile){characterPrefs.name=profile.name;characterPrefs.description=profile.description;el("custom-character-name").value=profile.name;el("custom-character-description").value=profile.description;renderCharacterAvatar();saveCharacterPrefs();}rebuildExpandedScenes();});
 rebuildExpandedScenes();
 if(characterPrefs.display){characterLine("Ooo, look! We are back!");characterSpeak("Ooo, look! We are back!");}
+
+/* Character-specific exit choreography */
+const companionExitStyles={speedster:"exit-run",robot:"exit-roll",cat:"exit-hop",knight:"exit-salute",wizard:"exit-magic",dragon:"exit-fly",detective:"exit-shadow",trickster:"exit-spin",pipePlumber:"exit-pipe",grappleHero:"exit-hook"};
+function playCharacterScene(key){
+ const scene=expandedSceneMap.get(key)||characterScenes[key];if(!scene)return;
+ companion.classList.remove("surprised","angry","sitting","walking","happy",...Object.values(companionExitStyles));
+ companion.classList.add(scene.mood);
+ characterLine(scene.line);characterSpeak(scene.line);
+ el("character-scene-status").textContent="Playing: "+scene.line;
+ if(key==="goodbye"){
+  const exitStyle=companionExitStyles[characterPrefs.choice]||"exit-run";
+  companion.classList.add(exitStyle);
+  window.setTimeout(()=>{companion.classList.remove(exitStyle);if(characterPrefs.display)companion.classList.remove("hidden");},1900);
+ }
+}
