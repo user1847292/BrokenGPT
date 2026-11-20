@@ -40,7 +40,7 @@ const DEMO_ACCESS_PASSWORD=process.env.BROKENGPT_DEMO_ACCESS_PASSWORD||'';
 function demoAccessGate(req,res,next){
   if(!DEMO_ACCESS_PASSWORD||req.path==='/api/health')return next();
   const header=req.get('authorization')||'';
-  const match=header.match(/^Basic\\s+(.+)$/i);
+  const match=header.match(/^Basic\s+(.+)$/i);
   let supplied='';
   if(match){try{supplied=Buffer.from(match[1],'base64').toString('utf8');}catch{}}
   const expected=Buffer.from('demo:'+DEMO_ACCESS_PASSWORD);
