@@ -430,6 +430,33 @@ apiEl("account-logout").addEventListener("click",async()=>{
   try{await apiRequest("/api/auth/logout",{method:"POST",csrf:true});currentUser=null;csrfToken="";liveConversation=[];updateAccountUI();await refreshProviderStatus();accountMessage("Signed out.");}
   catch(error){accountMessage(error.message);}
 });
+apiEl("account-change-password").addEventListener("click",async()=>{
+  if(!currentUser){apiEl("account-security-status").textContent="Sign in before changing your password.";return;}
+  const currentPassword=apiEl("account-current-password").value;
+  const newPassword=apiEl("account-new-password").value;
+  if(!currentPassword||newPassword.length<10){apiEl("account-security-status").textContent="Enter your current password and a new password of at least 10 characters.";return;}
+  const button=apiEl("account-change-password");button.disabled=true;
+  try{
+    const data=await apiRequest("/api/auth/password",{method:"POST",csrf:true,body:{currentPassword,newPassword}});
+    apiEl("account-current-password").value="";apiEl("account-new-password").value="";
+    apiEl("account-security-status").textContent=data.message||"Password changed.";
+  }catch(error){apiEl("account-security-status").textContent=error.message;}
+  finally{button.disabled=false;}
+});
+apiEl("account-delete").addEventListener("click",async()=>{
+  if(!currentUser){apiEl("account-security-status").textContent="Sign in before deleting an account.";return;}
+  const password=apiEl("account-delete-password").value;
+  if(!password){apiEl("account-security-status").textContent="Enter your password to confirm account deletion.";return;}
+  if(!window.confirm("Permanently delete your BROKENGPT account and its saved provider keys? This cannot be undone."))return;
+  const button=apiEl("account-delete");button.disabled=true;
+  try{
+    const data=await apiRequest("/api/auth/account",{method:"DELETE",csrf:true,body:{password}});
+    currentUser=null;csrfToken="";liveConversation=[];apiEl("account-delete-password").value="";
+    updateAccountUI();await refreshProviderStatus();
+    apiEl("account-security-status").textContent=data.message||"Account deleted.";
+  }catch(error){apiEl("account-security-status").textContent=error.message;}
+  finally{button.disabled=false;}
+});
 apiEl("provider-setup-select").addEventListener("change",()=>providerMessage("Selected "+apiEl("provider-setup-select").value.toUpperCase()+"."));
 apiEl("provider-save-key").addEventListener("click",async()=>{
   if(!currentUser){providerMessage("Sign in before connecting a provider.");return;}
