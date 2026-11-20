@@ -216,3 +216,45 @@ el("analyze-character-screenshot").addEventListener("click",()=>{el("character-s
 el("character-outside-toggle").addEventListener("change",()=>{if(characterPrefs.outside){characterLine("I can't leave this web app yet! I need my Android companion service!");}});
 document.getElementById("chat-form").addEventListener("submit",()=>{const sent=el("prompt").value.trim();if(!sent)return;if(characterPrefs.display){characterReact(sent);if(/^(go|go away|leave|bye)$/i.test(sent)){characterLine("See you later! *runs away*");characterSpeak("See you later!");setTimeout(()=>setCharacterDisplay(false),1800)}else characterSpeak(characterPrefs.name+" says: "+(characterPrefs.description||"Let's go!"));}});
 loadCharacterPrefs();
+
+
+/* Expanded Character Dialogue Library: 1,000 generated variations per built-in character */
+const expandedCharacterProfiles = {
+ speedster:{name:"Speedster Hero",tag:"Zoom!",style:["whoosh","full speed","race you","turbo mode","dash time","lightning fast","supercharged","no brakes","speed trail","next level"]},
+ robot:{name:"Logic Bot",tag:"Beep.",style:["calculation complete","data says","logic check","systems steady","processing","efficiency report","confirmed","analysis finished","tiny error detected","interesting variable"]},
+ cat:{name:"Mischief Cat",tag:"Meow!",style:["purr-fect","tiny paw plan","curiosity wins","mischief time","snack break","tail twitch","pounce mode","cat logic","mrrp","soft landing"]},
+ knight:{name:"Royal Knight",tag:"For the realm!",style:["by my honor","stand firm","shield raised","courage restored","quest accepted","victory awaits","a noble choice","steadfast","your loyal knight","the realm is safe"]},
+ wizard:{name:"Star Wizard",tag:"By starlight!",style:["a curious spell","stars have spoken","arcane wonder","a little magic","wisdom spark","the cosmos agrees","mystery unfolds","spell complete","wonder awaits","stardust idea"]},
+ dragon:{name:"Sleepy Dragon",tag:"Hrrmm...",style:["cozy cave","warm little puff","nap-powered","soft rumble","comfy clouds","tiny yawn","gentle fire","blanket time","snuggle mode","dreamy thoughts"]},
+ detective:{name:"Pixel Detective",tag:"Case noted.",style:["clue spotted","case update","evidence suggests","sharp eyes","mystery solved","one more clue","deduction time","pattern found","noted in my log","case remains open"]},
+ trickster:{name:"Jester Sprite",tag:"Ta-da!",style:["plot twist","dramatic entrance","tiny prank","behold","mischief achieved","what a twist","cue the music","suspense","surprise performance","ta-da"]}
+};
+const expandedFeelings = [
+ {name:"Joy",mood:"happy",lines:["That made my day!","I am grinning already!","What a lovely surprise!","This is wonderful!","My mood just zoomed up!","That feels fantastic!","I could celebrate!","What a bright moment!","I am delighted!","Best little moment ever!"]},
+ {name:"Excitement",mood:"walking",lines:["Adventure alert!","I am ready to go!","This is thrilling!","Let us make it happen!","Energy levels rising!","What happens next?","Count me in!","I am buzzing with ideas!","Here we go!","This is going to be great!"]},
+ {name:"Curiosity",mood:"surprised",lines:["Now that is interesting!","I have a question!","Let us investigate!","What could that mean?","My curiosity is awake!","There is more to discover!","Tell me another detail!","A mystery appears!","I want to understand!","Let us look closer!"]},
+ {name:"Surprise",mood:"surprised",lines:["Whoa! I did not expect that!","You caught me off guard!","Wait, what?","That was unexpected!","My thoughts did a flip!","Well, that is a twist!","I need a second!","Surprise detected!","I blinked twice!","You got me!"]},
+ {name:"Frustration",mood:"angry",lines:["Hmm, that is frustrating.","Let us take another look.","That did not go as planned.","Okay, tiny reset.","I am not giving up.","Let us untangle this.","A little patience, please.","That was a bump in the road.","We can fix this.","Deep breath. New plan."]},
+ {name:"Sadness",mood:"sitting",lines:["Aw, that is a little sad.","I am here with you.","That is a tough feeling.","Let us take it gently.","I wish that felt easier.","A quiet moment, then?","It is okay to pause.","I am listening.","That sounds disappointing.","Let us be kind to ourselves."]},
+ {name:"Worry",mood:"sitting",lines:["Let us slow down a moment.","We can check this carefully.","One step at a time.","No need to rush.","Let us find what we know.","I will help you think it through.","A calm plan might help.","Let us check the details.","We can ask for help if needed.","Let us focus on the next step."]},
+ {name:"Confidence",mood:"walking",lines:["We have got this!","Look at that progress!","I believe in this plan!","Let us take the next step!","Strong effort!","Ready when you are!","That is a clever move!","Keep that momentum!","We can learn as we go!","Onward!"]},
+ {name:"Sleepiness",mood:"sitting",lines:["Yaaawn...","My batteries feel cozy.","Can we pause a moment?","Nap mode activated.","A soft little break sounds nice.","I am running on dream power.","Let us take it easy.","My eyelids are buffering.","Quiet time, please.","Just one tiny rest."]},
+ {name:"Affection",mood:"happy",lines:["It is nice having you here.","You are a welcome sight.","I am glad we are chatting.","Teamwork feels great.","Thanks for including me.","This is a good little moment.","I am happy to help.","We are a pretty good team.","Your company is appreciated.","Let us make today a good one."]}
+];
+const expandedSceneMap = new Map();
+function rebuildExpandedScenes(){
+ const profile=expandedCharacterProfiles[characterPrefs.choice]||{name:characterPrefs.name||"My Character",tag:"Ready!",style:["ready","curious","thoughtful","playful","brave","calm","clever","kind","focused","creative"]};
+ const select=el("character-scene");select.replaceChildren();expandedSceneMap.clear();let n=0;
+ expandedFeelings.forEach(feeling=>{const group=document.createElement("optgroup");group.label=feeling.name;feeling.lines.forEach(line=>{profile.style.forEach(style=>{const key="expanded-scene-"+n;const full=line+" "+profile.tag+" "+style+"!";expandedSceneMap.set(key,{line:full,mood:feeling.mood});const option=document.createElement("option");option.value=key;option.textContent=(n+1)+". "+line+" · "+style;group.append(option);n++;});});select.append(group);});
+ const special=document.createElement("optgroup");special.label="Special scenes";Object.entries(characterScenes).forEach(([key,scene])=>{const option=document.createElement("option");option.value=key;option.textContent=scene.line;special.append(option);});select.append(special);
+ el("character-scene-status").textContent="1,000 character-specific scenes ready across 10 feelings, plus special scenes.";
+}
+function playCharacterScene(key){
+ const scene=expandedSceneMap.get(key)||characterScenes[key];if(!scene)return;
+ companion.classList.remove("surprised","angry","sitting","walking","happy");companion.classList.add(scene.mood);
+ characterLine(scene.line);characterSpeak(scene.line);el("character-scene-status").textContent="Playing: "+scene.line;
+ if(key==="goodbye")companion.classList.add("walking");
+}
+el("character-choice").addEventListener("change",rebuildExpandedScenes);
+rebuildExpandedScenes();
+if(characterPrefs.display){characterLine("Ooo, look! We are back!");}
