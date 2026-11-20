@@ -56,3 +56,26 @@ body.rgb-direct-switch{--rgb-easing:steps(1,end)}
 @keyframes companion-walk{from{translate:0 0}to{translate:-120px -5px}}
 @media(max-width:720px){.character-companion{right:8px;bottom:12px}.character-companion.sitting{right:12%;bottom:125px}}
 @media(prefers-reduced-motion:reduce){.character-companion,.character-companion button{animation:none!important}}
+
+/* Character-specific exit animations */
+.character-companion.exit-run{animation:exit-run 1.5s ease-in forwards}
+.character-companion.exit-roll{animation:exit-roll 1.5s ease-in forwards}
+.character-companion.exit-hop{animation:exit-hop 1.4s ease-in forwards}
+.character-companion.exit-salute{animation:exit-salute 1.7s ease-in forwards}
+.character-companion.exit-magic{animation:exit-magic 1.5s ease-in forwards}
+.character-companion.exit-fly{animation:exit-fly 1.7s ease-in forwards}
+.character-companion.exit-shadow{animation:exit-shadow 1.6s ease-in forwards}
+.character-companion.exit-spin{animation:exit-spin 1.5s ease-in forwards}
+.character-companion.exit-pipe{animation:exit-pipe 1.8s ease-in forwards}
+.character-companion.exit-hook{animation:exit-hook 1.8s ease-in forwards}
+@keyframes exit-run{to{transform:translateX(125vw);opacity:0}}
+@keyframes exit-roll{to{transform:translateX(120vw) rotate(900deg);opacity:0}}
+@keyframes exit-hop{35%{transform:translateY(-100px)}to{transform:translate(100vw,160px);opacity:0}}
+@keyframes exit-salute{25%{transform:rotate(-12deg)}to{transform:translateX(110vw);opacity:0}}
+@keyframes exit-magic{40%{transform:scale(1.15);filter:blur(2px)}to{transform:scale(.05);opacity:0;filter:blur(12px)}}
+@keyframes exit-fly{to{transform:translate(100vw,-100vh) rotate(12deg);opacity:0}}
+@keyframes exit-shadow{to{transform:translateX(40px) scale(.1);opacity:0;filter:blur(14px)}}
+@keyframes exit-spin{to{transform:translateX(110vw) rotate(1080deg);opacity:0}}
+@keyframes exit-pipe{35%{transform:translateY(-85px)}65%{transform:translateY(10px) scaleY(.7)}to{transform:translateY(100px) scaleY(.05);opacity:0}}
+@keyframes exit-hook{20%{transform:rotate(-15deg)}to{transform:translate(100vw,-100vh) rotate(-25deg);opacity:0}}
+@media(prefers-reduced-motion:reduce){.character-companion[class*="exit-"]{animation:none!important;opacity:0}}
