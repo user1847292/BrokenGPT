@@ -402,8 +402,9 @@ async function refreshProviderStatus(){
   try{
     const data=await apiRequest("/api/providers");
     const chosen=apiEl("active-provider").value,info=data.providers[chosen];
-    providerMessage((data.providers.openai.connected?"OpenAI connected. ":"OpenAI not connected. ")+(data.providers.gemini.connected?"Gemini connected.":"Gemini not connected."));
-    apiEl("active-provider-status").textContent=info.connected?chosen.toUpperCase()+" is connected. Ready to chat.":"Connect "+chosen.toUpperCase()+" in Settings to enable real AI replies.";
+    const connected=Object.entries(data.providers||{}).filter(([,value])=>value?.connected).map(([name])=>name.toUpperCase());
+    providerMessage(connected.length?"Connected: "+connected.join(", ")+".":"No providers connected yet.");
+    apiEl("active-provider-status").textContent=info?.connected?chosen.toUpperCase()+" is connected. Ready to chat.":"Connect "+chosen.toUpperCase()+" in Settings to enable real AI replies.";
   }catch(error){providerMessage(error.message);apiEl("active-provider-status").textContent=error.message;}
 }
 async function restoreAccount(){
@@ -444,7 +445,37 @@ apiEl("provider-remove-key").addEventListener("click",async()=>{
   try{await apiRequest("/api/providers/"+provider+"/key",{method:"DELETE",csrf:true});providerMessage(provider.toUpperCase()+" disconnected.");await refreshProviderStatus();}
   catch(error){providerMessage(error.message);}
 });
-apiEl("active-provider").addEventListener("change",()=>{const model=apiEl("active-model");if(model.value==="gpt-4o-mini"||model.value==="gemini-2.5-flash")model.value=apiEl("active-provider").value==="gemini"?"gemini-2.5-flash":"gpt-4o-mini";refreshProviderStatus();});
+const MODEL_SUGGESTIONS={
+ openai:["gpt-4o-mini","gpt-4.1-mini"],
+ gemini:["gemini-2.5-flash","gemini-2.5-pro"],
+ anthropic:["claude-sonnet-4-5","claude-haiku-4-5"],
+ xai:["grok-3-mini","grok-3"],
+ deepseek:["deepseek-chat","deepseek-reasoner"],
+ mistral:["mistral-small-latest","mistral-large-latest"],
+ openrouter:["openai/gpt-4o-mini","anthropic/claude-sonnet-4.5"],
+ groq:["openai/gpt-oss-120b","llama-3.3-70b-versatile"],
+ qwen:["qwen-plus","qwen-turbo"],
+ perplexity:["sonar","sonar-pro"],
+ together:["meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo"],
+ fireworks:["accounts/fireworks/models/llama-v3p1-70b-instruct"]
+};
+function updateModelSuggestions(provider,fieldId="active-model"){
+ const list=apiEl("provider-model-suggestions"),field=apiEl(fieldId),values=MODEL_SUGGESTIONS[provider]||[];
+ if(list&&fieldId==="active-model"){list.replaceChildren();values.forEach(value=>{const option=document.createElement("option");option.value=value;list.append(option);});}
+ if(field&&values.length&&(!field.value||field.dataset.providerDefault==="true"||field.dataset.providerDefault===provider)){
+   field.value=values[0];field.dataset.providerDefault=provider;
+ }
+}
+updateModelSuggestions(apiEl("active-provider").value);
+apiEl("active-provider").addEventListener("change",()=>{
+ const field=apiEl("active-model");field.dataset.providerDefault="true";updateModelSuggestions(apiEl("active-provider").value);refreshProviderStatus();
+});
+for(const id of ["battle-provider-a","battle-provider-b"]){
+ apiEl(id).addEventListener("change",()=>{
+  const suffix=id.endsWith("-a")?"a":"b",field=apiEl("battle-model-"+suffix),values=MODEL_SUGGESTIONS[apiEl(id).value]||[];
+  if(values.length)field.value=values[0];
+ });
+}
 function addChatMessage(label,content){
   const card=document.createElement("article");card.className="message";
   const heading=document.createElement("b");heading.textContent=label;
