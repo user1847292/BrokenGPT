@@ -17,7 +17,20 @@ CREATE TABLE IF NOT EXISTS provider_keys(user_id TEXT NOT NULL REFERENCES users(
 `);
 const key=()=>/^[a-f0-9]{64}$/i.test(process.env.BROKENGPT_ENCRYPTION_KEY||'')?Buffer.from(process.env.BROKENGPT_ENCRYPTION_KEY,'hex'):null;
 const sha=v=>crypto.createHash('sha256').update(v).digest('hex');
-const cookieOptions=()=>({httpOnly:true,secure:PROD,sameSite:'strict',path:'/',maxAge:SESSION_MS});
+const cookieOptions=()=>({httpOnly:true,secure:PROD,sameSite:PROD?'none':'lax',path:'/',maxAge:SESSION_MS});
+const allowedOrigins=(process.env.CORS_ORIGINS||'').split(',').map(x=>x.trim()).filter(Boolean);
+app.use((req,res,next)=>{
+  const origin=req.headers.origin;
+  if(origin&&allowedOrigins.includes(origin)){
+    res.setHeader('Access-Control-Allow-Origin',origin);
+    res.setHeader('Vary','Origin');
+    res.setHeader('Access-Control-Allow-Credentials','true');
+    res.setHeader('Access-Control-Allow-Headers','Content-Type, X-CSRF-Token');
+    res.setHeader('Access-Control-Allow-Methods','GET, POST, PUT, DELETE, OPTIONS');
+  }
+  if(req.method==='OPTIONS')return res.sendStatus(origin&&allowedOrigins.includes(origin)?204:403);
+  next();
+});
 const fail=(res,status,error)=>res.status(status).json({error});
 function encrypt(value){const k=key();if(!k)throw Error('Encryption is not configured');const iv=crypto.randomBytes(12),c=crypto.createCipheriv('aes-256-gcm',k,iv),data=Buffer.concat([c.update(value,'utf8'),c.final()]);return{encrypted_value:data.toString('base64'),iv:iv.toString('base64'),auth_tag:c.getAuthTag().toString('base64')};}
 function decrypt(row){const k=key();if(!k)throw Error('Encryption is not configured');const d=crypto.createDecipheriv('aes-256-gcm',k,Buffer.from(row.iv,'base64'));d.setAuthTag(Buffer.from(row.auth_tag,'base64'));return Buffer.concat([d.update(Buffer.from(row.encrypted_value,'base64')),d.final()]).toString('utf8');}
