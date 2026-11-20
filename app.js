@@ -315,7 +315,9 @@ const universeCharacters = [
  {id:"ben10",name:"Ben 10",category:"Cartoons",emoji:"⌚",description:"A brave young hero who enjoys gadgets, teamwork, and creative transformations.",tag:"Hero time!",style:["omnitrix check","hero time","alien idea","team rescue","watch activated","new form","quick save","mission accepted","gadget scan","let's roll"]},
  {id:"frozen",name:"Elsa",category:"Movies",emoji:"❄️",description:"A thoughtful ice-magic queen who is calm, creative, and learning confidence.",tag:"A little winter magic.",style:["ice crystal","snowy idea","quiet strength","winter wonder","let it flow","royal calm","frosty sparkle","new beginning","magic touch","peaceful moment"]},
  {id:"toystory",name:"Buzz Lightyear",category:"Movies",emoji:"🚀",description:"A brave space ranger with earnest confidence and mission-focused humor.",tag:"To infinity and beyond!",style:["space mission","ranger report","launch ready","star command","mission log","cosmic discovery","team check","brave landing","infinity ahead","all systems go"]},
- {id:"shrek",name:"Shrek",category:"Movies",emoji:"🧅",description:"A grumpy-but-kind swamp-dweller persona with dry humor and a soft heart.",tag:"Get outta my swamp—just kidding.",style:["swamp wisdom","onion layers","quiet afternoon","fairy tale trouble","dry joke","muddy boots","unexpected kindness","snack break","ogre logic","all done"]}
+ {id:"shrek",name:"Shrek",category:"Movies",emoji:"🧅",description:"A grumpy-but-kind swamp-dweller persona with dry humor and a soft heart.",tag:"Get outta my swamp—just kidding.",style:["swamp wisdom","onion layers","quiet afternoon","fairy tale trouble","dry joke","muddy boots","unexpected kindness","snack break","ogre logic","all done"]},
+ {id:"doge-meme",name:"Doge Meme",category:"Memes",emoji:"",description:"A playful meme-inspired companion with short, funny internet-style phrases and original text-only presentation.",tag:"Much helpful. Very ready.",style:["much helpful","very clever","such idea","wow moment","very coding","much progress","such teamwork","wow indeed","very curious","all done"]},
+ {id:"rage-comic",name:"Rage Comic",category:"Memes",emoji:"",description:"A classic internet-comedy companion with exaggerated reactions, playful jokes, and original text-only expressions.",tag:"That escalated quickly.",style:["unexpected plot twist","dramatic reaction","tiny inconvenience","big surprise","plot armor","comedy timing","mission failed successfully","classic moment","internet legend","case closed"]}
 ];
 const universeById = Object.fromEntries(universeCharacters.map(item=>[item.id,item]));
 universeCharacters.forEach(item=>{
@@ -324,7 +326,7 @@ universeCharacters.forEach(item=>{
 function renderUniverseCharacterAvatar(){
  const preview=el("character-avatar-preview");
  const profile=universeById[characterPrefs.choice];
- const emoji=profile?.emoji||"🦔";
+ const emoji=profile?.emoji||((profile?.name||"C").slice(0,1).toUpperCase());
  preview.replaceChildren();
  if(characterPrefs.avatar){
   const img=document.createElement("img");img.src=characterPrefs.avatar;img.alt="Your custom character avatar";preview.append(img);
@@ -478,6 +480,13 @@ function addChatMessage(label,content){
   const body=document.createElement("p");body.textContent=content;
   card.append(heading,body);messages.append(card);return card;
 }
+async function revealAssistantText(node,text){
+  const pacing=localStorage.getItem("brokengpt-ai-pacing")||"human";
+  const delay=pacing==="slow"?55:pacing==="normal"?18:pacing==="fast"?4:32;
+  const words=text.split(/(\\s+)/);let shown="";
+  for(let i=0;i<words.length;i+=2){shown+=words[i]+(words[i+1]||"");node.textContent=shown;if(i<240)await new Promise(resolve=>setTimeout(resolve,delay));}
+  node.textContent=text;
+}
 async function sendChatMessage(value){
   addChatMessage("YOU",value);
   const provider=apiEl("active-provider").value,model=apiEl("active-model").value.trim();
@@ -495,7 +504,7 @@ async function sendChatMessage(value){
     const secondaryPersona=prefs.combine
       ? "Blend in this secondary style where useful: "+(prefs.secondary||"Friendly")+". Keep the blend coherent and do not let it reduce accuracy."
       : "";
-    const emojiRule=prefs.emojis?"Use emojis naturally when they improve clarity.":"Avoid unnecessary emojis.";
+    const emojiRule=prefs.emojis?"Use emojis naturally when they improve clarity.":"Do not use emojis or emoticons in replies.";
     const system=[
       "You are BROKENGPT, a helpful AI assistant.",
       primaryPersona,
@@ -510,7 +519,7 @@ async function sendChatMessage(value){
     const data=await apiRequest("/api/chat",{method:"POST",csrf:true,body:{provider,model,messages:[{role:"system",content:system},...liveConversation]}});
     const answer=data.reply||"(The provider returned an empty response.)";
     liveConversation.push({role:"assistant",content:answer});
-    addChatMessage("BROKENGPT · "+data.provider.toUpperCase()+" / "+data.model,answer);speakAIReply(answer);
+    const assistantCard=addChatMessage("BROKENGPT · "+data.provider.toUpperCase()+" / "+data.model,"");await revealAssistantText(assistantCard.querySelector("p"),answer);speakAIReply(answer);
     const hist=readList("brokengpt-history");hist.push({title:value.slice(0,48),preview:"You: "+value+"\nBROKENGPT: "+answer.slice(0,700),time:new Date().toISOString()});writeList("brokengpt-history",hist);renderHistory();
   }catch(error){
     if(liveConversation.at(-1)?.role==="user")liveConversation.pop();
