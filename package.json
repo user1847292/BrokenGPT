@@ -1,0 +1,19 @@
+{
+  "name": "brokengpt-android",
+  "version": "0.1.0",
+  "private": true,
+  "description": "BrokenGPT mobile wrapper and screenshot build tools",
+  "scripts": {
+    "build:web": "node scripts/prepare-web.mjs",
+    "build:android": "npm run build:web && cap sync android",
+    "test:syntax": "node --check app.js && node --check languages.js && node --check scripts/prepare-web.mjs && node --check scripts/capture-screenshots.mjs"
+  },
+  "dependencies": {
+    "@capacitor/android": "7.4.3",
+    "@capacitor/core": "7.4.3"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "7.4.3",
+    "playwright": "1.55.0"
+  }
+}
