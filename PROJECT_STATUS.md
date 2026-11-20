@@ -27,7 +27,7 @@ This file tracks the current repository state. “Implemented in code” does no
 - [ ] Live provider testing with authorized provider accounts
 - [ ] Add more providers and model discovery
 
-## Stage 3 — voice and Creative Studio
+## Study Mode\n- [x] Dedicated grade-aware Study Mode UI for primary grades, middle school, high school, university/college, and postgraduate learners\n- [x] Tutor tasks for lesson explanations, homework guidance, quizzes, practice, study plans, and note review\n- [x] Image attachments sent to vision-capable OpenAI/Gemini models through a dedicated authenticated study endpoint\n- [x] Video upload preview via up to four sampled frames (video audio is not analysed)\n- [ ] Test image/video-frame tutoring with real connected provider accounts and supported vision models\n\n## Stage 3 — voice and Creative Studio
 - [x] Optional browser speech-to-text
 - [x] Optional device text-to-speech
 - [x] OpenAI GPT Image generation endpoint and UI
@@ -78,7 +78,7 @@ This file tracks the current repository state. “Implemented in code” does no
 - [ ] Create a versioned GitHub Release only after the full app is complete and tested
 
 ## Important limitations
-- The backend is source code only until it is deployed.
+- The backend is source code only until it is deployed.\n- Study Mode does not impose a lifetime message counter, but server rate limits, provider quotas, model support, upload-size limits, and API costs still apply.
 - The current account system has no password recovery or account deletion flow yet.
 - Provider API usage and media generation may cost money and depend on account eligibility, model access, and usage limits.
 - Browser speech features depend on device/browser support and are not a realtime voice-agent system.
