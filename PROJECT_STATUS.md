@@ -16,7 +16,7 @@ This file tracks the current repository state. “Implemented in code” does no
 ## Stage 2 — chat and AI Battle
 - [x] Composer plus menu for image, video, 3D, game, code, and text-file actions
 - [x] Dedicated microphone button beside the send arrow
-- [x] Text-file attachment preview (150 KB limit; plain text formats only)
+- [x] Text-file attachment preview (8 KB limit; plain text formats only)
 - [x] Iraqi Arabic interface option and existing Malay interface option
 - [x] Family Studio shortcuts for Study Mode and Future Vision image prompts
 - [ ] Guest text-only AI service (requires a protected, rate-limited server-side model configuration)
