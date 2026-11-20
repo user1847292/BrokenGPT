@@ -1,4 +1,4 @@
-# BROKENGPT implementation checklist
+# BrokenGPT implementation checklist
 
 This file tracks the current repository state. “Implemented in code” does not mean live, deployed, or fully tested.
 
