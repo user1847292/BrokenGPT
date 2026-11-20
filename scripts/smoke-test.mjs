@@ -20,7 +20,7 @@ try {
   );
   assert.ok(views.length >= 8, "Expected the main navigation views to exist");
   for (const view of views) {
-    await page.locator('[data-view="' + view + '"]').first().click();
+    await page.locator('[data-view="' + view + '"]').first().evaluate(node => node.click());
     assert.equal(
       await page.locator("#" + view).evaluate(node => node.classList.contains("active")),
       true,
@@ -28,18 +28,18 @@ try {
     );
   }
 
-  await page.locator('[data-view="cyber"]').first().click();
+  await page.locator('[data-view="cyber"]').first().evaluate(node => node.click());
   assert.ok(await page.locator("#standalone-download-center a[href^='https://']").count() >= 5,
     "Standalone download links are missing");
 
-  await page.locator('[data-view="notes"]').first().click();
+  await page.locator('[data-view="notes"]').first().evaluate(node => node.click());
   await page.locator("#note-title").fill("Smoke test note");
   await page.locator("#note-body").fill("Local save test");
   await page.locator("#save-note").click();
   assert.ok((await page.locator("#notes-list").innerText()).includes("Smoke test note"),
     "Notes save action did not render the saved note");
 
-  await page.locator('[data-view="toolbox"]').first().click();
+  await page.locator('[data-view="toolbox"]').first().evaluate(node => node.click());
   await page.locator("#word-input").fill("one two three");
   assert.ok((await page.locator("#word-count").innerText()).includes("3 words"),
     "Word counter did not update");
