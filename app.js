@@ -1,4 +1,4 @@
-const buttons=[...document.querySelectorAll("[data-view]")];function show(id){document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",v.id===id));buttons.forEach(b=>b.classList.toggle("selected",b.dataset.view===id));document.getElementById("page").textContent=id.toUpperCase()}buttons.forEach(b=>b.addEventListener("click",()=>show(b.dataset.view)));const messages=document.getElementById("messages");document.getElementById("chat-form").addEventListener("submit",e=>{e.preventDefault();const field=document.getElementById("prompt"),value=field.value.trim();if(!value)return;const user=document.createElement("p");user.textContent="You: "+value;user.className="message";messages.append(user);const reply=document.createElement("article");reply.className="message";const title=document.createElement("b");title.textContent="BROKENGPT · DEMO";const text=document.createElement("p");text.textContent="Thanks for testing BROKENGPT! This is a local sample response. Connect an AI provider through a secure backend to enable real AI replies.";reply.append(title,text);messages.append(reply);const hist=readList("brokengpt-history");hist.push({title:value.slice(0,48),preview:"You: "+value+"\\nBROKENGPT: Local demo response",time:new Date().toISOString()});writeList("brokengpt-history",hist);renderHistory();field.value=""});document.getElementById("new-chat").addEventListener("click",()=>{messages.replaceChildren();show("chat")});document.getElementById("browser-form").addEventListener("submit",e=>{e.preventDefault();const q=document.getElementById("address").value.trim();if(!q)return;const url=/^https?:\/\//i.test(q)?q:/^[\w-]+\.[a-z]{2,}/i.test(q)?"https://"+q:"https://www.google.com/search?q="+encodeURIComponent(q);window.open(url,"_blank","noopener,noreferrer")});
+const buttons=[...document.querySelectorAll("[data-view]")];function show(id){document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",v.id===id));buttons.forEach(b=>b.classList.toggle("selected",b.dataset.view===id));document.getElementById("page").textContent=id.toUpperCase()}buttons.forEach(b=>b.addEventListener("click",()=>show(b.dataset.view)));const messages=document.getElementById("messages");document.getElementById("chat-form").addEventListener("submit",e=>{e.preventDefault();const field=document.getElementById("prompt"),value=field.value.trim();if(!value)return;field.value="";sendChatMessage(value)});document.getElementById("new-chat").addEventListener("click",()=>{messages.replaceChildren();liveConversation=[];show("chat")});document.getElementById("browser-form").addEventListener("submit",e=>{e.preventDefault();const q=document.getElementById("address").value.trim();if(!q)return;const url=/^https?:\/\//i.test(q)?q:/^[\w-]+\.[a-z]{2,}/i.test(q)?"https://"+q:"https://www.google.com/search?q="+encodeURIComponent(q);window.open(url,"_blank","noopener,noreferrer")});
 const languages=window.BROKENGPT_LANGUAGES||{};const languageSelect=document.getElementById("language-select");const savedLanguage=localStorage.getItem("brokengpt-language")||"en";
 Object.entries(languages).forEach(([code,item])=>{const opt=document.createElement("option");opt.value=code;opt.textContent=item.name;languageSelect.append(opt)});
 function applyLanguage(code){const lang=languages[code]||languages.en;document.documentElement.lang=code;document.documentElement.dir=lang.dir||"ltr";document.querySelector('[data-view="chat"]').textContent="◈ "+(lang.chat||"Chat");document.querySelector('[data-view="battle"]').textContent="⚔ "+(lang.battle||"AI Battle");document.querySelector('[data-view="browser"]').textContent="◎ "+(lang.browser||"Browser");document.querySelector('[data-view="studio"]').textContent="▧ "+(lang.studio||"Creative Studio");document.querySelector('[data-view="cyber"]').textContent="⌘ "+(lang.cyber||"Cyber Lab");document.querySelector('[data-view="settings"]').textContent="⚙ "+(lang.settings||"Settings");document.getElementById("new-chat").textContent="＋ "+(lang.newChat||"New chat");["home","notes","prompts","academy","toolbox","favorites","history"].forEach(id=>{const nav=document.querySelector(`[data-view="${id}"]`);if(nav&&lang[id])nav.textContent=({home:"⌂ ",notes:"▤ ",prompts:"✦ ",academy:"▣ ",toolbox:"⌘ ",favorites:"★ ",history:"◷ "}[id])+lang[id]});document.querySelector("#chat .hero h1").innerHTML=(lang.welcome||"I can help with")+" <em>"+(lang.anything||"anything.")+"</em>";document.getElementById("prompt").placeholder=lang.message||"Message BROKENGPT...";document.querySelector("#settings h1").innerHTML=(lang.account||"Account")+" <em>"+(lang.settings||"Settings")+"</em>";document.getElementById("language-status").textContent=lang.languageSaved||"Interface language selected. AI reply language can be configured after provider connection.";localStorage.setItem("brokengpt-language",code)}
@@ -373,3 +373,103 @@ el("character-choice").addEventListener("change",()=>{
 });
 renderUniverseDirectory();
 if(universeById[characterPrefs.choice])addUniverseCharacter(characterPrefs.choice);
+
+
+/* Stage 4A: account sessions and real provider chat */
+let csrfToken="",currentUser=null,liveConversation=[];
+const apiEl=id=>document.getElementById(id);
+async function apiRequest(url,options={}){
+  const headers={"Content-Type":"application/json",...(options.headers||{})};
+  if(options.csrf)headers["X-CSRF-Token"]=csrfToken;
+  const response=await fetch(url,{method:options.method||"GET",credentials:"same-origin",headers,body:options.body?JSON.stringify(options.body):undefined});
+  const type=response.headers.get("content-type")||"";
+  if(!type.includes("application/json"))throw new Error("BROKENGPT backend is not connected to this website yet.");
+  const data=await response.json();
+  if(!response.ok)throw new Error(data.error||"The request failed.");
+  return data;
+}
+function accountMessage(message){const node=apiEl("account-status");if(node)node.textContent=message;}
+function providerMessage(message){const node=apiEl("provider-status");if(node)node.textContent=message;}
+function updateAccountUI(){
+  apiEl("account-logout").disabled=!currentUser;
+  apiEl("account-register").disabled=!!currentUser;
+  apiEl("account-login").disabled=!!currentUser;
+  apiEl("account-status").textContent=currentUser?"Signed in as "+currentUser.username+".":"Not signed in.";
+  apiEl("active-provider-status").textContent=currentUser?"Signed in. Checking provider connection…":"Sign in and connect a provider in Settings to use real AI.";
+}
+async function refreshProviderStatus(){
+  if(!currentUser){providerMessage("Sign in first. Provider keys are encrypted by the backend and are not stored in this browser.");return;}
+  try{
+    const data=await apiRequest("/api/providers");
+    const chosen=apiEl("active-provider").value,info=data.providers[chosen];
+    providerMessage((data.providers.openai.connected?"OpenAI connected. ":"OpenAI not connected. ")+(data.providers.gemini.connected?"Gemini connected.":"Gemini not connected."));
+    apiEl("active-provider-status").textContent=info.connected?chosen.toUpperCase()+" is connected. Ready to chat.":"Connect "+chosen.toUpperCase()+" in Settings to enable real AI replies.";
+  }catch(error){providerMessage(error.message);apiEl("active-provider-status").textContent=error.message;}
+}
+async function restoreAccount(){
+  try{
+    const data=await apiRequest("/api/auth/me");
+    currentUser=data.user;csrfToken=data.csrfToken;updateAccountUI();await refreshProviderStatus();
+  }catch(error){
+    currentUser=null;csrfToken="";updateAccountUI();
+    accountMessage(error.message.includes("not connected")?"Backend not connected. Run or deploy the BROKENGPT backend to enable accounts.":"No active account session. Create an account or sign in.");
+  }
+}
+async function submitAccount(action){
+  const username=apiEl("account-username").value.trim(),password=apiEl("account-password").value;
+  if(!username||!password){accountMessage("Enter your username and password.");return;}
+  try{
+    const data=await apiRequest(action==="register"?"/api/auth/register":"/api/auth/login",{method:"POST",body:{username,password}});
+    currentUser=data.user;csrfToken=data.csrfToken;apiEl("account-password").value="";updateAccountUI();await refreshProviderStatus();
+    accountMessage((action==="register"?"Account created. ":"Signed in. ")+"Welcome, "+currentUser.username+".");
+  }catch(error){accountMessage(error.message);}
+}
+apiEl("account-register").addEventListener("click",()=>submitAccount("register"));
+apiEl("account-login").addEventListener("click",()=>submitAccount("login"));
+apiEl("account-logout").addEventListener("click",async()=>{
+  try{await apiRequest("/api/auth/logout",{method:"POST",csrf:true});currentUser=null;csrfToken="";liveConversation=[];updateAccountUI();await refreshProviderStatus();accountMessage("Signed out.");}
+  catch(error){accountMessage(error.message);}
+});
+apiEl("provider-setup-select").addEventListener("change",()=>providerMessage("Selected "+apiEl("provider-setup-select").value.toUpperCase()+"."));
+apiEl("provider-save-key").addEventListener("click",async()=>{
+  if(!currentUser){providerMessage("Sign in before connecting a provider.");return;}
+  const provider=apiEl("provider-setup-select").value,apiKey=apiEl("provider-api-key").value.trim();
+  if(!apiKey){providerMessage("Paste a provider key first.");return;}
+  try{await apiRequest("/api/providers/"+provider+"/key",{method:"PUT",csrf:true,body:{apiKey}});apiEl("provider-api-key").value="";providerMessage(provider.toUpperCase()+" key encrypted and saved on the backend.");await refreshProviderStatus();}
+  catch(error){providerMessage(error.message);}
+});
+apiEl("provider-remove-key").addEventListener("click",async()=>{
+  if(!currentUser){providerMessage("Sign in first.");return;}
+  const provider=apiEl("provider-setup-select").value;
+  try{await apiRequest("/api/providers/"+provider+"/key",{method:"DELETE",csrf:true});providerMessage(provider.toUpperCase()+" disconnected.");await refreshProviderStatus();}
+  catch(error){providerMessage(error.message);}
+});
+apiEl("active-provider").addEventListener("change",refreshProviderStatus);
+function addChatMessage(label,content){
+  const card=document.createElement("article");card.className="message";
+  const heading=document.createElement("b");heading.textContent=label;
+  const body=document.createElement("p");body.textContent=content;
+  card.append(heading,body);messages.append(card);return card;
+}
+async function sendChatMessage(value){
+  addChatMessage("YOU",value);
+  const provider=apiEl("active-provider").value,model=apiEl("active-model").value.trim();
+  if(!currentUser){addChatMessage("BROKENGPT · SETUP","Sign in and connect an AI provider in Settings to get real AI replies. This is a local prototype until the backend is deployed.");return;}
+  const button=document.querySelector("#chat-form button");button.disabled=true;
+  try{
+    liveConversation.push({role:"user",content:value});
+    const personality=prefs.personality||"BROKENGPT Default";
+    const mode=apiEl("mode-select").value||"Balanced";
+    const system="You are BROKENGPT, a helpful AI assistant. Personality: "+personality+". Mode: "+mode+". Explanation level: "+(prefs.explanationLevel||"Adaptive")+". Response length: "+(prefs.responseLength||"Balanced")+". Be clear, safe, honest about uncertainty, and adapt explanations to the user's level.";
+    const data=await apiRequest("/api/chat",{method:"POST",body:{provider,model,messages:[{role:"system",content:system},...liveConversation]}});
+    const answer=data.reply||"(The provider returned an empty response.)";
+    liveConversation.push({role:"assistant",content:answer});
+    addChatMessage("BROKENGPT · "+data.provider.toUpperCase()+" / "+data.model,answer);
+    const hist=readList("brokengpt-history");hist.push({title:value.slice(0,48),preview:"You: "+value+"\nBROKENGPT: "+answer.slice(0,700),time:new Date().toISOString()});writeList("brokengpt-history",hist);renderHistory();
+  }catch(error){
+    if(liveConversation.at(-1)?.role==="user")liveConversation.pop();
+    addChatMessage("BROKENGPT · CONNECTION",error.message);
+  }finally{button.disabled=false;}
+}
+restoreAccount();
+
