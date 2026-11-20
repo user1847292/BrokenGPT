@@ -1,0 +1,71 @@
+name: BrokenGPT Android APK and screenshots
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feature/approved-brokgpt-expansion
+    paths:
+      - "index.html"
+      - "styles.css"
+      - "app.js"
+      - "languages.js"
+      - "manifest.json"
+      - "package.json"
+      - "package-lock.json"
+      - "capacitor.config.json"
+      - "scripts/**"
+      - ".github/workflows/android-build.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+      - name: Install dependencies
+        run: npm install
+      - name: Check JavaScript syntax
+        run: npm run test:syntax
+      - name: Prepare web app
+        run: npm run build:web
+      - name: Generate Android project
+        run: npx cap add android
+      - name: Sync Capacitor
+        run: npx cap sync android
+      - name: Build debug APK
+        working-directory: android
+        run: ./gradlew assembleDebug --no-daemon
+      - name: Start local preview server
+        run: |
+          python3 -m http.server 4173 --directory www > /tmp/brokengpt-preview.log 2>&1 &
+          echo $! > /tmp/brokengpt-preview.pid
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+      - name: Capture mobile app screenshots
+        run: node scripts/capture-screenshots.mjs
+      - name: Upload APK and screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: BrokenGPT-Android-APK-and-Screenshots
+          path: |
+            android/app/build/outputs/apk/debug/app-debug.apk
+            artifacts/screenshots/*.png
+          if-no-files-found: error
+          retention-days: 14
