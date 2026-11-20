@@ -26,7 +26,7 @@ function auth(req,res,next){const token=req.cookies?.[COOKIE];if(!token)return f
 function csrf(req,res,next){const supplied=req.get('x-csrf-token')||'';const a=Buffer.from(sha(supplied)),b=Buffer.from(req.auth.csrf_hash);if(!supplied||a.length!==b.length||!crypto.timingSafeEqual(a,b))return fail(res,403,'Security check failed. Refresh the page and try again.');next();}
 const provider=v=>v==='openai'||v==='gemini'?v:null;
 function messagesOk(items){if(!Array.isArray(items)||!items.length||items.length>40)return null;const out=[];for(const m of items){if(!m||!['user','assistant','system'].includes(m.role)||typeof m.content!=='string'||m.content.length>12000)return null;out.push({role:m.role,content:m.content});}return out;}
-app.disable('x-powered-by');app.use(cookieParser());app.use(helmet({crossOriginResourcePolicy:{policy:'same-origin'},contentSecurityPolicy:{directives:{'style-src':["'self'","'unsafe-inline'"],'img-src':["'self'",'data:','blob:']}}}));app.use(express.json({limit:'24kb',strict:true}));
+app.disable('x-powered-by');app.use(cookieParser());app.use(helmet({crossOriginResourcePolicy:{policy:'same-origin'},contentSecurityPolicy:{directives:{'style-src':["'self'","'unsafe-inline'"],'img-src':["'self'",'data:','blob:']}}}));app.use(express.json({limit:'28mb',strict:true}));
 app.use((req,res,next)=>/^\/(?:backend|node_modules|\.env|package\.json)(?:\/|$)/i.test(req.path)?res.sendStatus(404):next());
 const authLimit=rateLimit({windowMs:15*60*1000,limit:8,standardHeaders:'draft-7',legacyHeaders:false});
 const apiLimit=rateLimit({windowMs:60*1000,limit:30,standardHeaders:'draft-7',legacyHeaders:false});
@@ -38,6 +38,53 @@ app.post('/api/auth/logout',auth,csrf,(req,res)=>{db.prepare('DELETE FROM sessio
 app.get('/api/providers',auth,(req,res)=>{const rows=db.prepare('SELECT provider,updated_at FROM provider_keys WHERE user_id=?').all(req.auth.user_id),map=Object.fromEntries(rows.map(r=>[r.provider,{connected:true,updatedAt:r.updated_at}]));res.json({providers:{openai:map.openai||{connected:false},gemini:map.gemini||{connected:false}}});});
 app.put('/api/providers/:provider/key',auth,csrf,(req,res)=>{const p=provider(req.params.provider),apiKey=typeof req.body?.apiKey==='string'?req.body.apiKey.trim():'';if(!p)return fail(res,404,'Provider is not supported yet.');if(apiKey.length<12||apiKey.length>500||/\s/.test(apiKey))return fail(res,400,'Enter a valid provider API key.');let secret;try{secret=encrypt(apiKey);}catch{return fail(res,503,'Provider key storage is not configured on this server yet.');}db.prepare('INSERT INTO provider_keys(user_id,provider,encrypted_value,iv,auth_tag,updated_at) VALUES(@user_id,@provider,@encrypted_value,@iv,@auth_tag,@updated_at) ON CONFLICT(user_id,provider) DO UPDATE SET encrypted_value=excluded.encrypted_value,iv=excluded.iv,auth_tag=excluded.auth_tag,updated_at=excluded.updated_at').run({user_id:req.auth.user_id,provider:p,...secret,updated_at:Date.now()});res.json({ok:true,provider:p,message:'Provider key encrypted and saved on this server.'});});
 app.delete('/api/providers/:provider/key',auth,csrf,(req,res)=>{const p=provider(req.params.provider);if(!p)return fail(res,404,'Provider is not supported yet.');db.prepare('DELETE FROM provider_keys WHERE user_id=? AND provider=?').run(req.auth.user_id,p);res.json({ok:true,provider:p});});
+
+function studyImagesOk(items){
+  if(items===undefined)return [];
+  if(!Array.isArray(items)||items.length>8)return null;
+  let total=0;const out=[];
+  for(const item of items){
+    if(!item||!['image/jpeg','image/png','image/webp'].includes(item.mimeType)||typeof item.data!=='string'||!/^([A-Za-z0-9+/]+={0,2})$/.test(item.data))return null;
+    if(item.data.length>4_500_000)return null;
+    total+=item.data.length;if(total>22_000_000)return null;
+    out.push({mimeType:item.mimeType,data:item.data,label:typeof item.label==='string'?item.label.slice(0,160):'Study attachment'});
+  }
+  return out;
+}
+app.post('/api/study',auth,csrf,apiLimit,async(req,res)=>{
+  const p=provider(req.body?.provider),model=typeof req.body?.model==='string'?req.body.model.trim():'';
+  const prompt=typeof req.body?.prompt==='string'?req.body.prompt.trim():'';
+  const grade=typeof req.body?.grade==='string'?req.body.grade.slice(0,80):'Not specified';
+  const subject=typeof req.body?.subject==='string'?req.body.subject.slice(0,100):'Not specified';
+  const images=studyImagesOk(req.body?.images);
+  if(!p)return fail(res,400,'Choose OpenAI or Gemini.');
+  if(!/^[a-zA-Z0-9._:-]{2,100}$/.test(model))return fail(res,400,'Enter a valid model identifier.');
+  if(prompt.length<3||prompt.length>9000)return fail(res,400,'Your study question must be 3–9,000 characters.');
+  if(!images)return fail(res,400,'Use up to 8 supported images (JPEG, PNG, or WebP), with a total upload size under 22 MB.');
+  const row=db.prepare('SELECT * FROM provider_keys WHERE user_id=? AND provider=?').get(req.auth.user_id,p);
+  if(!row)return fail(res,400,'Connect this provider in Settings first.');
+  let secret;try{secret=decrypt(row);}catch{return fail(res,503,'The server cannot decrypt the saved provider key.');}
+  const tutor='You are BROKENGPT Study Mode, a patient and encouraging tutor. Teach at the learner level: '+grade+'. Subject: '+subject+'. Start with a simple explanation, then break the idea into small steps, define unfamiliar words, and give a worked example where useful. If the learner attached textbook pages, homework, diagrams, or video frames, inspect them carefully and explain what is actually visible. Do not invent unreadable text; ask for a clearer image when needed. Do not simply give homework answers: show the method and help the learner understand. Adapt to the requested task. For quizzes, ask one question at a time and wait for the learner. Be supportive, never shame the learner, and keep the answer organized.';
+  try{
+    let response,data,reply='';
+    if(p==='openai'){
+      const content=[{type:'text',text:prompt},...images.map(img=>({type:'image_url',image_url:{url:'data:'+img.mimeType+';base64,'+img.data,detail:'high'}}))];
+      response=await fetch('https://api.openai.com/v1/chat/completions',{method:'POST',headers:{Authorization:'Bearer '+secret,'Content-Type':'application/json'},body:JSON.stringify({model,messages:[{role:'system',content:tutor},{role:'user',content}],max_tokens:2400}),signal:AbortSignal.timeout(90000)});
+      data=await response.json().catch(()=>({}));
+      if(!response.ok)return fail(res,response.status===401?401:502,data.error?.message||'Study request failed. Check whether this model supports image input and your provider usage limits.');
+      reply=data.choices?.[0]?.message?.content||'';
+      if(Array.isArray(reply))reply=reply.map(part=>part.text||'').join('\n');
+      return res.json({provider:p,model,reply,usage:data.usage||null});
+    }
+    const parts=[{text:prompt},...images.map(img=>({inlineData:{mimeType:img.mimeType,data:img.data}}))];
+    response=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(model)+':generateContent',{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':secret},body:JSON.stringify({systemInstruction:{parts:[{text:tutor}]},contents:[{role:'user',parts}],generationConfig:{maxOutputTokens:2400}}),signal:AbortSignal.timeout(90000)});
+    data=await response.json().catch(()=>({}));
+    if(!response.ok)return fail(res,[401,403].includes(response.status)?401:502,data.error?.message||'Study request failed. Check image support for this Gemini model and your usage limits.');
+    reply=(data.candidates?.[0]?.content?.parts||[]).map(x=>x.text||'').join('\n');
+    return res.json({provider:p,model,reply,usage:data.usageMetadata||null});
+  }catch(error){return fail(res,502,error.name==='TimeoutError'?'The tutor took too long to respond. Try a smaller attachment or another model.':'Could not reach the AI provider. Try again later.');}
+});
+
 app.post('/api/chat',auth,csrf,apiLimit,async(req,res)=>{const p=provider(req.body?.provider),model=typeof req.body?.model==='string'?req.body.model.trim():'',msgs=messagesOk(req.body?.messages);if(!p)return fail(res,400,'Choose OpenAI or Gemini.');if(!/^[a-zA-Z0-9._:-]{2,100}$/.test(model))return fail(res,400,'Enter a valid model identifier.');if(!msgs)return fail(res,400,'Messages must contain 1–40 valid entries, each under 12,000 characters.');const row=db.prepare('SELECT * FROM provider_keys WHERE user_id=? AND provider=?').get(req.auth.user_id,p);if(!row)return fail(res,400,'Connect this provider in Settings first.');let secret;try{secret=decrypt(row);}catch{return fail(res,503,'The server cannot decrypt the saved provider key. Check its encryption configuration.');}try{let response,data;if(p==='openai'){response=await fetch('https://api.openai.com/v1/chat/completions',{method:'POST',headers:{Authorization:'Bearer '+secret,'Content-Type':'application/json'},body:JSON.stringify({model,messages:msgs,max_tokens:1800}),signal:AbortSignal.timeout(60000)});data=await response.json().catch(()=>({}));if(!response.ok)return fail(res,response.status===401?401:502,data.error?.message||'OpenAI request failed. Check the key, model, and usage limits.');return res.json({provider:p,model,reply:data.choices?.[0]?.message?.content||'',usage:data.usage||null});}const contents=msgs.filter(m=>m.role!=='system').map(m=>({role:m.role==='assistant'?'model':'user',parts:[{text:m.content}]})),system=msgs.filter(m=>m.role==='system').map(m=>m.content).join('\n\n'),body={contents,generationConfig:{maxOutputTokens:1800}};if(system)body.systemInstruction={parts:[{text:system}]};response=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(model)+':generateContent',{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':secret},body:JSON.stringify(body),signal:AbortSignal.timeout(60000)});data=await response.json().catch(()=>({}));if(!response.ok)return fail(res,[401,403].includes(response.status)?401:502,data.error?.message||'Gemini request failed. Check the key, model, and usage limits.');const reply=(data.candidates?.[0]?.content?.parts||[]).map(x=>x.text||'').join('\n');res.json({provider:p,model,reply,usage:data.usageMetadata||null});}catch(e){fail(res,502,e.name==='TimeoutError'?'The provider took too long to respond. Try again.':'Could not reach the AI provider. Try again later.');}});
 
 const mediaLimit=rateLimit({windowMs:60*60*1000,limit:5,standardHeaders:'draft-7',legacyHeaders:false});
