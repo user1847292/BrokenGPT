@@ -71,6 +71,8 @@ jobs:
         run: npx playwright install chromium
       - name: Capture mobile app screenshots
         run: node scripts/capture-screenshots.mjs
+      - name: Run browser smoke tests
+        run: npm run test:smoke
       - name: Upload mobile screenshots
         uses: actions/upload-artifact@v4
         with:
