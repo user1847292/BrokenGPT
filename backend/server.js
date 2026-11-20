@@ -4,7 +4,7 @@ const crypto=require('node:crypto'),path=require('node:path'),fs=require('node:f
 const express=require('express'),helmet=require('helmet'),cookieParser=require('cookie-parser'),Database=require('better-sqlite3');
 const {rateLimit}=require('express-rate-limit');
 const app=express(),PORT=Number(process.env.PORT||3000),ROOT=path.resolve(__dirname,'..');
-const DATA=path.join(__dirname,'data'),DBFILE=path.join(DATA,'brokengpt.sqlite');
+const DATA=process.env.BROKENGPT_DATA_DIR||path.join(__dirname,'data'),DBFILE=path.join(DATA,'brokengpt.sqlite');
 const SESSION_MS=30*24*60*60*1000,COOKIE='brokengpt_session',PROD=process.env.NODE_ENV==='production';
 const OWNER_USER_ID=process.env.BROKENGPT_OWNER_USER_ID||'',OWNER_EMAIL=process.env.BROKENGPT_OWNER_EMAIL||'',RESEND_API_KEY=process.env.RESEND_API_KEY||'',EMAIL_FROM=process.env.BROKENGPT_EMAIL_FROM||'';
 if(process.env.TRUST_PROXY==='1')app.set('trust proxy',1);
