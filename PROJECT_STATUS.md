@@ -85,6 +85,16 @@ This file tracks the current repository state. “Implemented in code” does no
 - [ ] Add automatic tool selection that chooses only available, authorized tools and asks before sensitive actions
 - [ ] Test attachments, model capability fallbacks, privacy, security, accessibility, and mobile camera/microphone behavior
 
+## Stage 7 — long-term memory
+- [x] Add per-account encrypted memory storage in SQLite
+- [x] Add memory create, search, edit, and delete API routes
+- [x] Add a memory manager for important notes, school text, project decisions, and screenshot text pasted by the user
+- [x] Retrieve relevant saved memories and include them as reference context in future chats
+- [x] Add an explicit “remember this:” chat command for saving text
+- [ ] Connect screenshot OCR/vision extraction so important image text can be saved automatically
+- [ ] Add memory export and bulk-delete controls
+- [ ] Test encrypted memory behavior, account isolation, and retrieval quality
+
 ## Final testing and release
 - [x] JavaScript syntax checks
 - [x] HTML ID/reference consistency checks
