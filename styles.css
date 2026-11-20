@@ -79,3 +79,16 @@ body.rgb-direct-switch{--rgb-easing:steps(1,end)}
 @keyframes exit-pipe{35%{transform:translateY(-85px)}65%{transform:translateY(10px) scaleY(.7)}to{transform:translateY(100px) scaleY(.05);opacity:0}}
 @keyframes exit-hook{20%{transform:rotate(-15deg)}to{transform:translate(100vw,-100vh) rotate(-25deg);opacity:0}}
 @media(prefers-reduced-motion:reduce){.character-companion[class*="exit-"]{animation:none!important;opacity:0}}
+
+/* Searchable Character Universe */
+.character-universe-card>p{color:var(--muted);font-size:13px;line-height:1.55}
+#universe-search,#universe-category{width:100%;min-height:44px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:#101010;color:inherit}
+.universe-results{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:14px}
+.universe-character{display:flex;align-items:flex-start;gap:12px;min-width:0;padding:12px;border:1px solid var(--line);border-radius:10px;background:#101010}
+.universe-avatar{display:grid;place-items:center;flex:0 0 48px;height:48px;border:1px solid #593033;border-radius:12px;background:#1b1012;font-size:27px}
+.universe-character-info{min-width:0}
+.universe-character-info strong{display:block}
+.universe-character-info small{display:block;color:var(--muted);margin:3px 0 6px}
+.universe-character-info p{font-size:12px;color:var(--muted);line-height:1.4;margin:0 0 9px}
+.universe-character-info button{min-height:44px;padding:8px 12px;border:1px solid #713139;border-radius:7px;background:#281215;color:#fff}
+@media(max-width:720px){.universe-results{grid-template-columns:1fr}}
