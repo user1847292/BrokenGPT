@@ -1,0 +1,69 @@
+# BROKENGPT implementation checklist
+
+This file tracks the current repository state. “Implemented in code” does not mean live, deployed, or fully tested.
+
+## Stage 1 — backend, accounts, providers
+- [x] Node.js/Express backend starter
+- [x] Username/password registration and sign-in
+- [x] Password hashing with scrypt
+- [x] HttpOnly session cookies and CSRF checks
+- [x] Encrypted OpenAI/Gemini API-key storage
+- [x] OpenAI and Gemini text chat routes
+- [ ] Deploy backend with HTTPS and persistent storage
+- [ ] Run dependency installation and backend runtime tests
+- [ ] Add password reset, account deletion, and production account-recovery safeguards
+
+## Stage 2 — chat and AI Battle
+- [x] Chat UI sends requests to the backend
+- [x] Personality and mode instructions passed with chat
+- [x] Two independent model answers
+- [x] Combined synthesis and per-model result panels
+- [ ] Live provider testing with authorized provider accounts
+- [ ] Add more providers and model discovery
+
+## Stage 3 — voice and Creative Studio
+- [x] Optional browser speech-to-text
+- [x] Optional device text-to-speech
+- [x] OpenAI GPT Image generation endpoint and UI
+- [x] Sora video job creation, status, and download endpoints/UI
+- [ ] Realtime natural voice conversation
+- [ ] Original expressive character voices and contextual sound effects
+- [ ] 3D model generation and export
+- [ ] Game creation and export workflow
+- [ ] Runtime testing with approved provider access
+
+## Stage 4 — Character Universe and Android companion
+- [x] Searchable 36-profile Character Universe prototype
+- [x] Character selection, basic dialogue presets, and local persistence
+- [ ] More character profiles and custom character builder improvements
+- [ ] Licensed/original artwork, animations, and voice assets
+- [ ] Native Android floating companion service and overlay permission flow
+- [ ] Test Android lifecycle, battery use, and accessibility
+
+## Stage 5 — browser, App Connector, Ad Shield, Cyber Lab
+- [x] App directory, manual app adding, task-plan preview
+- [x] Ad Shield preference and allowlist UI
+- [x] Cybersecurity learning cards
+- [ ] Real official app integrations and approved in-app actions
+- [ ] Native Android installed-app discovery/automation with permissions
+- [ ] Actual compatible browser ad filtering
+- [ ] Internal browser with safe browsing/privacy controls
+- [ ] Working defensive cybersecurity lab tools
+- [ ] Screenshot understanding through a connected vision model
+
+## Final testing and release
+- [x] JavaScript syntax checks
+- [x] HTML ID/reference consistency checks
+- [ ] Install backend dependencies successfully
+- [ ] Backend API tests
+- [ ] Browser/device functional testing
+- [ ] Security review, privacy review, and dependency audit
+- [ ] Final Android/web packaging and release preparation
+- [ ] Create a versioned GitHub Release only after the full app is complete and tested
+
+## Important limitations
+- The backend is source code only until it is deployed.
+- The current account system has no password recovery or account deletion flow yet.
+- Provider API usage and media generation may cost money and depend on account eligibility, model access, and usage limits.
+- Browser speech features depend on device/browser support and are not a realtime voice-agent system.
+- App Connector and Ad Shield are not yet able to control arbitrary third-party apps or block every ad.
