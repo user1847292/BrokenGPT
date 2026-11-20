@@ -136,3 +136,9 @@ body,body *{color:var(--text-red)!important}
 button,form button,.settings-card button{background:#300000!important;border-color:#8A0303!important;color:#B00000!important}
 nav button:hover,nav button.selected,.hacking-tab.selected{background:#3A0000!important;border-color:#B00000!important;color:#D00000!important}
 input::placeholder,textarea::placeholder{color:#8A0303!important}
+
+/* Configurable multi-participant AI Battle */
+.battle-count-row{display:grid;grid-template-columns:minmax(150px,1fr) minmax(100px,180px);gap:10px;align-items:center;margin:16px 0;padding:12px;border:1px solid var(--line);border-radius:8px;background:#100707}
+.battle-count-row label{margin:0!important}.battle-count-row select{width:100%;background:#090000;color:inherit;border:1px solid var(--line);border-radius:7px;padding:10px}.battle-count-row .status{grid-column:1/-1;margin:0}
+#battle-participants{grid-template-columns:repeat(2,minmax(0,1fr))}#battle-participants .battle-participant{min-width:0}
+@media(max-width:600px){#battle-participants{grid-template-columns:1fr}.battle-count-row{grid-template-columns:1fr}}
