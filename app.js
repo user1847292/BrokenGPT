@@ -388,7 +388,7 @@ if(universeById[characterPrefs.choice])addUniverseCharacter(characterPrefs.choic
 let csrfToken="",currentUser=null,liveConversation=[];
 const apiEl=id=>document.getElementById(id);
 function backendBaseUrl(){
-  return (localStorage.getItem("brokengpt-backend-url")||"").trim().replace(/\\/+$/,"");
+  return (localStorage.getItem("brokengpt-backend-url")||"").trim().replace(/\/+$/,"");
 }
 function apiUrl(url){const base=backendBaseUrl();return base?base+url:url;}
 async function apiRequest(url,options={}){
