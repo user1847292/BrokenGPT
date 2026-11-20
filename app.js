@@ -464,7 +464,7 @@ async function sendChatMessage(value){
     const data=await apiRequest("/api/chat",{method:"POST",csrf:true,body:{provider,model,messages:[{role:"system",content:system},...liveConversation]}});
     const answer=data.reply||"(The provider returned an empty response.)";
     liveConversation.push({role:"assistant",content:answer});
-    addChatMessage("BROKENGPT · "+data.provider.toUpperCase()+" / "+data.model,answer);
+    addChatMessage("BROKENGPT · "+data.provider.toUpperCase()+" / "+data.model,answer);speakAIReply(answer);
     const hist=readList("brokengpt-history");hist.push({title:value.slice(0,48),preview:"You: "+value+"\nBROKENGPT: "+answer.slice(0,700),time:new Date().toISOString()});writeList("brokengpt-history",hist);renderHistory();
   }catch(error){
     if(liveConversation.at(-1)?.role==="user")liveConversation.pop();
@@ -510,4 +510,37 @@ apiEl("run-battle").addEventListener("click",async()=>{
   }catch(error){apiEl("battle-final-result").textContent="Synthesis could not be completed: "+error.message;apiEl("battle-status").textContent="The battle stopped during synthesis.";}
   finally{button.disabled=false;button.textContent="⚔ Run AI Battle";}
 });
+
+
+
+/* Stage 4C: optional device speech input and output */
+const SpeechRecognitionAPI=window.SpeechRecognition||window.webkitSpeechRecognition;
+let speechRecognition=null;
+const voiceStatus=message=>{const node=apiEl("voice-status");if(node)node.textContent=message;};
+if(SpeechRecognitionAPI){
+  speechRecognition=new SpeechRecognitionAPI();
+  speechRecognition.continuous=false;speechRecognition.interimResults=false;
+  speechRecognition.onstart=()=>{apiEl("voice-input").disabled=true;voiceStatus("Listening… speak your prompt. Nothing is sent until you press Send.");};
+  speechRecognition.onresult=event=>{const transcript=event.results?.[0]?.[0]?.transcript||"";if(transcript){const field=apiEl("prompt");field.value=(field.value?field.value+" ":"")+transcript;field.focus();voiceStatus("Speech added to the message box. Review it, then press Send.");}};
+  speechRecognition.onerror=event=>voiceStatus(event.error==="not-allowed"?"Microphone permission was denied. You can type instead.":"Speech recognition error: "+event.error+". You can type instead.");
+  speechRecognition.onend=()=>{apiEl("voice-input").disabled=false;};
+}else{
+  apiEl("voice-input").addEventListener("click",()=>voiceStatus("Speech-to-text is not supported in this browser. You can still use Read AI replies aloud if device speech is available."));
+}
+if(SpeechRecognitionAPI){
+  apiEl("voice-input").addEventListener("click",()=>{try{speechRecognition.lang=document.documentElement.lang||"en";speechRecognition.start();}catch(error){voiceStatus("Could not start microphone: "+error.message);}});
+}
+function speakAIReply(text){
+  if(!apiEl("voice-auto-play").checked)return;
+  if(!("speechSynthesis" in window)||!("SpeechSynthesisUtterance" in window)){voiceStatus("Text-to-speech is not supported by this browser.");return;}
+  window.speechSynthesis.cancel();
+  const utterance=new SpeechSynthesisUtterance(text);
+  utterance.lang=document.documentElement.lang||"en";
+  utterance.rate=Number(apiEl("voice-rate").value)||1;
+  utterance.onstart=()=>{apiEl("voice-stop").disabled=false;voiceStatus("Reading the AI reply aloud with a device voice.");};
+  utterance.onend=()=>{apiEl("voice-stop").disabled=true;voiceStatus("Voice playback finished.");};
+  utterance.onerror=()=>{apiEl("voice-stop").disabled=true;voiceStatus("Voice playback stopped or unavailable.");};
+  window.speechSynthesis.speak(utterance);
+}
+apiEl("voice-stop").addEventListener("click",()=>{if(speechRecognition)try{speechRecognition.stop();}catch{}if("speechSynthesis" in window)window.speechSynthesis.cancel();apiEl("voice-stop").disabled=true;voiceStatus("Voice stopped.");});
 
