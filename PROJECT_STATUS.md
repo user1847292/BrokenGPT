@@ -44,11 +44,21 @@ This file tracks the current repository state. “Implemented in code” does no
 - [x] App directory, manual app adding, task-plan preview
 - [x] Ad Shield preference and allowlist UI
 - [x] Cybersecurity learning cards
+- [x] Hacking Center with separate Root Tools and Non-Root Tools directories
+- [x] StrykerOSS information cards for rooted and rootless engine types
+- [x] Wi-Fi connection status preview using browser-reported connectivity only
+- [x] Manual local device notes (not live network discovery)
+- [x] Router blacklist/QoS controls clearly marked as requiring a supported router integration
+- [x] Wi-Fi security settings checklist
+- [x] Permission-confirmed remote-control pairing preview (native companion still required)
+- [x] Local offline text-note cache
+- [ ] Live router integration and authorized device discovery
+- [ ] Native remote companion and secure pairing service
 - [ ] Real official app integrations and approved in-app actions
 - [ ] Native Android installed-app discovery/automation with permissions
 - [ ] Actual compatible browser ad filtering
 - [ ] Internal browser with safe browsing/privacy controls
-- [ ] Working defensive cybersecurity lab tools
+- [ ] Working defensive cybersecurity lab tools with live, permissioned device integrations
 - [ ] Screenshot understanding through a connected vision model
 
 ## Final testing and release
