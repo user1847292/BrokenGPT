@@ -114,18 +114,9 @@ This file tracks the current repository state. “Implemented in code” does no
 - Attachment types and model capabilities must be verified per provider/model; the interface must never claim that unsupported media was analyzed.
 - “100× Thinking” is a branded deep-reasoning mode, not a literal performance multiplier or a guarantee that every connected model supports advanced reasoning.
 
-## Stage 8 — owner access, moderation, feedback, and updates
-- [x] Add private server-side owner identity allowlist using a configured account ID
-- [x] Require normal password authentication plus a six-digit email verification code for owner login
-- [x] Expire owner codes after five minutes, enforce one-time use, and cap failed attempts
-- [x] Send owner verification codes through a configured Resend email sender without storing Gmail passwords
-- [x] Add owner-only account overview, usage summaries, conversation review, and moderation audit log
-- [x] Encrypt stored chat prompts and assistant replies at rest using the server encryption key
-- [x] Disclose server-side conversation storage and authorized moderation review in the account UI
-- [x] Add optional positive/negative response feedback and aggregate counts for the owner
-- [x] Connect conversation IDs so chat turns can be grouped into sessions
+## Stage 8 — feedback and updates
+- [x] Add optional positive/negative response feedback and aggregate counts
 - [x] Add automatic stable-release checking in Account Settings and a manual release/install action
-- [ ] Configure private deployment variables: owner account ID, owner email, Resend API key, and verified sender
-- [ ] Deploy with HTTPS and persistent encrypted database storage
-- [ ] Run end-to-end tests for email delivery, owner lockout, account isolation, moderation access, and audit logging
 - [ ] Publish a signed/versioned stable release with installable update assets
+
+Owner Control Center, owner email verification, cross-account conversation review, moderation dashboard, and admin audit endpoints are not part of this project.
