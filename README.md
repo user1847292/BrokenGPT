@@ -36,6 +36,7 @@ These checks verify basic code parsing and server startup only. They do **not** 
 - Online chat prompts and assistant replies are stored server-side for the disclosed conversation-review/moderation feature. Users must be told this before using the hosted service.
 - Provider API keys are stored server-side encrypted with AES-256-GCM. Keep the encryption key private and persistent.
 - Use HTTPS and persistent private storage in any hosted environment.
+- Before sharing a demo URL, set `BROKENGPT_DEMO_ACCESS_PASSWORD` in the host's private environment settings. The app then requires HTTP Basic Auth (username `demo`) for all pages and API routes except the health check. Do not rely on an obscure URL for privacy.
 - Never commit `.env`, API keys, owner email addresses, database files, passwords, or other secrets.
 - Cybersecurity features are intended for authorized defensive learning and testing only.
 - Media requests can incur provider charges. Usage limits and access are controlled by the provider, not BrokenGPT.
