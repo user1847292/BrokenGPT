@@ -134,3 +134,11 @@ body.rgb-direct-switch{--rgb-easing:steps(1,end)}
 #chat-form .composer-menu button:hover{background:#2a1017;border-color:#8f0015}
 #chat-form small{grid-column:1/-1}
 @media(max-width:520px){#chat-form{grid-template-columns:42px minmax(0,1fr) 42px 42px;gap:6px;padding:8px}#chat-form .composer-plus-wrap>button,#chat-form .composer-mic,#chat-form .composer-send{min-width:40px;min-height:44px;padding:7px}}
+
+
+/* Default BROKENGPT blood-red typography. Appearance settings can override --text. */
+:root{--text:#ff3038}
+body,body *{color:var(--text)!important}
+body input::placeholder,body textarea::placeholder{color:var(--text)!important;opacity:.72}
+body button,body a,body label,body small,body p,body h1,body h2,body h3,body h4,body span,body strong,body b,body em,body li,body option,body select,body textarea,body input{color:var(--text)!important}
+body svg{color:var(--text)!important}
