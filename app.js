@@ -483,7 +483,7 @@ function addChatMessage(label,content){
 async function revealAssistantText(node,text){
   const pacing=localStorage.getItem("brokengpt-ai-pacing")||"human";
   const delay=pacing==="slow"?55:pacing==="normal"?18:pacing==="fast"?4:32;
-  const words=text.split(/(\\s+)/);let shown="";
+  const words=text.split(/(\s+)/);let shown="";
   for(let i=0;i<words.length;i+=2){shown+=words[i]+(words[i+1]||"");node.textContent=shown;if(i<240)await new Promise(resolve=>setTimeout(resolve,delay));}
   node.textContent=text;
 }
