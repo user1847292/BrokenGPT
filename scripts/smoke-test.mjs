@@ -32,7 +32,7 @@ try {
   assert.ok(await page.locator("#standalone-download-center a[href^='https://']").count() >= 5,
     "Standalone download links are missing");
 
-  await page.locator('[data-view="notes"]').first().evaluate(node => node.click());
+  await page.locator('[data-go="notes"]').first().evaluate(node => node.click());
   await page.locator("#note-title").fill("Smoke test note");
   await page.locator("#note-body").fill("Local save test");
   await page.locator("#save-note").click();
