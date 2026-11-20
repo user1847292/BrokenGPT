@@ -44,6 +44,11 @@ jobs:
         run: npm run build:web
       - name: Generate Android project
         run: npx cap add android
+      - name: Generate launcher icons from the uploaded BrokenGPT icon
+        run: |
+          python3 -m venv /tmp/brokengpt-icon-venv
+          /tmp/brokengpt-icon-venv/bin/pip install --quiet Pillow
+          /tmp/brokengpt-icon-venv/bin/python scripts/generate-android-icons.py file_00000000a7b481f4ac6329d53b247deb.png android/app/src/main/res
       - name: Sync Capacitor
         run: npx cap sync android
       - name: Build debug APK
