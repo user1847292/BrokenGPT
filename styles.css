@@ -121,7 +121,7 @@ body.rgb-direct-switch{--rgb-easing:steps(1,end)}
 .wifi-device-note button,.offline-item button{margin-top:8px}
 @media(max-width:650px){.tool-directory{grid-template-columns:1fr}.hacking-tabs{display:grid;grid-template-columns:1fr 1fr}}
 
-/* BROKENGPT composer and family studio */
+/* BROKENGPT chat composer */
 #chat-form{grid-template-columns:auto minmax(0,1fr) auto auto;align-items:end;position:relative}
 #chat-form textarea{width:100%;min-height:48px;resize:vertical}
 #chat-form .composer-plus-wrap{position:relative;align-self:end}
@@ -133,7 +133,4 @@ body.rgb-direct-switch{--rgb-easing:steps(1,end)}
 #chat-form .composer-menu button{min-height:42px;text-align:left;background:#191113;border:1px solid #35141a;color:#f4e9ea;border-radius:7px;padding:9px 11px}
 #chat-form .composer-menu button:hover{background:#2a1017;border-color:#8f0015}
 #chat-form small{grid-column:1/-1}
-.family-studio-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-.family-studio-grid .tile{margin:0}
-.family-studio-grid .tile button{min-height:44px;background:#8f0015;border:1px solid #b00020;color:white;border-radius:8px;padding:9px 12px}
-@media(max-width:520px){#chat-form{grid-template-columns:42px minmax(0,1fr) 42px 42px;gap:6px;padding:8px}#chat-form .composer-plus-wrap>button,#chat-form .composer-mic,#chat-form .composer-send{min-width:40px;min-height:44px;padding:7px}.family-studio-grid{grid-template-columns:1fr}}
+@media(max-width:520px){#chat-form{grid-template-columns:42px minmax(0,1fr) 42px 42px;gap:6px;padding:8px}#chat-form .composer-plus-wrap>button,#chat-form .composer-mic,#chat-form .composer-send{min-width:40px;min-height:44px;padding:7px}}
