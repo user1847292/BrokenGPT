@@ -522,8 +522,16 @@ function addChatMessage(label,content){
   const body=document.createElement("p");body.textContent=content;
   card.append(heading,body);messages.append(card);return card;
 }
+function detectMessageLanguage(value){
+  const arabic=(value.match(/[\\u0600-\\u06FF\\u0750-\\u077F\\u08A0-\\u08FF]/g)||[]).length;
+  const letters=(value.match(/[\\p{L}]/gu)||[]).length;
+  if(arabic>=2&&arabic/Math.max(letters,1)>=0.2)return "ar";
+  return "en";
+}
+let activeReplyLanguage="en";
 async function sendChatMessage(value){
   addChatMessage("YOU",value);
+  activeReplyLanguage=detectMessageLanguage(value);
   const provider=apiEl("active-provider").value,model=apiEl("active-model").value.trim();
   if(!currentUser){addChatMessage("BrokenGPT · SETUP","Sign in and connect an AI provider in Settings to get real AI replies. This is a local prototype until the backend is deployed.");return;}
   const button=document.getElementById("send-message");button.disabled=true;
@@ -532,7 +540,8 @@ async function sendChatMessage(value){
     liveConversation.push({role:"user",content:value});
     const personality=prefs.personality||"BrokenGPT Default";
     const mode=apiEl("mode-select").value||"Balanced";
-    const system="You are BrokenGPT, a helpful AI assistant. Personality: "+personality+". Mode: "+mode+". Explanation level: "+(prefs.explanationLevel||"Adaptive")+". Response length: "+(prefs.responseLength||"Balanced")+". Be clear, safe, honest about uncertainty, and adapt explanations to the user's level.";
+    const languageInstruction=activeReplyLanguage==="ar"?"The user's latest message is in Arabic. Reply naturally and fully in Arabic. Use Arabic for explanations and follow-up questions unless the user asks for another language.":"The user's latest message is in English or another non-Arabic language. Reply in the same language as the user's latest message. If uncertain, use English.";
+    const system="You are BrokenGPT, a helpful AI assistant. "+languageInstruction+" Personality: "+personality+". Mode: "+mode+". Explanation level: "+(prefs.explanationLevel||"Adaptive")+". Response length: "+(prefs.responseLength||"Balanced")+". Be clear, safe, honest about uncertainty, and adapt explanations to the user's level.";
     const data=await apiRequest("/api/chat",{method:"POST",csrf:true,body:{provider,model,messages:[{role:"system",content:system},...liveConversation]}});
     const answer=data.reply||"(The provider returned an empty response.)";
     liveConversation.push({role:"assistant",content:answer});
@@ -607,7 +616,7 @@ function speakAIReply(text){
   if(!("speechSynthesis" in window)||!("SpeechSynthesisUtterance" in window)){voiceStatus("Text-to-speech is not supported by this browser.");return;}
   window.speechSynthesis.cancel();
   const utterance=new SpeechSynthesisUtterance(text);
-  utterance.lang=document.documentElement.lang||"en";
+  utterance.lang=activeReplyLanguage==="ar"?"ar-IQ":document.documentElement.lang||"en";
   utterance.rate=Number(apiEl("voice-rate").value)||1;
   utterance.onstart=()=>{apiEl("voice-stop").disabled=false;voiceStatus("Reading the AI reply aloud with a device voice.");};
   utterance.onend=()=>{apiEl("voice-stop").disabled=true;voiceStatus("Voice playback finished.");};
@@ -892,7 +901,7 @@ apiEl("download-video").addEventListener("click",async()=>{
  function messageText(card){return card.querySelector(".message-content")?.textContent||card.querySelector("p")?.textContent||"";}
  async function copyText(value){try{await navigator.clipboard.writeText(value);announce("Copied to clipboard.");}catch{const field=document.createElement("textarea");field.value=value;field.style.position="fixed";field.style.opacity="0";document.body.append(field);field.select();const ok=document.execCommand("copy");field.remove();announce(ok?"Copied to clipboard.":"Copy is unavailable in this browser.");}}
  function announce(value){let node=document.getElementById("message-action-status");if(!node){node=document.createElement("div");node.id="message-action-status";node.className="visually-hidden";node.setAttribute("aria-live","polite");document.body.append(node);}node.textContent=value;}
- function readAloud(value){if(!("speechSynthesis" in window)||!("SpeechSynthesisUtterance" in window)){announce("Read aloud is not supported on this device.");return;}window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(value);u.lang=document.documentElement.lang||"en";u.rate=Number(document.getElementById("voice-rate")?.value)||1;u.onstart=()=>announce("Reading message aloud.");u.onend=()=>announce("Finished reading.");u.onerror=()=>announce("Speech playback is unavailable.");window.speechSynthesis.speak(u);}
+ function readAloud(value){if(!("speechSynthesis" in window)||!("SpeechSynthesisUtterance" in window)){announce("Read aloud is not supported on this device.");return;}window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(value);u.lang=activeReplyLanguage==="ar"?"ar-IQ":document.documentElement.lang||"en";u.rate=Number(document.getElementById("voice-rate")?.value)||1;u.onstart=()=>announce("Reading message aloud.");u.onend=()=>announce("Finished reading.");u.onerror=()=>announce("Speech playback is unavailable.");window.speechSynthesis.speak(u);}
  async function shareText(value){if(navigator.share){try{await navigator.share({title:"BrokenGPT message",text:value});}catch(error){if(error.name!=="AbortError")announce("Sharing was not available.");}}else{await copyText(value);announce("Sharing is unavailable here; message copied instead.");}}
  function saveMessage(value){const saved=readList("brokengpt-favorites");if(!saved.some(x=>x.body===value)){saved.push({title:"Saved AI response",body:value,time:new Date().toISOString()});writeList("brokengpt-favorites",saved);if(typeof renderSaved==="function")renderSaved("brokengpt-favorites","favorites-list","favorite");}announce("Saved to your favorites.");}
  function closeMenus(){document.querySelectorAll(".message-action-menu").forEach(x=>x.remove());}
