@@ -94,3 +94,47 @@ loadRGBStudio();
 document.querySelectorAll("[data-theme]").forEach(button=>button.addEventListener("click",()=>{el("rainbow-enabled").checked=!!prefs.rgb;applyRGBStudio()}));
 el("save-appearance").addEventListener("click",()=>{rgbReadControls();prefs.rgb=el("rainbow-enabled").checked;localStorage.setItem("brokengpt-prefs",JSON.stringify(prefs));applyRGBStudio()});
 el("reset-settings").addEventListener("click",()=>{prefs={...defaults,...rgbDefaults};loadRGBStudio();applyRGBStudio()});
+
+/* Universal App Connector: app directory, local app list, and task approval */
+const appCatalog=[
+{name:"Google Maps",category:"Productivity",description:"Maps, routes, and places",store:"https://play.google.com/store/search?q=Google%20Maps&c=apps",site:"https://maps.google.com"},
+{name:"Discord",category:"Communication",description:"Communities and group chat",store:"https://play.google.com/store/search?q=Discord&c=apps",site:"https://discord.com"},
+{name:"Spotify",category:"Creative",description:"Music and playlists",store:"https://play.google.com/store/search?q=Spotify&c=apps",site:"https://open.spotify.com"},
+{name:"Minecraft",category:"Games",description:"Building, worlds, and game tips",store:"https://play.google.com/store/search?q=Minecraft&c=apps",site:"https://www.minecraft.net"},
+{name:"Roblox",category:"Games",description:"Game discovery and experience tips",store:"https://play.google.com/store/search?q=Roblox&c=apps",site:"https://www.roblox.com"},
+{name:"YouTube",category:"Creative",description:"Videos and creator tools",store:"https://play.google.com/store/search?q=YouTube&c=apps",site:"https://www.youtube.com"},
+{name:"Google Drive",category:"Productivity",description:"Files and documents",store:"https://play.google.com/store/search?q=Google%20Drive&c=apps",site:"https://drive.google.com"},
+{name:"Khan Academy",category:"Education",description:"Learning and practice",store:"https://play.google.com/store/search?q=Khan%20Academy&c=apps",site:"https://www.khanacademy.org"}
+];
+function getConnectedApps(){try{return JSON.parse(localStorage.getItem("brokengpt-connected-apps")||"[]")}catch{return[]}}
+function saveConnectedApps(items){localStorage.setItem("brokengpt-connected-apps",JSON.stringify(items))}
+function renderAppDirectory(query=""){
+ const target=el("app-directory");target.replaceChildren();
+ const matches=appCatalog.filter(app=>(app.name+" "+app.category+" "+app.description).toLowerCase().includes(query.toLowerCase()));
+ matches.forEach(app=>{const card=document.createElement("div");card.className="app-entry";const info=document.createElement("div");const name=safeText("strong",app.name);const desc=safeText("small",app.category+" · "+app.description);info.append(name,desc);const actions=document.createElement("div");const add=document.createElement("button");add.textContent="Add";add.addEventListener("click",()=>addConnectedApp({...app,installed:"unknown"}));const find=document.createElement("button");find.textContent="Find app";find.addEventListener("click",()=>window.open(app.store,"_blank","noopener,noreferrer"));actions.append(add,find);card.append(info,actions);target.append(card)});
+ if(!matches.length)target.append(safeText("p","No match in this starter directory. You can add an app by name below.","status"));
+}
+function renderConnectedApps(){
+ const target=el("connected-apps"),select=el("task-app"),apps=getConnectedApps();target.replaceChildren();select.replaceChildren(new Option("Choose an app",""));
+ if(!apps.length)target.append(safeText("p","No apps added yet.","status"));
+ apps.forEach((app,index)=>{const row=document.createElement("div");row.className="connected-entry";const info=document.createElement("div");info.append(safeText("strong",app.name),safeText("small",(app.category||"Other")+" · Added to BROKENGPT list; integration "+(app.integration?"available":"not connected")));const actions=document.createElement("div");if(app.site){const open=document.createElement("button");open.textContent="Open";open.addEventListener("click",()=>window.open(app.site,"_blank","noopener,noreferrer"));actions.append(open)}if(app.store){const store=document.createElement("button");store.textContent="Install page";store.addEventListener("click",()=>window.open(app.store,"_blank","noopener,noreferrer"));actions.append(store)}const remove=document.createElement("button");remove.textContent="Remove";remove.addEventListener("click",()=>{const list=getConnectedApps();list.splice(index,1);saveConnectedApps(list);renderConnectedApps()});actions.append(remove);row.append(info,actions);target.append(row);select.add(new Option(app.name,app.name))});
+}
+function addConnectedApp(app){
+ const apps=getConnectedApps();if(!apps.some(item=>item.name.toLowerCase()===app.name.toLowerCase())){apps.push({name:app.name,category:app.category||"Other",description:app.description||"",site:app.site||"",store:app.store||"",integration:false,addedAt:new Date().toISOString()});saveConnectedApps(apps)}
+ renderConnectedApps();el("app-task-result").textContent=app.name+" added. Direct control is not connected yet; supported integrations will be shown when available.";
+}
+el("app-search").addEventListener("input",()=>renderAppDirectory(el("app-search").value));
+el("add-manual-app").addEventListener("click",()=>{const name=el("manual-app-name").value.trim();if(!name)return;addConnectedApp({name,category:el("manual-app-type").value});el("manual-app-name").value=""});
+el("prepare-app-task").addEventListener("click",()=>{
+ const app=el("task-app").value,task=el("app-task").value.trim();if(!app||!task){el("app-task-result").textContent="Choose an app and describe the task first.";return}
+ const plan="APP TASK PLAN · "+app+"\n\nYour request: "+task+"\n\nStatus: Awaiting your approval.\nBROKENGPT can prepare guidance now. Automatic in-app actions are unavailable until this app has a supported, permissioned integration. Review the steps before doing anything.";
+ el("app-task-result").textContent=plan;
+});
+renderAppDirectory();renderConnectedApps();
+
+/* Ad Shield preference storage. This switch is a setup preference, not an active ad blocker. */
+const adShieldDefaults={enabled:false,scope:"browser",allowlist:""};
+let adShield={...adShieldDefaults};try{adShield={...adShield,...JSON.parse(localStorage.getItem("brokengpt-ad-shield")||"{}")}}catch{}
+function loadAdShield(){el("ad-shield-enabled").checked=!!adShield.enabled;el("ad-shield-scope").value=adShield.scope;el("ad-shield-allowlist").value=adShield.allowlist;el("ad-shield-status").textContent=adShield.enabled?"Preference saved. Filtering is not active in this prototype; an Android VPN/DNS or browser-filter integration is still required.":"Setup preview only: this prototype does not yet block ads. Actual filtering requires a tested browser filter or Android VPN/DNS component and its permissions."}
+el("save-ad-shield").addEventListener("click",()=>{adShield={enabled:el("ad-shield-enabled").checked,scope:el("ad-shield-scope").value,allowlist:el("ad-shield-allowlist").value};localStorage.setItem("brokengpt-ad-shield",JSON.stringify(adShield));loadAdShield()});
+loadAdShield();
