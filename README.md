@@ -1,26 +1,43 @@
 # BrokenGPT
 
-BrokenGPT is a dark, blood-red AI workspace with a browser interface and a Node.js backend starter.
+BrokenGPT is a dark, blood-red AI workspace for chatting, learning, creating, and practicing defensive cybersecurity.
 
-## Current project status
+## Demo-preview status
 
-- The interface includes the Command Center, chat, modes, notes, Prompt Lab, learning cards, app connector prototype, Character Universe, RGB effects, and Ad Shield settings.
-- The backend starter provides username-based accounts, secure sessions, encrypted OpenAI/Gemini API-key storage, authenticated chat, GPT Image generation, and Sora video-job endpoints.
-- Chat voice controls use optional browser/device speech recognition and text-to-speech. Availability depends on the browser and device.
-- AI Battle sends the same prompt to two models, shows both answers, and requests a combined response.
-- 3D model generation, game export workflows, native Android companion features, and several external integrations remain in progress.
+This branch is a **work in progress**, not a finished or production-approved release.
+
+### Implemented in the current starter
+- Browser workspace with chat, modes, settings, notes, Prompt Lab, learning tools, character tools, and local preferences.
+- Node.js backend with username/password accounts, server-side sessions, CSRF protection, rate limits, and encrypted provider-key storage.
+- OpenAI and Google Gemini chat endpoints.
+- AI Battle workflow using two provider responses and a synthesis request.
+- Image and video generation endpoints, subject to provider access, model availability, and charges.
+- Optional device speech input/output, depending on browser support.
+- Owner moderation dashboard scaffolding with email verification and audit logging.
+
+### Still incomplete or requiring verification
+- No hosted private demo is deployed by this repository change.
+- Real provider calls, account flows, AI Battle, and media generation still need end-to-end testing with valid provider accounts.
+- 3D model generation, complete game export, native Android features, and some integrations are not implemented.
+- This is a responsive web app/PWA starter, not a signed native Android release.
 
 ## Run locally
 
-Follow [`backend/README.md`](backend/README.md). The backend serves the web interface from the same origin so secure session cookies work correctly.
+See [backend/README.md](backend/README.md). The backend serves the browser interface from the same origin.
 
-## Important
+## Automated checks
 
-This project is not yet fully built, deployed, or production-tested. The backend needs HTTPS, persistent storage, and a private `BROKENGPT_ENCRYPTION_KEY`. Provider usage may cost money and is controlled by the provider account and its limits. Media generation may require provider access or organization verification. Never commit `.env` files, API keys, or database files.
+The `.github/workflows/demo-preview-checks.yml` workflow checks JavaScript syntax, installs backend dependencies, starts the backend, and checks `GET /api/health` on pushes and pull requests targeting `demo-preview`.
 
+These checks verify basic code parsing and server startup only. They do **not** verify real AI provider access, security certification, Google Play approval, or production readiness.
 
-## Update Center
-The Account Settings update checker reads the latest stable release from the official GitHub Releases API. It opens the release page for manual review and installation; it does not silently replace app files. Publish stable releases with clear notes and installable assets before expecting updates to appear.
+## Privacy and security notes
 
-## Owner dashboard status
-The Owner Control Center now has server-side owner-only endpoints, email one-time-code verification, conversation storage for moderation, and an access audit log. It remains disabled until the private hosting environment is configured with the owner account ID, owner email, Resend API key, and verified sender. Never put owner email addresses, passwords, email API credentials, or other secrets in this repository.
+- Online chat prompts and assistant replies are stored server-side for the disclosed conversation-review/moderation feature. Users must be told this before using the hosted service.
+- Provider API keys are stored server-side encrypted with AES-256-GCM. Keep the encryption key private and persistent.
+- Use HTTPS and persistent private storage in any hosted environment.
+- Never commit `.env`, API keys, owner email addresses, database files, passwords, or other secrets.
+- Cybersecurity features are intended for authorized defensive learning and testing only.
+- Media requests can incur provider charges. Usage limits and access are controlled by the provider, not BrokenGPT.
+
+Do not publish this branch as a stable release until end-to-end testing, privacy disclosures, deployment configuration, and security review are complete.
