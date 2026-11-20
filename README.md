@@ -15,6 +15,18 @@ BROKENGPT is a dark, blood-red AI workspace with a browser interface and a Node.
 
 The [UI preview workflow](https://github.com/user1847292/BrokenGPT/actions/workflows/ui-preview.yml) runs BROKENGPT in Chromium, captures six real screens, and uploads a downloadable screenshot artifact. Artifacts are temporary (30-day retention) and are previews of the current build, not proof of production readiness.
 
+## Run locally from Android Termux
+
+BROKENGPT can run locally on Android with Termux and Node.js. The web app and backend run on the phone; online AI replies still need internet and a configured provider API key. A truly offline language model is a separate feature and is not included yet.
+
+1. Install Termux from its official source.
+2. Run `pkg update && pkg install git nodejs-lts`.
+3. Clone this repository: `git clone https://github.com/user1847292/BrokenGPT.git && cd BrokenGPT`.
+4. Run `bash scripts/termux-run.sh`.
+5. Open `http://127.0.0.1:3000` in your phone browser.
+
+The setup script creates a private encryption key in `backend/.env` when needed. Keep that file private.
+
 ## Run locally
 
 Follow [`backend/README.md`](backend/README.md). The backend serves the web interface from the same origin so secure session cookies work correctly.
