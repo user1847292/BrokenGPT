@@ -136,12 +136,15 @@ body.rgb-direct-switch{--rgb-easing:steps(1,end)}
 @media(max-width:520px){#chat-form{grid-template-columns:42px minmax(0,1fr) 42px 42px;gap:6px;padding:8px}#chat-form .composer-plus-wrap>button,#chat-form .composer-mic,#chat-form .composer-send{min-width:40px;min-height:44px;padding:7px}}
 
 
-/* Default BROKENGPT blood-red typography. Appearance settings can override --text. */
-:root{--text:#ff3038}
-body,body *{color:var(--text)!important}
-body input::placeholder,body textarea::placeholder{color:var(--text)!important;opacity:.72}
-body button,body a,body label,body small,body p,body h1,body h2,body h3,body h4,body span,body strong,body b,body em,body li,body option,body select,body textarea,body input{color:var(--text)!important}
-body svg{color:var(--text)!important}
+/* BrokenGPT signature: near-black surfaces with restrained blood-red accents. */
+:root{--accent:#b00020;--accent-soft:#ff777c}
+body{color:#f5f5f5}
+.brand b,.brand:first-letter,.view h1 em,.label,section>small,header span,
+.message b,.tile>b,.study-result h2,.study-start-card>small{color:var(--accent-soft)}
+button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{
+  outline:2px solid var(--accent-soft);outline-offset:2px
+}
+body input::placeholder,body textarea::placeholder{color:#888}
 
 /* Study Mode */
 .study-start-card{border-color:#54232a;background:linear-gradient(145deg,#151010,#101010)}
