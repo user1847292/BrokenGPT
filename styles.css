@@ -22,3 +22,15 @@ body.rgb-buttons-active button:not(.secondary){background-image:var(--rgb-gradie
 body.rgb-direct-switch{--rgb-easing:steps(1,end)}
 @media(max-width:720px){.rgb-color-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.rgb-control-grid{grid-template-columns:1fr}}
 @media(prefers-reduced-motion:reduce){body.rgb-bg-active,body.rgb-text-active *,body.rgb-border-active *,body.rgb-bubble-active *,body.rgb-buttons-active *{animation:none!important}}
+
+/* Universal App Connector and Ad Shield */
+.app-directory{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:14px}
+.app-entry,.connected-entry{border:1px solid var(--line);background:#101010;border-radius:9px;padding:12px;display:flex;align-items:center;gap:10px;justify-content:space-between}
+.app-entry strong,.connected-entry strong{display:block}.app-entry small,.connected-entry small{color:var(--muted)}
+.app-entry button,.connected-entry button{border:1px solid var(--line);border-radius:7px;background:#211113;color:white;padding:8px 10px;cursor:pointer}
+#app-search,#manual-app-name,#task-app,#app-task{width:100%;padding:11px;border:1px solid var(--line);border-radius:7px;background:#101010;color:inherit}
+#app-task-result{white-space:pre-wrap;margin-top:12px}
+.connected-entry{margin:8px 0}
+.ad-shield-card{border-color:#593033}
+.ad-shield-card h2{color:#ff777c}
+@media(max-width:720px){.app-directory{grid-template-columns:1fr}}
