@@ -11,11 +11,15 @@ This file tracks the current repository state. “Implemented in code” does no
 - [x] OpenAI and Gemini text chat routes
 - [ ] Deploy backend with HTTPS and persistent storage
 - [ ] Run dependency installation and backend runtime tests
-- [ ] Add password reset, account deletion, and production account-recovery safeguards
+- [x] Add password change with current-password verification and sign out other sessions
+- [x] Add account deletion with password confirmation and cascading removal of linked provider keys
+- [ ] Add verified email-based password reset and production account-recovery safeguards
 
 ## Stage 2 — chat and AI Battle
 - [x] Chat UI sends requests to the backend
 - [x] Personality and mode instructions passed with chat
+- [x] Custom persona instructions and blended secondary styles applied to chat requests
+- [x] Selected interface language used as the default AI reply language
 - [x] Two independent model answers
 - [x] Combined synthesis and per-model result panels
 - [ ] Live provider testing with authorized provider accounts
@@ -65,11 +69,20 @@ This file tracks the current repository state. “Implemented in code” does no
 - [x] JavaScript syntax checks
 - [x] HTML ID/reference consistency checks
 - [ ] Install backend dependencies successfully
-- [ ] Backend API tests
-- [ ] Browser/device functional testing
-- [ ] Security review, privacy review, and dependency audit
+- [x] Backend integration tests for health, registration, duplicate usernames, CSRF, provider-key save/removal, logout, login, password change, and account deletion
+- [ ] Additional negative-path, concurrency, and production configuration tests
+- [x] Desktop Chromium UI smoke test across Chat, AI Battle, Creative Studio, Hacking Center, Character Studio, and Settings
+- [x] Automated capture of six real screenshots from the running app (GitHub Actions artifact)
+- [ ] Full browser/device functional testing, including Android screen sizes and lifecycle
+- [ ] Full security review, privacy review, and dependency audit
 - [ ] Final Android/web packaging and release preparation
 - [ ] Create a versioned GitHub Release only after the full app is complete and tested
+
+## Current build branch
+- `build/core-hardening` contains the first account-security and automated-test improvements.
+- GitHub Actions backend integration checks have passed for account and provider flows.
+- The Chromium UI smoke test and six-screen screenshot capture workflow have passed; screenshot artifacts are retained for 30 days.
+- The changes are in draft pull request #1 and have not been merged into `main`.
 
 ## Important limitations
 - The backend is source code only until it is deployed.

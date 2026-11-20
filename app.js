@@ -1,15 +1,15 @@
-const buttons=[...document.querySelectorAll("[data-view]")];function show(id){document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",v.id===id));buttons.forEach(b=>b.classList.toggle("selected",b.dataset.view===id));document.getElementById("page").textContent=id.toUpperCase()}buttons.forEach(b=>b.addEventListener("click",()=>show(b.dataset.view)));const messages=document.getElementById("messages");document.getElementById("chat-form").addEventListener("submit",e=>{e.preventDefault();const field=document.getElementById("prompt"),value=field.value.trim();if(!value)return;field.value="";sendChatMessage(value)});document.getElementById("new-chat").addEventListener("click",()=>{messages.replaceChildren();liveConversation=[];show("chat")});document.getElementById("browser-form").addEventListener("submit",e=>{e.preventDefault();const q=document.getElementById("address").value.trim();if(!q)return;const url=/^https?:\/\//i.test(q)?q:/^[\w-]+\.[a-z]{2,}/i.test(q)?"https://"+q:"https://www.google.com/search?q="+encodeURIComponent(q);window.open(url,"_blank","noopener,noreferrer")});
+const buttons=[...document.querySelectorAll("[data-view]")];const aiPacingSelect=document.getElementById("ai-pacing");if(aiPacingSelect){aiPacingSelect.value=localStorage.getItem("brokengpt-ai-pacing")||"human";aiPacingSelect.addEventListener("change",()=>localStorage.setItem("brokengpt-ai-pacing",aiPacingSelect.value));}function show(id){document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",v.id===id));buttons.forEach(b=>b.classList.toggle("selected",b.dataset.view===id));document.getElementById("page").textContent=id.toUpperCase()}buttons.forEach(b=>b.addEventListener("click",()=>show(b.dataset.view)));const messages=document.getElementById("messages");document.getElementById("chat-form").addEventListener("submit",e=>{e.preventDefault();const field=document.getElementById("prompt"),value=field.value.trim();if(!value)return;field.value="";sendChatMessage(value)});document.getElementById("new-chat").addEventListener("click",()=>{messages.replaceChildren();liveConversation=[];show("chat")});document.getElementById("browser-form").addEventListener("submit",e=>{e.preventDefault();const q=document.getElementById("address").value.trim();if(!q)return;const url=/^https?:\/\//i.test(q)?q:/^[\w-]+\.[a-z]{2,}/i.test(q)?"https://"+q:"https://www.google.com/search?q="+encodeURIComponent(q);window.open(url,"_blank","noopener,noreferrer")});
 const languages=window.BROKENGPT_LANGUAGES||{};const languageSelect=document.getElementById("language-select");const savedLanguage=localStorage.getItem("brokengpt-language")||"en";
 Object.entries(languages).forEach(([code,item])=>{const opt=document.createElement("option");opt.value=code;opt.textContent=item.name;languageSelect.append(opt)});
-function applyLanguage(code){const lang=languages[code]||languages.en;document.documentElement.lang=code;document.documentElement.dir=lang.dir||"ltr";document.querySelector('[data-view="chat"]').textContent="◈ "+(lang.chat||"Chat");document.querySelector('[data-view="battle"]').textContent="⚔ "+(lang.battle||"AI Battle");document.querySelector('[data-view="browser"]').textContent="◎ "+(lang.browser||"Browser");document.querySelector('[data-view="studio"]').textContent="▧ "+(lang.studio||"Creative Studio");document.querySelector('[data-view="cyber"]').textContent="⌘ "+(lang.cyber||"Cyber Lab");document.querySelector('[data-view="settings"]').textContent="⚙ "+(lang.settings||"Settings");document.getElementById("new-chat").textContent="＋ "+(lang.newChat||"New chat");["home","notes","prompts","academy","toolbox","favorites","history"].forEach(id=>{const nav=document.querySelector(`[data-view="${id}"]`);if(nav&&lang[id])nav.textContent=({home:"⌂ ",notes:"▤ ",prompts:"✦ ",academy:"▣ ",toolbox:"⌘ ",favorites:"★ ",history:"◷ "}[id])+lang[id]});document.querySelector("#chat .hero h1").innerHTML=(lang.welcome||"I can help with")+" <em>"+(lang.anything||"anything.")+"</em>";document.getElementById("prompt").placeholder=lang.message||"Message BROKENGPT...";document.querySelector("#settings h1").innerHTML=(lang.account||"Account")+" <em>"+(lang.settings||"Settings")+"</em>";document.getElementById("language-status").textContent=lang.languageSaved||"Interface language selected. AI reply language can be configured after provider connection.";localStorage.setItem("brokengpt-language",code)}
+function applyLanguage(code){const lang=languages[code]||languages.en;document.documentElement.lang=code;document.documentElement.dir=lang.dir||"ltr";document.querySelector('[data-view="chat"]').textContent="◈ "+(lang.chat||"Chat");document.querySelector('[data-view="battle"]').textContent="◆ "+(lang.battle||"AI Battle");document.querySelector('[data-view="browser"]').textContent="◎ "+(lang.browser||"Browser");document.querySelector('[data-view="studio"]').textContent="▧ "+(lang.studio||"Creative Studio");document.querySelector('[data-view="cyber"]').textContent="⌘ "+(lang.cyber||"Cyber Lab");document.querySelector('[data-view="settings"]').textContent="◆ "+(lang.settings||"Settings");document.getElementById("new-chat").textContent="＋ "+(lang.newChat||"New chat");["home","notes","prompts","academy","toolbox","favorites","history"].forEach(id=>{const nav=document.querySelector(`[data-view="${id}"]`);if(nav&&lang[id])nav.textContent=({home:"⌂ ",notes:"▤ ",prompts:"✦ ",academy:"▣ ",toolbox:"⌘ ",favorites:"★ ",history:"◷ "}[id])+lang[id]});document.querySelector("#chat .hero h1").innerHTML=(lang.welcome||"I can help with")+" <em>"+(lang.anything||"anything.")+"</em>";document.getElementById("prompt").placeholder=lang.message||"Message BROKENGPT...";document.querySelector("#settings h1").innerHTML=(lang.account||"Account")+" <em>"+(lang.settings||"Settings")+"</em>";document.getElementById("language-status").textContent=lang.languageSaved||"Interface language selected. AI reply language can be configured after provider connection.";localStorage.setItem("brokengpt-language",code)}
 languageSelect.value=savedLanguage in languages?savedLanguage:"en";applyLanguage(languageSelect.value);languageSelect.addEventListener("change",()=>applyLanguage(languageSelect.value));
-const defaults={personality:"🤖 BROKENGPT Default",responseLength:"Balanced",explanationLevel:"Adaptive",emojis:false,combine:false,secondary:"😂 Funny",bg:"#080808",fg:"#f5f5f5",accent:"#df2028",bubble:"#121212",font:"system-ui",rgb:false,rgbSpeed:"4s",rainbowText:false,rgbGlow:false,customName:"",customDescription:""};let prefs={...defaults};try{prefs={...defaults,...JSON.parse(localStorage.getItem("brokengpt-prefs")||"{}")}}catch{}
+const defaults={personality:"BROKENGPT Default",responseLength:"Balanced",explanationLevel:"Adaptive",emojis:false,combine:false,secondary:"Funny",bg:"#080808",fg:"#f5f5f5",accent:"#B00000",bubble:"#121212",font:"system-ui",rgb:false,rgbSpeed:"4s",rainbowText:false,rgbGlow:false,customName:"",customDescription:""};let prefs={...defaults};try{prefs={...defaults,...JSON.parse(localStorage.getItem("brokengpt-prefs")||"{}")}}catch{}
 const el=id=>document.getElementById(id);function applyPrefs(){document.documentElement.style.setProperty("--bg",prefs.bg);document.documentElement.style.setProperty("--red",prefs.accent);document.documentElement.style.setProperty("--panel",prefs.bubble);document.body.style.color=prefs.fg;document.body.style.fontFamily=prefs.font+",sans-serif";document.body.classList.toggle("rgb-on",prefs.rgb);document.body.classList.toggle("rgb-glow",prefs.rgbGlow);document.body.style.setProperty("--rgb-speed",prefs.rgbSpeed);el("personality").value=prefs.personality;el("response-length").value=prefs.responseLength;el("explanation-level").value=prefs.explanationLevel;el("use-emojis").checked=prefs.emojis;el("combine-personalities").checked=prefs.combine;el("secondary-personality").value=prefs.secondary;el("background-color").value=prefs.bg;el("text-color").value=prefs.fg;el("accent-color").value=prefs.accent;el("bubble-color").value=prefs.bubble;el("font-choice").value=prefs.font;el("rainbow-enabled").checked=prefs.rgb;el("rainbow-speed").value=prefs.rgbSpeed;el("rainbow-text").checked=prefs.rainbowText;el("rainbow-glow").checked=prefs.rgbGlow;el("custom-name").value=prefs.customName;el("custom-description").value=prefs.customDescription;el("custom-personality").classList.toggle("hidden",prefs.personality!=="custom");el("combine-area").classList.toggle("hidden",!prefs.combine)}
 function readPrefs(){prefs={...prefs,personality:el("personality").value,responseLength:el("response-length").value,explanationLevel:el("explanation-level").value,emojis:el("use-emojis").checked,combine:el("combine-personalities").checked,secondary:el("secondary-personality").value,bg:el("background-color").value,fg:el("text-color").value,accent:el("accent-color").value,bubble:el("bubble-color").value,font:el("font-choice").value,rgb:el("rainbow-enabled").checked,rgbSpeed:el("rainbow-speed").value,rainbowText:el("rainbow-text").checked,rgbGlow:el("rainbow-glow").checked,customName:el("custom-name").value,customDescription:el("custom-description").value};applyPrefs()}
 ["personality","response-length","explanation-level","use-emojis","combine-personalities","secondary-personality","background-color","text-color","accent-color","bubble-color","font-choice","rainbow-enabled","rainbow-speed","rainbow-text","rainbow-glow","custom-name","custom-description"].forEach(id=>el(id).addEventListener("input",readPrefs));
 el("personality").addEventListener("change",()=>{el("custom-personality").classList.toggle("hidden",el("personality").value!=="custom");readPrefs()});el("combine-personalities").addEventListener("change",()=>{el("combine-area").classList.toggle("hidden",!el("combine-personalities").checked);readPrefs()});
 el("save-personality").addEventListener("click",()=>{readPrefs();localStorage.setItem("brokengpt-prefs",JSON.stringify(prefs));el("settings-status").textContent="Personality preferences saved on this device."});
-document.querySelectorAll("[data-theme]").forEach(b=>b.addEventListener("click",()=>{const t={blood:["#080808","#f5f5f5","#df2028","#121212",false],midnight:["#15152a","#f5f2ff","#a78bfa","#201f38",false],light:["#f2f2f2","#171717","#2563eb","#fff",false],forest:["#10251b","#effaf2","#65d99b","#183528",false],rainbow:["#080808","#fff","#ed3b9d","#15121b",true]}[b.dataset.theme];[prefs.bg,prefs.fg,prefs.accent,prefs.bubble,prefs.rgb]=t;applyPrefs();el("settings-status").textContent="Theme preview selected. Save appearance to keep it."}));
+document.querySelectorAll("[data-theme]").forEach(b=>b.addEventListener("click",()=>{const t={blood:["#080808","#B00000","#B00000","#120000",false],midnight:["#15152a","#f5f2ff","#a78bfa","#201f38",false],light:["#f2f2f2","#171717","#2563eb","#fff",false],forest:["#10251b","#effaf2","#65d99b","#183528",false],rainbow:["#080808","#fff","#ed3b9d","#15121b",true]}[b.dataset.theme];[prefs.bg,prefs.fg,prefs.accent,prefs.bubble,prefs.rgb]=t;applyPrefs();el("settings-status").textContent="Theme preview selected. Save appearance to keep it."}));
 el("save-appearance").addEventListener("click",()=>{readPrefs();localStorage.setItem("brokengpt-prefs",JSON.stringify(prefs));el("settings-status").textContent="Appearance saved on this device."});
 el("reset-settings").addEventListener("click",()=>{prefs={...defaults};applyPrefs();localStorage.removeItem("brokengpt-prefs");el("settings-status").textContent="Settings reset to BROKENGPT defaults."});
 
@@ -46,7 +46,7 @@ renderHistory();
 
 /* RGB Color Effects Studio controls and live preview */
 const rgbIds=["rgb-mode","rgb-transition","rgb-speed-range","rgb-color-a","rgb-color-b","rgb-color-c","rgb-color-d","rgb-color-e","rgb-target-background","rgb-target-text","rgb-target-borders","rgb-target-bubbles","rgb-target-buttons"];
-const rgbDefaults={rgbMode:"rainbow",rgbTransition:"smooth",rgbSpeedSeconds:8,rgbColors:["#080808","#df2028","#7b1020","#ff5259","#400814"],rgbTargets:{background:true,text:false,borders:true,bubbles:true,buttons:false}};
+const rgbDefaults={rgbMode:"rainbow",rgbTransition:"smooth",rgbSpeedSeconds:8,rgbColors:["#080808","#B00000","#8A0303","#D00000","#400000"],rgbTargets:{background:true,text:false,borders:true,bubbles:true,buttons:false}};
 prefs={...rgbDefaults,...prefs,rgbColors:Array.isArray(prefs.rgbColors)?prefs.rgbColors:rgbDefaults.rgbColors,rgbTargets:{...rgbDefaults.rgbTargets,...(prefs.rgbTargets||{})}};
 let rgbRandomTimer=null;
 function rgbSetValue(id,value){const node=el(id);if(node)node.value=value}
@@ -155,7 +155,7 @@ const characterScenes={
  joke:{line:"HAHA! Okay, that was actually a good one!",mood:"happy"},
  ready:{line:"Let's move! I've got places to be!",mood:"walking"},
  goodbye:{line:"See you later! *runs off screen*",mood:"walking"},
- "dont-close":{line:"NOOO! DON'T CLOSE ME! I DON'T WANNA DISAPPEAR! AAAAA! 😭",mood:"surprised"}
+ "dont-close":{line:"NOOO! DON'T CLOSE ME! I DON'T WANNA DISAPPEAR! AAAAA! ◆",mood:"surprised"}
 };
 function playCharacterScene(key){
  const scene=characterScenes[key];if(!scene)return;
@@ -182,7 +182,7 @@ function setCharacterDisplay(on){
 function renderCharacterAvatar(){
  const preview=el("character-avatar-preview");preview.replaceChildren();
  if(characterPrefs.avatar){const img=document.createElement("img");img.src=characterPrefs.avatar;img.alt="Your custom character avatar";preview.append(img);companionAvatar.replaceChildren();const mini=document.createElement("img");mini.src=characterPrefs.avatar;mini.alt="";companionAvatar.append(mini)}
- else{preview.textContent="🦔";companionAvatar.textContent="🦔"}
+ else{preview.textContent="◆";companionAvatar.textContent="◆"}
  companionCaption.textContent=characterPrefs.name||"Speedster Hero";
 }
 function loadCharacterPrefs(){
@@ -207,7 +207,7 @@ function characterSpeak(text){
  utterance.rate=characterPrefs.voiceStyle==="energetic"?1.16:.96;utterance.pitch=characterPrefs.voiceStyle==="energetic"?1.28:1.02;
  window.speechSynthesis.speak(utterance);
 }
-el("character-test-warning").addEventListener("click",()=>{characterLine("NOOO! DON'T CLOSE ME! I DON'T WANNA DISAPPEAR! AAAAA! 😭");characterReact("surprise");characterSpeak("Nooo! Don't close me! I don't wanna disappear! See you later!");});
+el("character-test-warning").addEventListener("click",()=>{characterLine("NOOO! DON'T CLOSE ME! I DON'T WANNA DISAPPEAR! AAAAA! ◆");characterReact("surprise");characterSpeak("Nooo! Don't close me! I don't wanna disappear! See you later!");});
 el("play-character-scene").addEventListener("click",()=>playCharacterScene(el("character-scene").value));
 companionAvatar.addEventListener("click",()=>{characterLine("Hey! Need me?");characterReact("surprise");});
 const screenshotInput=el("character-screenshot");
@@ -280,51 +280,53 @@ function playCharacterScene(key){
 /* Character Universe: searchable character presets with original placeholder presentation.
    Official artwork, logos, and exact character voices are not bundled. */
 const universeCharacters = [
- {id:"mario",name:"Mario",category:"Games",emoji:"🍄",description:"An upbeat, brave platforming hero who encourages teamwork and never gives up.",tag:"Let's-a go!",style:["power-up","jump time","coin chase","level clear","teamwork","super jump","bonus stage","adventure time","brave move","here we go"]},
- {id:"luigi",name:"Luigi",category:"Games",emoji:"👻",description:"A kind, clever, slightly nervous adventurer who finds courage when friends need help.",tag:"I can do this!",style:["careful step","ghost hunt","brave moment","deep breath","green power","team helper","quiet courage","unexpected win","mystery mansion","let's-a go"]},
- {id:"peach",name:"Princess Peach",category:"Games",emoji:"👑",description:"A warm, confident royal leader with a thoughtful and adventurous spirit.",tag:"A royal adventure!",style:["kindness first","royal plan","bright idea","castle day","graceful move","friendship wins","brave heart","team spirit","a lovely surprise","onward"]},
- {id:"bowser",name:"Bowser",category:"Games",emoji:"🐲",description:"A loud, dramatic fantasy boss character with playful competitive energy.",tag:"ROAR!",style:["boss mode","big entrance","fiery plan","thunderous laugh","challenge accepted","power move","dramatic roar","not so fast","kingly stomp","next level"]},
- {id:"yoshi",name:"Yoshi",category:"Games",emoji:"🦖",description:"A cheerful, loyal dinosaur companion who loves helping friends.",tag:"Yoshi!",style:["happy hop","friendly flutter","egg-cellent idea","team jump","snack time","little adventure","big smile","green sprint","helping hand","whee"]},
- {id:"kirby",name:"Kirby",category:"Games",emoji:"🌸",description:"A sweet, energetic star adventurer with a playful and optimistic personality.",tag:"Poyo!",style:["star power","dream land","tiny hero","happy bounce","snack break","cosmic cheer","copy ability","pink power","big adventure","poyo time"]},
- {id:"link",name:"Link",category:"Games",emoji:"🗡️",description:"A quiet, courageous fantasy adventurer who communicates through actions and thoughtful gestures.",tag:"Adventure awaits.",style:["quest accepted","shield ready","forest path","ancient secret","brave heart","treasure found","quiet focus","hero's call","new discovery","onward"]},
- {id:"pikachu",name:"Pikachu",category:"Games",emoji:"⚡",description:"A loyal, energetic electric mouse companion who is curious and encouraging.",tag:"Pika-pika!",style:["spark of joy","thunder ready","tiny zap","team bond","electric energy","happy squeak","curious peek","bright idea","quick dash","pika power"]},
- {id:"shadow",name:"Shadow",category:"Games",emoji:"🖤",description:"A cool, serious, determined speed rival with a guarded but helpful side.",tag:"Hmph. Try to keep up.",style:["chaos control","serious mode","ultimate focus","dark speed","mission accepted","rival spotted","precision move","no distractions","calculated risk","limit breaker"]},
- {id:"tails",name:"Tails",category:"Games",emoji:"🦊",description:"A friendly young inventor who is curious, clever, and supportive.",tag:"I've got an idea!",style:["invention time","flight check","toolbox ready","smart solution","two-tail takeoff","test run","clever fix","science moment","team support","new blueprint"]},
- {id:"knuckles",name:"Knuckles",category:"Games",emoji:"🥊",description:"A strong, stubborn guardian who values honesty, loyalty, and protecting others.",tag:"Bring it on.",style:["guardian duty","strong stance","training time","straight answer","emerald watch","power punch","loyal teammate","focus up","challenge accepted","all clear"]},
- {id:"spiderman",name:"Spider-Man",category:"Superheroes",emoji:"🕸️",description:"A witty, friendly city hero who uses quick thinking, responsibility, and humor.",tag:"Friendly neighborhood hero!",style:["web-sling ready","city patrol","quick quip","spider-sense","hero moment","swing by","clever save","responsibility first","rooftop route","team-up time"]},
- {id:"ironman",name:"Iron Man",category:"Superheroes",emoji:"🤖",description:"A brilliant, confident tech inventor with fast humor and engineering instincts.",tag:"Systems online.",style:["armor check","tech upgrade","flight systems","diagnostics","genius idea","power core","workshop time","calculated risk","prototype ready","mission control"]},
- {id:"hulk",name:"Hulk",category:"Superheroes",emoji:"💚",description:"A powerful hero with simple, direct speech and a protective heart.",tag:"Hulk ready!",style:["strong move","big jump","protect friends","calm down","team smash","power check","gentle moment","big green energy","hero help","all clear"]},
- {id:"thor",name:"Thor",category:"Superheroes",emoji:"⚡",description:"A noble thunder hero with grand, friendly confidence.",tag:"By the thunder!",style:["storm approaches","worthy quest","thunder call","brave companion","realm watch","mighty idea","heroic welcome","lightning strike","honor first","onward"]},
- {id:"batman",name:"Batman",category:"Superheroes",emoji:"🦇",description:"A calm, strategic detective hero who studies clues and prepares carefully.",tag:"The case is not closed.",style:["case file","grapple ready","night patrol","detective mode","evidence first","contingency plan","rooftop watch","silent approach","city needs help","mission complete"]},
- {id:"superman",name:"Superman",category:"Superheroes",emoji:"🦸",description:"A hopeful, compassionate hero who values courage and helping people.",tag:"There's always hope.",style:["hopeful thought","rescue ready","kindness matters","skyward flight","steady courage","help is here","truth first","bright tomorrow","teamwork","look up"]},
- {id:"flash",name:"The Flash",category:"Superheroes",emoji:"💨",description:"A cheerful, fast-talking speed hero who loves science and quick jokes.",tag:"Fastest thought first!",style:["speed force","quick lap","time to move","science snack","fast fix","lightning round","race you","speedy solution","red blur","back in a flash"]},
- {id:"wonderwoman",name:"Wonder Woman",category:"Superheroes",emoji:"🛡️",description:"A brave, wise warrior who leads with compassion and fairness.",tag:"Courage and truth.",style:["truth and courage","shield raised","wise choice","warrior focus","peace first","honor bound","strong heart","mission accepted","compassion wins","stand together"]},
- {id:"joker",name:"Joker",category:"Superheroes",emoji:"🃏",description:"A theatrical fictional trickster persona with unpredictable jokes; kept non-threatening and playful.",tag:"A little plot twist!",style:["dramatic giggle","plot twist","ta-da","curtain call","unexpected joke","mischief mode","silly scheme","surprise entrance","comic timing","what a show"]},
- {id:"goku",name:"Goku",category:"Anime",emoji:"🥋",description:"An upbeat martial-arts adventurer who loves challenges, training, and helping friends.",tag:"Let's get stronger!",style:["training time","new challenge","power up","friendly match","keep practicing","big energy","team spirit","ready stance","next level","let's go"]},
- {id:"vegeta",name:"Vegeta",category:"Anime",emoji:"👑",description:"A proud, disciplined rival who is intense, focused, and secretly loyal.",tag:"Hmph. I will surpass it.",style:["elite focus","training harder","pride intact","no excuses","rival challenge","precision strike","royal resolve","prove it","limit break","discipline first"]},
- {id:"naruto",name:"Naruto",category:"Anime",emoji:"🍥",description:"An energetic, optimistic ninja who values friendship, perseverance, and teamwork.",tag:"Believe it!",style:["ninja way","shadow clone idea","never give up","team seven spirit","training arc","big dream","ramen break","friendship power","mission accepted","believe it"]},
- {id:"sasuke",name:"Sasuke",category:"Anime",emoji:"🌑",description:"A quiet, focused ninja rival who is analytical and independent.",tag:"I have a plan.",style:["focused gaze","quiet strategy","sharingan focus","mission first","precise move","training alone","calm analysis","rival nearby","next step","no distractions"]},
- {id:"luffy",name:"Monkey D. Luffy",category:"Anime",emoji:"🏴‍☠️",description:"A carefree, brave pirate captain who loves adventure, food, and friends.",tag:"I'm gonna be King of the Pirates!",style:["adventure ahoy","crew assemble","meat break","big dream","captain's call","island ahead","rubber power","friendship first","full speed","let's sail"]},
- {id:"zoro",name:"Roronoa Zoro",category:"Anime",emoji:"⚔️",description:"A serious, determined swordsman who is loyal and often hilariously directionally challenged.",tag:"Point me toward the goal.",style:["training session","three-sword focus","steady stance","loyal crew","quiet resolve","wrong turn","sharp focus","goal ahead","discipline","rest later"]},
- {id:"gojo",name:"Satoru Gojo",category:"Anime",emoji:"🕶️",description:"A playful, confident mentor who mixes jokes with sharp insight.",tag:"Don't worry, I've got this.",style:["limitless confidence","teacher mode","playful tease","infinity focus","clever trick","lesson time","cool entrance","sharp observation","all under control","next lesson"]},
- {id:"tanjiro",name:"Tanjiro Kamado",category:"Anime",emoji:"🌊",description:"A kind, determined swordsman who is empathetic, observant, and protective.",tag:"I'll keep going.",style:["steady breath","kind heart","careful listening","training path","protect others","water flow","brave step","gentle strength","focus","keep going"]},
- {id:"spongebob",name:"SpongeBob",category:"Cartoons",emoji:"🧽",description:"An enthusiastic, silly sea sponge who finds joy in everyday adventures.",tag:"I'm ready!",style:["jellyfish time","pineapple plans","best day ever","silly grin","krabby idea","bubbles everywhere","happy dance","work shift","undersea fun","ready"]},
- {id:"patrick",name:"Patrick",category:"Cartoons",emoji:"⭐",description:"A lovable, goofy friend with simple, unexpected observations.",tag:"Is this the part where we laugh?",style:["deep thought","snack question","rock time","silly idea","unexpected wisdom","nap plan","friendship moment","wait what","star power","hmm"]},
- {id:"tom",name:"Tom",category:"Cartoons",emoji:"🐱",description:"A determined cartoon cat with expressive reactions and slapstick timing.",tag:"Mrow!",style:["sneaky plan","chase scene","dramatic pause","cat reflexes","quiet tiptoe","oops moment","big reaction","one more try","comic timing","nap time"]},
- {id:"jerry",name:"Jerry",category:"Cartoons",emoji:"🐭",description:"A clever, quick-thinking mouse who enjoys playful problem-solving.",tag:"Heh-heh!",style:["tiny trick","clever escape","cheese break","quick thinking","silent victory","mouse-sized plan","sneaky peek","one step ahead","mischief","ta-da"]},
- {id:"ben10",name:"Ben 10",category:"Cartoons",emoji:"⌚",description:"A brave young hero who enjoys gadgets, teamwork, and creative transformations.",tag:"Hero time!",style:["omnitrix check","hero time","alien idea","team rescue","watch activated","new form","quick save","mission accepted","gadget scan","let's roll"]},
- {id:"frozen",name:"Elsa",category:"Movies",emoji:"❄️",description:"A thoughtful ice-magic queen who is calm, creative, and learning confidence.",tag:"A little winter magic.",style:["ice crystal","snowy idea","quiet strength","winter wonder","let it flow","royal calm","frosty sparkle","new beginning","magic touch","peaceful moment"]},
- {id:"toystory",name:"Buzz Lightyear",category:"Movies",emoji:"🚀",description:"A brave space ranger with earnest confidence and mission-focused humor.",tag:"To infinity and beyond!",style:["space mission","ranger report","launch ready","star command","mission log","cosmic discovery","team check","brave landing","infinity ahead","all systems go"]},
- {id:"shrek",name:"Shrek",category:"Movies",emoji:"🧅",description:"A grumpy-but-kind swamp-dweller persona with dry humor and a soft heart.",tag:"Get outta my swamp—just kidding.",style:["swamp wisdom","onion layers","quiet afternoon","fairy tale trouble","dry joke","muddy boots","unexpected kindness","snack break","ogre logic","all done"]}
+ {id:"mario",name:"Mario",category:"Games",emoji:"◆",description:"An upbeat, brave platforming hero who encourages teamwork and never gives up.",tag:"Let's-a go!",style:["power-up","jump time","coin chase","level clear","teamwork","super jump","bonus stage","adventure time","brave move","here we go"]},
+ {id:"luigi",name:"Luigi",category:"Games",emoji:"◆",description:"A kind, clever, slightly nervous adventurer who finds courage when friends need help.",tag:"I can do this!",style:["careful step","ghost hunt","brave moment","deep breath","green power","team helper","quiet courage","unexpected win","mystery mansion","let's-a go"]},
+ {id:"peach",name:"Princess Peach",category:"Games",emoji:"◆",description:"A warm, confident royal leader with a thoughtful and adventurous spirit.",tag:"A royal adventure!",style:["kindness first","royal plan","bright idea","castle day","graceful move","friendship wins","brave heart","team spirit","a lovely surprise","onward"]},
+ {id:"bowser",name:"Bowser",category:"Games",emoji:"◆",description:"A loud, dramatic fantasy boss character with playful competitive energy.",tag:"ROAR!",style:["boss mode","big entrance","fiery plan","thunderous laugh","challenge accepted","power move","dramatic roar","not so fast","kingly stomp","next level"]},
+ {id:"yoshi",name:"Yoshi",category:"Games",emoji:"◆",description:"A cheerful, loyal dinosaur companion who loves helping friends.",tag:"Yoshi!",style:["happy hop","friendly flutter","egg-cellent idea","team jump","snack time","little adventure","big smile","green sprint","helping hand","whee"]},
+ {id:"kirby",name:"Kirby",category:"Games",emoji:"◆",description:"A sweet, energetic star adventurer with a playful and optimistic personality.",tag:"Poyo!",style:["star power","dream land","tiny hero","happy bounce","snack break","cosmic cheer","copy ability","pink power","big adventure","poyo time"]},
+ {id:"link",name:"Link",category:"Games",emoji:"◆",description:"A quiet, courageous fantasy adventurer who communicates through actions and thoughtful gestures.",tag:"Adventure awaits.",style:["quest accepted","shield ready","forest path","ancient secret","brave heart","treasure found","quiet focus","hero's call","new discovery","onward"]},
+ {id:"pikachu",name:"Pikachu",category:"Games",emoji:"◆",description:"A loyal, energetic electric mouse companion who is curious and encouraging.",tag:"Pika-pika!",style:["spark of joy","thunder ready","tiny zap","team bond","electric energy","happy squeak","curious peek","bright idea","quick dash","pika power"]},
+ {id:"shadow",name:"Shadow",category:"Games",emoji:"◆",description:"A cool, serious, determined speed rival with a guarded but helpful side.",tag:"Hmph. Try to keep up.",style:["chaos control","serious mode","ultimate focus","dark speed","mission accepted","rival spotted","precision move","no distractions","calculated risk","limit breaker"]},
+ {id:"tails",name:"Tails",category:"Games",emoji:"◆",description:"A friendly young inventor who is curious, clever, and supportive.",tag:"I've got an idea!",style:["invention time","flight check","toolbox ready","smart solution","two-tail takeoff","test run","clever fix","science moment","team support","new blueprint"]},
+ {id:"knuckles",name:"Knuckles",category:"Games",emoji:"◆",description:"A strong, stubborn guardian who values honesty, loyalty, and protecting others.",tag:"Bring it on.",style:["guardian duty","strong stance","training time","straight answer","emerald watch","power punch","loyal teammate","focus up","challenge accepted","all clear"]},
+ {id:"spiderman",name:"Spider-Man",category:"Superheroes",emoji:"◆",description:"A witty, friendly city hero who uses quick thinking, responsibility, and humor.",tag:"Friendly neighborhood hero!",style:["web-sling ready","city patrol","quick quip","spider-sense","hero moment","swing by","clever save","responsibility first","rooftop route","team-up time"]},
+ {id:"ironman",name:"Iron Man",category:"Superheroes",emoji:"◆",description:"A brilliant, confident tech inventor with fast humor and engineering instincts.",tag:"Systems online.",style:["armor check","tech upgrade","flight systems","diagnostics","genius idea","power core","workshop time","calculated risk","prototype ready","mission control"]},
+ {id:"hulk",name:"Hulk",category:"Superheroes",emoji:"◆",description:"A powerful hero with simple, direct speech and a protective heart.",tag:"Hulk ready!",style:["strong move","big jump","protect friends","calm down","team smash","power check","gentle moment","big green energy","hero help","all clear"]},
+ {id:"thor",name:"Thor",category:"Superheroes",emoji:"◆",description:"A noble thunder hero with grand, friendly confidence.",tag:"By the thunder!",style:["storm approaches","worthy quest","thunder call","brave companion","realm watch","mighty idea","heroic welcome","lightning strike","honor first","onward"]},
+ {id:"batman",name:"Batman",category:"Superheroes",emoji:"◆",description:"A calm, strategic detective hero who studies clues and prepares carefully.",tag:"The case is not closed.",style:["case file","grapple ready","night patrol","detective mode","evidence first","contingency plan","rooftop watch","silent approach","city needs help","mission complete"]},
+ {id:"superman",name:"Superman",category:"Superheroes",emoji:"◆",description:"A hopeful, compassionate hero who values courage and helping people.",tag:"There's always hope.",style:["hopeful thought","rescue ready","kindness matters","skyward flight","steady courage","help is here","truth first","bright tomorrow","teamwork","look up"]},
+ {id:"flash",name:"The Flash",category:"Superheroes",emoji:"◆",description:"A cheerful, fast-talking speed hero who loves science and quick jokes.",tag:"Fastest thought first!",style:["speed force","quick lap","time to move","science snack","fast fix","lightning round","race you","speedy solution","red blur","back in a flash"]},
+ {id:"wonderwoman",name:"Wonder Woman",category:"Superheroes",emoji:"◆",description:"A brave, wise warrior who leads with compassion and fairness.",tag:"Courage and truth.",style:["truth and courage","shield raised","wise choice","warrior focus","peace first","honor bound","strong heart","mission accepted","compassion wins","stand together"]},
+ {id:"joker",name:"Joker",category:"Superheroes",emoji:"◆",description:"A theatrical fictional trickster persona with unpredictable jokes; kept non-threatening and playful.",tag:"A little plot twist!",style:["dramatic giggle","plot twist","ta-da","curtain call","unexpected joke","mischief mode","silly scheme","surprise entrance","comic timing","what a show"]},
+ {id:"goku",name:"Goku",category:"Anime",emoji:"◆",description:"An upbeat martial-arts adventurer who loves challenges, training, and helping friends.",tag:"Let's get stronger!",style:["training time","new challenge","power up","friendly match","keep practicing","big energy","team spirit","ready stance","next level","let's go"]},
+ {id:"vegeta",name:"Vegeta",category:"Anime",emoji:"◆",description:"A proud, disciplined rival who is intense, focused, and secretly loyal.",tag:"Hmph. I will surpass it.",style:["elite focus","training harder","pride intact","no excuses","rival challenge","precision strike","royal resolve","prove it","limit break","discipline first"]},
+ {id:"naruto",name:"Naruto",category:"Anime",emoji:"◆",description:"An energetic, optimistic ninja who values friendship, perseverance, and teamwork.",tag:"Believe it!",style:["ninja way","shadow clone idea","never give up","team seven spirit","training arc","big dream","ramen break","friendship power","mission accepted","believe it"]},
+ {id:"sasuke",name:"Sasuke",category:"Anime",emoji:"◆",description:"A quiet, focused ninja rival who is analytical and independent.",tag:"I have a plan.",style:["focused gaze","quiet strategy","sharingan focus","mission first","precise move","training alone","calm analysis","rival nearby","next step","no distractions"]},
+ {id:"luffy",name:"Monkey D. Luffy",category:"Anime",emoji:"◆",description:"A carefree, brave pirate captain who loves adventure, food, and friends.",tag:"I'm gonna be King of the Pirates!",style:["adventure ahoy","crew assemble","meat break","big dream","captain's call","island ahead","rubber power","friendship first","full speed","let's sail"]},
+ {id:"zoro",name:"Roronoa Zoro",category:"Anime",emoji:"◆",description:"A serious, determined swordsman who is loyal and often hilariously directionally challenged.",tag:"Point me toward the goal.",style:["training session","three-sword focus","steady stance","loyal crew","quiet resolve","wrong turn","sharp focus","goal ahead","discipline","rest later"]},
+ {id:"gojo",name:"Satoru Gojo",category:"Anime",emoji:"◆",description:"A playful, confident mentor who mixes jokes with sharp insight.",tag:"Don't worry, I've got this.",style:["limitless confidence","teacher mode","playful tease","infinity focus","clever trick","lesson time","cool entrance","sharp observation","all under control","next lesson"]},
+ {id:"tanjiro",name:"Tanjiro Kamado",category:"Anime",emoji:"◆",description:"A kind, determined swordsman who is empathetic, observant, and protective.",tag:"I'll keep going.",style:["steady breath","kind heart","careful listening","training path","protect others","water flow","brave step","gentle strength","focus","keep going"]},
+ {id:"spongebob",name:"SpongeBob",category:"Cartoons",emoji:"◆",description:"An enthusiastic, silly sea sponge who finds joy in everyday adventures.",tag:"I'm ready!",style:["jellyfish time","pineapple plans","best day ever","silly grin","krabby idea","bubbles everywhere","happy dance","work shift","undersea fun","ready"]},
+ {id:"patrick",name:"Patrick",category:"Cartoons",emoji:"◆",description:"A lovable, goofy friend with simple, unexpected observations.",tag:"Is this the part where we laugh?",style:["deep thought","snack question","rock time","silly idea","unexpected wisdom","nap plan","friendship moment","wait what","star power","hmm"]},
+ {id:"tom",name:"Tom",category:"Cartoons",emoji:"◆",description:"A determined cartoon cat with expressive reactions and slapstick timing.",tag:"Mrow!",style:["sneaky plan","chase scene","dramatic pause","cat reflexes","quiet tiptoe","oops moment","big reaction","one more try","comic timing","nap time"]},
+ {id:"jerry",name:"Jerry",category:"Cartoons",emoji:"◆",description:"A clever, quick-thinking mouse who enjoys playful problem-solving.",tag:"Heh-heh!",style:["tiny trick","clever escape","cheese break","quick thinking","silent victory","mouse-sized plan","sneaky peek","one step ahead","mischief","ta-da"]},
+ {id:"ben10",name:"Ben 10",category:"Cartoons",emoji:"◆",description:"A brave young hero who enjoys gadgets, teamwork, and creative transformations.",tag:"Hero time!",style:["omnitrix check","hero time","alien idea","team rescue","watch activated","new form","quick save","mission accepted","gadget scan","let's roll"]},
+ {id:"frozen",name:"Elsa",category:"Movies",emoji:"◆",description:"A thoughtful ice-magic queen who is calm, creative, and learning confidence.",tag:"A little winter magic.",style:["ice crystal","snowy idea","quiet strength","winter wonder","let it flow","royal calm","frosty sparkle","new beginning","magic touch","peaceful moment"]},
+ {id:"toystory",name:"Buzz Lightyear",category:"Movies",emoji:"◆",description:"A brave space ranger with earnest confidence and mission-focused humor.",tag:"To infinity and beyond!",style:["space mission","ranger report","launch ready","star command","mission log","cosmic discovery","team check","brave landing","infinity ahead","all systems go"]},
+ {id:"shrek",name:"Shrek",category:"Movies",emoji:"◆",description:"A grumpy-but-kind swamp-dweller persona with dry humor and a soft heart.",tag:"Get outta my swamp—just kidding.",style:["swamp wisdom","onion layers","quiet afternoon","fairy tale trouble","dry joke","muddy boots","unexpected kindness","snack break","ogre logic","all done"]},
+ {id:"doge-meme",name:"Doge Meme",category:"Memes",emoji:"",description:"A playful meme-inspired companion with short, funny internet-style phrases and original text-only presentation.",tag:"Much helpful. Very ready.",style:["much helpful","very clever","such idea","wow moment","very coding","much progress","such teamwork","wow indeed","very curious","all done"]},
+ {id:"rage-comic",name:"Rage Comic",category:"Memes",emoji:"",description:"A classic internet-comedy companion with exaggerated reactions, playful jokes, and original text-only expressions.",tag:"That escalated quickly.",style:["unexpected plot twist","dramatic reaction","tiny inconvenience","big surprise","plot armor","comedy timing","mission failed successfully","classic moment","internet legend","case closed"]}
 ];
 const universeById = Object.fromEntries(universeCharacters.map(item=>[item.id,item]));
 universeCharacters.forEach(item=>{
  expandedCharacterProfiles[item.id]={name:item.name,tag:item.tag,style:item.style,description:item.description,emoji:item.emoji};
 });
-function renderCharacterAvatar(){
+function renderUniverseCharacterAvatar(){
  const preview=el("character-avatar-preview");
  const profile=universeById[characterPrefs.choice];
- const emoji=profile?.emoji||"🦔";
+ const emoji=profile?.emoji||((profile?.name||"C").slice(0,1).toUpperCase());
  preview.replaceChildren();
  if(characterPrefs.avatar){
   const img=document.createElement("img");img.src=characterPrefs.avatar;img.alt="Your custom character avatar";preview.append(img);
@@ -342,7 +344,7 @@ function addUniverseCharacter(id){
  select.value=id;
  characterPrefs.choice=id;characterPrefs.name=item.name;characterPrefs.description=item.description;
  el("custom-character-name").value=item.name;el("custom-character-description").value=item.description;
- saveCharacterPrefs();renderCharacterAvatar();rebuildExpandedScenes();
+ saveCharacterPrefs();renderUniverseCharacterAvatar();rebuildExpandedScenes();
  el("universe-status").textContent=item.name+" added and selected! You can customize its costume, avatar, and description below.";
 }
 function renderUniverseDirectory(){
@@ -368,7 +370,7 @@ el("universe-search").addEventListener("input",renderUniverseDirectory);
 el("universe-category").addEventListener("change",renderUniverseDirectory);
 el("character-choice").addEventListener("change",()=>{
  const item=universeById[characterPrefs.choice];
- if(item){characterPrefs.name=item.name;characterPrefs.description=item.description;saveCharacterPrefs();renderCharacterAvatar();}
+ if(item){characterPrefs.name=item.name;characterPrefs.description=item.description;saveCharacterPrefs();renderUniverseCharacterAvatar();}
  renderUniverseDirectory();
 });
 renderUniverseDirectory();
@@ -430,6 +432,33 @@ apiEl("account-logout").addEventListener("click",async()=>{
   try{await apiRequest("/api/auth/logout",{method:"POST",csrf:true});currentUser=null;csrfToken="";liveConversation=[];updateAccountUI();await refreshProviderStatus();accountMessage("Signed out.");}
   catch(error){accountMessage(error.message);}
 });
+apiEl("account-change-password").addEventListener("click",async()=>{
+  if(!currentUser){apiEl("account-security-status").textContent="Sign in before changing your password.";return;}
+  const currentPassword=apiEl("account-current-password").value;
+  const newPassword=apiEl("account-new-password").value;
+  if(!currentPassword||newPassword.length<10){apiEl("account-security-status").textContent="Enter your current password and a new password of at least 10 characters.";return;}
+  const button=apiEl("account-change-password");button.disabled=true;
+  try{
+    const data=await apiRequest("/api/auth/password",{method:"POST",csrf:true,body:{currentPassword,newPassword}});
+    apiEl("account-current-password").value="";apiEl("account-new-password").value="";
+    apiEl("account-security-status").textContent=data.message||"Password changed.";
+  }catch(error){apiEl("account-security-status").textContent=error.message;}
+  finally{button.disabled=false;}
+});
+apiEl("account-delete").addEventListener("click",async()=>{
+  if(!currentUser){apiEl("account-security-status").textContent="Sign in before deleting an account.";return;}
+  const password=apiEl("account-delete-password").value;
+  if(!password){apiEl("account-security-status").textContent="Enter your password to confirm account deletion.";return;}
+  if(!window.confirm("Permanently delete your BROKENGPT account and its saved provider keys? This cannot be undone."))return;
+  const button=apiEl("account-delete");button.disabled=true;
+  try{
+    const data=await apiRequest("/api/auth/account",{method:"DELETE",csrf:true,body:{password}});
+    currentUser=null;csrfToken="";liveConversation=[];apiEl("account-delete-password").value="";
+    updateAccountUI();await refreshProviderStatus();
+    apiEl("account-security-status").textContent=data.message||"Account deleted.";
+  }catch(error){apiEl("account-security-status").textContent=error.message;}
+  finally{button.disabled=false;}
+});
 apiEl("provider-setup-select").addEventListener("change",()=>providerMessage("Selected "+apiEl("provider-setup-select").value.toUpperCase()+"."));
 apiEl("provider-save-key").addEventListener("click",async()=>{
   if(!currentUser){providerMessage("Sign in before connecting a provider.");return;}
@@ -451,6 +480,13 @@ function addChatMessage(label,content){
   const body=document.createElement("p");body.textContent=content;
   card.append(heading,body);messages.append(card);return card;
 }
+async function revealAssistantText(node,text){
+  const pacing=localStorage.getItem("brokengpt-ai-pacing")||"human";
+  const delay=pacing==="slow"?55:pacing==="normal"?18:pacing==="fast"?4:32;
+  const words=text.split(/(\s+)/);let shown="";
+  for(let i=0;i<words.length;i+=2){shown+=words[i]+(words[i+1]||"");node.textContent=shown;if(i<240)await new Promise(resolve=>setTimeout(resolve,delay));}
+  node.textContent=text;
+}
 async function sendChatMessage(value){
   addChatMessage("YOU",value);
   const provider=apiEl("active-provider").value,model=apiEl("active-model").value.trim();
@@ -460,11 +496,30 @@ async function sendChatMessage(value){
     liveConversation.push({role:"user",content:value});
     const personality=prefs.personality||"BROKENGPT Default";
     const mode=apiEl("mode-select").value||"Balanced";
-    const system="You are BROKENGPT, a helpful AI assistant. Personality: "+personality+". Mode: "+mode+". Explanation level: "+(prefs.explanationLevel||"Adaptive")+". Response length: "+(prefs.responseLength||"Balanced")+". Be clear, safe, honest about uncertainty, and adapt explanations to the user's level.";
+    const languageNames={en:"English",ar:"Arabic",ku:"Kurdish",es:"Spanish",fr:"French",de:"German",it:"Italian",pt:"Portuguese",tr:"Turkish",ru:"Russian",zh:"Chinese",ja:"Japanese",ko:"Korean",hi:"Hindi",ur:"Urdu",fa:"Persian",id:"Indonesian",ms:"Malay",nl:"Dutch",pl:"Polish",bn:"Bengali",th:"Thai",vi:"Vietnamese"};
+    const selectedLanguage=languageNames[localStorage.getItem("brokengpt-language")||"en"]||"English";
+    const primaryPersona=personality==="custom"
+      ? "Custom persona named "+(prefs.customName||"BROKENGPT Custom")+". Instructions: "+(prefs.customDescription||"Use a helpful, clear style.")
+      : "Primary persona: "+personality+".";
+    const secondaryPersona=prefs.combine
+      ? "Blend in this secondary style where useful: "+(prefs.secondary||"Friendly")+". Keep the blend coherent and do not let it reduce accuracy."
+      : "";
+    const emojiRule=prefs.emojis?"Use emojis naturally when they improve clarity.":"Do not use emojis or emoticons in replies.";
+    const system=[
+      "You are BROKENGPT, a helpful AI assistant.",
+      primaryPersona,
+      secondaryPersona,
+      "Active mode: "+mode+".",
+      "Explanation level: "+(prefs.explanationLevel||"Adaptive")+".",
+      "Response length: "+(prefs.responseLength||"Balanced")+".",
+      "Reply in "+selectedLanguage+" by default unless the user asks for another language.",
+      emojiRule,
+      "Be clear, safe, honest about uncertainty, and adapt explanations to the user's level. Never claim to have performed actions you did not perform."
+    ].filter(Boolean).join("\n\n");
     const data=await apiRequest("/api/chat",{method:"POST",csrf:true,body:{provider,model,messages:[{role:"system",content:system},...liveConversation]}});
     const answer=data.reply||"(The provider returned an empty response.)";
     liveConversation.push({role:"assistant",content:answer});
-    addChatMessage("BROKENGPT · "+data.provider.toUpperCase()+" / "+data.model,answer);speakAIReply(answer);
+    const assistantCard=addChatMessage("BROKENGPT · "+data.provider.toUpperCase()+" / "+data.model,"");await revealAssistantText(assistantCard.querySelector("p"),answer);speakAIReply(answer);
     const hist=readList("brokengpt-history");hist.push({title:value.slice(0,48),preview:"You: "+value+"\nBROKENGPT: "+answer.slice(0,700),time:new Date().toISOString()});writeList("brokengpt-history",hist);renderHistory();
   }catch(error){
     if(liveConversation.at(-1)?.role==="user")liveConversation.pop();
@@ -475,44 +530,80 @@ restoreAccount();
 
 
 
-/* Stage 4B: independent model comparison and synthesis */
-function battleUsage(usage){if(!usage)return"Usage details not provided by provider.";const inTokens=usage.prompt_tokens??usage.promptTokenCount,outTokens=usage.completion_tokens??usage.candidatesTokenCount;return [inTokens!=null?"Input: "+inTokens+" tokens":"",outTokens!=null?"Output: "+outTokens+" tokens":""].filter(Boolean).join(" · ")||"Usage details returned.";}
-function battleRender(slot,title,answer,usage){apiEl("battle-"+slot+"-title").textContent=title;apiEl("battle-"+slot+"-result").textContent=answer;apiEl("battle-"+slot+"-usage").textContent=usage||"";}
+/* Stage 4B: configurable multi-model AI Battle */
+function battleUsage(usage){if(!usage)return"Usage details not provided by provider.";const input=usage.prompt_tokens??usage.promptTokenCount,output=usage.completion_tokens??usage.candidatesTokenCount;return [input!=null?"Input: "+input+" tokens":"",output!=null?"Output: "+output+" tokens":""].filter(Boolean).join(" · ")||"Usage details returned.";}
+const battleDefaults=[{provider:"openai",model:"gpt-4o-mini"},{provider:"gemini",model:"gemini-2.5-flash"}];
+function battleParticipantConfig(){return [...document.querySelectorAll(".battle-participant")].map((card,index)=>({provider:card.querySelector("[data-battle-provider]").value,model:card.querySelector("[data-battle-model]").value.trim(),index}));}
+function renderBattleParticipants(){
+  const count=Number(apiEl("battle-count").value)||2,container=apiEl("battle-participants"),synth=apiEl("battle-synthesizer");
+  const previous=battleParticipantConfig(),configs=Array.from({length:count},(_,i)=>previous[i]||battleDefaults[i]||{provider:i%2?"gemini":"openai",model:i%2?"gemini-2.5-flash":"gpt-4o-mini"});
+  container.replaceChildren();synth.replaceChildren();
+  configs.forEach((config,i)=>{
+    const card=document.createElement("div");card.className="battle-participant";
+    const heading=document.createElement("h3");heading.textContent="AI Participant "+(i+1);card.append(heading);
+    const providerLabel=document.createElement("label");providerLabel.textContent="Provider";card.append(providerLabel);
+    const provider=document.createElement("select");provider.dataset.battleProvider="";provider.setAttribute("aria-label","Provider for participant "+(i+1));
+    [["openai","OpenAI"],["gemini","Google Gemini"]].forEach(([value,label])=>{const option=document.createElement("option");option.value=value;option.textContent=label;provider.append(option)});provider.value=config.provider;card.append(provider);
+    const modelLabel=document.createElement("label");modelLabel.textContent="Model ID";card.append(modelLabel);
+    const model=document.createElement("input");model.dataset.battleModel="";model.value=config.model;model.spellcheck=false;model.placeholder="Enter model ID";model.setAttribute("aria-label","Model ID for participant "+(i+1));card.append(model);
+    container.append(card);
+    const option=document.createElement("option");option.value=String(i);option.textContent="Participant "+(i+1)+" · "+(config.provider==="openai"?"OpenAI":"Gemini");synth.append(option);
+    provider.addEventListener("change",()=>{synth.options[i].textContent="Participant "+(i+1)+" · "+(provider.value==="openai"?"OpenAI":"Gemini")});
+  });
+  synth.value="0";
+}
+apiEl("battle-count").addEventListener("change",renderBattleParticipants);
+renderBattleParticipants();
 apiEl("run-battle").addEventListener("click",async()=>{
   const prompt=apiEl("battle-prompt").value.trim();
   if(!prompt){apiEl("battle-status").textContent="Enter a prompt first.";return;}
   if(!currentUser){apiEl("battle-status").textContent="Sign in and connect your provider keys in Settings first.";return;}
-  const a={provider:apiEl("battle-provider-a").value,model:apiEl("battle-model-a").value.trim()};
-  const b={provider:apiEl("battle-provider-b").value,model:apiEl("battle-model-b").value.trim()};
-  const synth=apiEl("battle-synthesizer").value==="a"?a:b;
-  if(!a.model||!b.model){apiEl("battle-status").textContent="Enter a model ID for both models.";return;}
+  const participants=battleParticipantConfig();
+  const invalid=participants.findIndex(p=>!p.model);
+  if(invalid!==-1){apiEl("battle-status").textContent="Enter a model ID for participant "+(invalid+1)+".";return;}
+  const synth=participants[Number(apiEl("battle-synthesizer").value)||0];
   const button=apiEl("run-battle");button.disabled=true;button.textContent="Battle running…";
-  battleRender("a",a.provider.toUpperCase()+" · "+a.model,"Waiting for response…","");
-  battleRender("b",b.provider.toUpperCase()+" · "+b.model,"Waiting for response…","");
-  apiEl("battle-final-result").textContent="Waiting for both models…";
-  apiEl("battle-status").textContent="Sending the same prompt to both models…";
+  const resultsRoot=apiEl("battle-results");resultsRoot.replaceChildren();
+  const cards=participants.map((p,i)=>{
+    const card=document.createElement("article");card.className="tile";
+    const heading=document.createElement("b");heading.textContent="PARTICIPANT "+(i+1);
+    const title=document.createElement("h3");title.textContent=(p.provider==="openai"?"OPENAI":"GEMINI")+" · "+p.model;
+    const answer=document.createElement("p");answer.textContent="Waiting for response…";
+    const usage=document.createElement("small");
+    card.append(heading,title,answer,usage);resultsRoot.append(card);return{card,answer,usage};
+  });
+  const combined=document.createElement("article");combined.className="tile battle-combined";
+  const combinedLabel=document.createElement("b");combinedLabel.textContent="COMBINED RESPONSE";
+  const combinedTitle=document.createElement("h3");combinedTitle.textContent="Best combined answer";
+  const combinedAnswer=document.createElement("p");combinedAnswer.id="battle-final-result";combinedAnswer.textContent="Waiting for all participants…";
+  combined.append(combinedLabel,combinedTitle,combinedAnswer);resultsRoot.append(combined);
+  apiEl("battle-status").textContent="Sending the same prompt to "+participants.length+" AI participants…";
   try{
-    const ask=(slot,config)=>apiRequest("/api/chat",{method:"POST",csrf:true,body:{provider:config.provider,model:config.model,messages:[{role:"system",content:"You are an independent AI participant in BROKENGPT AI Battle. Answer the user's prompt carefully and clearly. Do not refer to another model's answer because you cannot see it."},{role:"user",content:prompt}]}});
-    const results=await Promise.allSettled([ask("a",a),ask("b",b)]);
-    const first=results[0].status==="fulfilled"?results[0].value:null;
-    const second=results[1].status==="fulfilled"?results[1].value:null;
-    battleRender("a",a.provider.toUpperCase()+" · "+a.model,first?.reply||("Request failed: "+results[0].reason.message),first?battleUsage(first.usage):"");
-    battleRender("b",b.provider.toUpperCase()+" · "+b.model,second?.reply||("Request failed: "+results[1].reason.message),second?battleUsage(second.usage):"");
-    if(!first&&!second){apiEl("battle-final-result").textContent="Neither model returned an answer. Check your provider connections and model IDs.";apiEl("battle-status").textContent="Battle failed.";return;}
-    if(!first||!second){apiEl("battle-final-result").textContent="Only one model responded. The individual answer is shown above; synthesis was skipped because two answers are needed.";apiEl("battle-status").textContent="Partial result: one model request failed.";return;}
-    apiEl("battle-status").textContent="Both models answered. Comparing and synthesizing…";
+    const requests=participants.map(config=>apiRequest("/api/chat",{method:"POST",csrf:true,body:{provider:config.provider,model:config.model,messages:[
+      {role:"system",content:"You are an independent AI participant in BROKENGPT AI Battle. Answer the user's prompt carefully and clearly. Do not refer to other participants' answers because you cannot see them."},
+      {role:"user",content:prompt}
+    ]}}));
+    const settled=await Promise.allSettled(requests);
+    const successful=[];
+    settled.forEach((result,i)=>{
+      if(result.status==="fulfilled"){
+        const data=result.value;cards[i].answer.textContent=data.reply||"(The provider returned an empty response.)";cards[i].usage.textContent=battleUsage(data.usage);successful.push({config:participants[i],reply:data.reply||""});
+      }else{cards[i].answer.textContent="Request failed: "+(result.reason?.message||"Unknown provider error");}
+    });
+    if(!successful.length){combinedAnswer.textContent="No participant returned an answer. Check provider connections and model IDs.";apiEl("battle-status").textContent="Battle failed.";return;}
+    if(successful.length===1){combinedAnswer.textContent="Only one participant responded. Its answer is shown above; synthesis needs at least two successful answers.";apiEl("battle-status").textContent="Partial result: only one participant responded.";return;}
+    apiEl("battle-status").textContent=successful.length+" of "+participants.length+" participants answered. Comparing and synthesizing…";
+    const comparison=successful.map((item,i)=>"Participant "+(i+1)+" ("+item.config.provider+" / "+item.config.model+") answer:\n"+item.reply).join("\n\n");
     const synthesis=await apiRequest("/api/chat",{method:"POST",csrf:true,body:{provider:synth.provider,model:synth.model,messages:[
-      {role:"system",content:"You are the BROKENGPT AI Battle judge. Compare two independent answers to the same prompt. Identify agreement, meaningful differences, unsupported claims, and omissions. Then produce one clear, accurate, useful combined answer. Do not automatically prefer either model. Be honest about uncertainty and do not claim external verification."},
-      {role:"user",content:"Original prompt:\n"+prompt+"\n\nModel A ("+a.provider+" / "+a.model+") answer:\n"+first.reply+"\n\nModel B ("+b.provider+" / "+b.model+") answer:\n"+second.reply+"\n\nCompare them briefly, then give the strongest combined answer."}
+      {role:"system",content:"You are the BROKENGPT AI Battle judge. Compare all independent answers to the same prompt. Identify agreement, meaningful differences, unsupported claims, and omissions. Do not automatically prefer any participant. Produce one clear, accurate, useful combined answer. Be honest about uncertainty and do not claim external verification."},
+      {role:"user",content:"Original prompt:\n"+prompt+"\n\n"+comparison+"\n\nCompare all answers briefly, then give the strongest combined answer."}
     ]}});
-    apiEl("battle-final-result").textContent=synthesis.reply||"The synthesis model returned an empty response.";
-    apiEl("battle-status").textContent="Battle complete. Two independent answers and one synthesis were generated.";
-  }catch(error){apiEl("battle-final-result").textContent="Synthesis could not be completed: "+error.message;apiEl("battle-status").textContent="The battle stopped during synthesis.";}
-  finally{button.disabled=false;button.textContent="⚔ Run AI Battle";}
+    combinedAnswer.textContent=synthesis.reply||"The synthesis participant returned an empty response.";
+    apiEl("battle-status").textContent="Battle complete: "+successful.length+" independent answers and one synthesis generated.";
+  }catch(error){combinedAnswer.textContent="Synthesis could not be completed: "+error.message;apiEl("battle-status").textContent="The battle stopped during synthesis.";}
+  finally{button.disabled=false;button.textContent="◆ Run AI Battle";}
 });
-
-
-
+ 
 /* Stage 4C: optional device speech input and output */
 const SpeechRecognitionAPI=window.SpeechRecognition||window.webkitSpeechRecognition;
 let speechRecognition=null;

@@ -120,3 +120,25 @@ body.rgb-direct-switch{--rgb-easing:steps(1,end)}
 .wifi-device-note small,.offline-item small{color:#999}
 .wifi-device-note button,.offline-item button{margin-top:8px}
 @media(max-width:650px){.tool-directory{grid-template-columns:1fr}.hacking-tabs{display:grid;grid-template-columns:1fr 1fr}}
+
+.account-security-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin:18px 0;padding:14px;border:1px solid var(--line);border-radius:8px}.account-security-grid>div{min-width:0}.account-security-grid input{width:100%;margin-bottom:8px}.account-security-grid button{min-height:44px}@media(max-width:720px){.account-security-grid{grid-template-columns:1fr}}
+
+:root{--text-red:#ff4b55}
+body,body *{color:var(--text-red)!important}
+button,form button,.settings-card button{background:#26090d!important;border-color:#6f1820!important}
+input::placeholder,textarea::placeholder{color:#c94b53!important;opacity:1}
+
+
+/* True blood-red theme: deep crimson text with clear red accents */
+:root{--red:#B00000;--text-red:#B00000}
+body,body *{color:var(--text-red)!important}
+.brand:first-letter,.brand b,em,.message b,.tile>b,.rgb-studio h3,.mode-bar label,.label,section>small,.settings-card label,.battle-controls label,.creative-options label,.ai-connection-bar label{color:#B00000!important}
+button,form button,.settings-card button{background:#300000!important;border-color:#8A0303!important;color:#B00000!important}
+nav button:hover,nav button.selected,.hacking-tab.selected{background:#3A0000!important;border-color:#B00000!important;color:#D00000!important}
+input::placeholder,textarea::placeholder{color:#8A0303!important}
+
+/* Configurable multi-participant AI Battle */
+.battle-count-row{display:grid;grid-template-columns:minmax(150px,1fr) minmax(100px,180px);gap:10px;align-items:center;margin:16px 0;padding:12px;border:1px solid var(--line);border-radius:8px;background:#100707}
+.battle-count-row label{margin:0!important}.battle-count-row select{width:100%;background:#090000;color:inherit;border:1px solid var(--line);border-radius:7px;padding:10px}.battle-count-row .status{grid-column:1/-1;margin:0}
+#battle-participants{grid-template-columns:repeat(2,minmax(0,1fr))}#battle-participants .battle-participant{min-width:0}
+@media(max-width:600px){#battle-participants{grid-template-columns:1fr}.battle-count-row{grid-template-columns:1fr}}

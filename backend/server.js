@@ -4,7 +4,7 @@ const crypto=require('node:crypto'),path=require('node:path'),fs=require('node:f
 const express=require('express'),helmet=require('helmet'),cookieParser=require('cookie-parser'),Database=require('better-sqlite3');
 const {rateLimit}=require('express-rate-limit');
 const app=express(),PORT=Number(process.env.PORT||3000),ROOT=path.resolve(__dirname,'..');
-const DATA=path.join(__dirname,'data'),DBFILE=path.join(DATA,'brokengpt.sqlite');
+const DATA=path.resolve(process.env.BROKENGPT_DATA_DIR||path.join(__dirname,'data')),DBFILE=path.join(DATA,'brokengpt.sqlite');
 const SESSION_MS=30*24*60*60*1000,COOKIE='brokengpt_session',PROD=process.env.NODE_ENV==='production';
 if(process.env.TRUST_PROXY==='1')app.set('trust proxy',1);
 fs.mkdirSync(DATA,{recursive:true,mode:0o700});
@@ -28,13 +28,38 @@ const provider=v=>v==='openai'||v==='gemini'?v:null;
 function messagesOk(items){if(!Array.isArray(items)||!items.length||items.length>40)return null;const out=[];for(const m of items){if(!m||!['user','assistant','system'].includes(m.role)||typeof m.content!=='string'||m.content.length>12000)return null;out.push({role:m.role,content:m.content});}return out;}
 app.disable('x-powered-by');app.use(cookieParser());app.use(helmet({crossOriginResourcePolicy:{policy:'same-origin'},contentSecurityPolicy:{directives:{'style-src':["'self'","'unsafe-inline'"],'img-src':["'self'",'data:','blob:']}}}));app.use(express.json({limit:'24kb',strict:true}));
 app.use((req,res,next)=>/^\/(?:backend|node_modules|\.env|package\.json)(?:\/|$)/i.test(req.path)?res.sendStatus(404):next());
-const authLimit=rateLimit({windowMs:15*60*1000,limit:8,standardHeaders:'draft-7',legacyHeaders:false});
+const authLimit=rateLimit({windowMs:15*60*1000,limit:12,standardHeaders:'draft-7',legacyHeaders:false});
 const apiLimit=rateLimit({windowMs:60*1000,limit:30,standardHeaders:'draft-7',legacyHeaders:false});
 app.get('/api/health',(_req,res)=>res.json({ok:true,service:'BROKENGPT API',version:'0.1.0'}));
 app.post('/api/auth/register',authLimit,(req,res)=>{const username=typeof req.body?.username==='string'?req.body.username.trim():'';const password=typeof req.body?.password==='string'?req.body.password:'';if(!/^[a-zA-Z0-9_]{3,24}$/.test(username))return fail(res,400,'Username must be 3–24 characters using letters, numbers, or underscores.');if(password.length<10||password.length>128)return fail(res,400,'Password must be 10–128 characters.');const salt=crypto.randomBytes(16),passwordHash=crypto.scryptSync(password,salt,64).toString('hex'),id=crypto.randomUUID();try{db.prepare('INSERT INTO users VALUES(?,?,?,?,?)').run(id,username,salt.toString('hex'),passwordHash,Date.now());}catch(e){if(String(e.code).includes('SQLITE_CONSTRAINT'))return fail(res,409,'That username is already taken.');throw e;}res.status(201).json({user:{id,username},csrfToken:newSession(id,res)});});
 app.post('/api/auth/login',authLimit,(req,res)=>{const username=typeof req.body?.username==='string'?req.body.username.trim():'';const password=typeof req.body?.password==='string'?req.body.password:'';const u=db.prepare('SELECT id,username,password_salt,password_hash FROM users WHERE username=? COLLATE NOCASE').get(username);const salt=u?Buffer.from(u.password_salt,'hex'):Buffer.alloc(16),expected=u?Buffer.from(u.password_hash,'hex'):Buffer.alloc(64),actual=crypto.scryptSync(password.slice(0,128),salt,64);if(!u||!crypto.timingSafeEqual(actual,expected))return fail(res,401,'Username or password is incorrect.');res.json({user:{id:u.id,username:u.username},csrfToken:newSession(u.id,res)});});
 app.get('/api/auth/me',auth,(req,res)=>{const token=crypto.randomBytes(24).toString('base64url');db.prepare('UPDATE sessions SET csrf_hash=? WHERE token_hash=?').run(sha(token),req.auth.token_hash);res.json({user:{id:req.auth.user_id,username:req.auth.username},csrfToken:token});});
 app.post('/api/auth/logout',auth,csrf,(req,res)=>{db.prepare('DELETE FROM sessions WHERE token_hash=?').run(req.auth.token_hash);res.clearCookie(COOKIE,cookieOptions());res.json({ok:true});});
+app.post('/api/auth/password',auth,csrf,authLimit,(req,res)=>{
+  const currentPassword=typeof req.body?.currentPassword==='string'?req.body.currentPassword:'';
+  const newPassword=typeof req.body?.newPassword==='string'?req.body.newPassword:'';
+  if(newPassword.length<10||newPassword.length>128)return fail(res,400,'New password must be 10–128 characters.');
+  const user=db.prepare('SELECT password_salt,password_hash FROM users WHERE id=?').get(req.auth.user_id);
+  if(!user)return fail(res,401,'Account not found. Please sign in again.');
+  const salt=Buffer.from(user.password_salt,'hex'),expected=Buffer.from(user.password_hash,'hex');
+  const actual=crypto.scryptSync(currentPassword.slice(0,128),salt,64);
+  if(!crypto.timingSafeEqual(actual,expected))return fail(res,401,'Current password is incorrect.');
+  const nextSalt=crypto.randomBytes(16),nextHash=crypto.scryptSync(newPassword,nextSalt,64);
+  db.prepare('UPDATE users SET password_salt=?,password_hash=? WHERE id=?').run(nextSalt.toString('hex'),nextHash.toString('hex'),req.auth.user_id);
+  db.prepare('DELETE FROM sessions WHERE user_id=? AND token_hash<>?').run(req.auth.user_id,req.auth.token_hash);
+  res.json({ok:true,message:'Password changed. Other sessions were signed out.'});
+});
+app.delete('/api/auth/account',auth,csrf,authLimit,(req,res)=>{
+  const password=typeof req.body?.password==='string'?req.body.password:'';
+  const user=db.prepare('SELECT password_salt,password_hash FROM users WHERE id=?').get(req.auth.user_id);
+  if(!user)return fail(res,401,'Account not found. Please sign in again.');
+  const salt=Buffer.from(user.password_salt,'hex'),expected=Buffer.from(user.password_hash,'hex');
+  const actual=crypto.scryptSync(password.slice(0,128),salt,64);
+  if(!crypto.timingSafeEqual(actual,expected))return fail(res,401,'Password is incorrect. Account was not deleted.');
+  db.prepare('DELETE FROM users WHERE id=?').run(req.auth.user_id);
+  res.clearCookie(COOKIE,cookieOptions());
+  res.json({ok:true,message:'Account and linked provider keys were deleted.'});
+});
 app.get('/api/providers',auth,(req,res)=>{const rows=db.prepare('SELECT provider,updated_at FROM provider_keys WHERE user_id=?').all(req.auth.user_id),map=Object.fromEntries(rows.map(r=>[r.provider,{connected:true,updatedAt:r.updated_at}]));res.json({providers:{openai:map.openai||{connected:false},gemini:map.gemini||{connected:false}}});});
 app.put('/api/providers/:provider/key',auth,csrf,(req,res)=>{const p=provider(req.params.provider),apiKey=typeof req.body?.apiKey==='string'?req.body.apiKey.trim():'';if(!p)return fail(res,404,'Provider is not supported yet.');if(apiKey.length<12||apiKey.length>500||/\s/.test(apiKey))return fail(res,400,'Enter a valid provider API key.');let secret;try{secret=encrypt(apiKey);}catch{return fail(res,503,'Provider key storage is not configured on this server yet.');}db.prepare('INSERT INTO provider_keys(user_id,provider,encrypted_value,iv,auth_tag,updated_at) VALUES(@user_id,@provider,@encrypted_value,@iv,@auth_tag,@updated_at) ON CONFLICT(user_id,provider) DO UPDATE SET encrypted_value=excluded.encrypted_value,iv=excluded.iv,auth_tag=excluded.auth_tag,updated_at=excluded.updated_at').run({user_id:req.auth.user_id,provider:p,...secret,updated_at:Date.now()});res.json({ok:true,provider:p,message:'Provider key encrypted and saved on this server.'});});
 app.delete('/api/providers/:provider/key',auth,csrf,(req,res)=>{const p=provider(req.params.provider);if(!p)return fail(res,404,'Provider is not supported yet.');db.prepare('DELETE FROM provider_keys WHERE user_id=? AND provider=?').run(req.auth.user_id,p);res.json({ok:true,provider:p});});
