@@ -128,7 +128,48 @@ test('backend health, account, session, CSRF, and encrypted provider-key flows',
       body: JSON.stringify({ username: 'test_user', password: 'a-safe-test-password-123' })
     });
     assert.equal(login.status, 200);
-    assert.ok(login.headers.get('set-cookie'));
+    cookie = login.headers.get('set-cookie')?.split(';')[0];
+    assert.ok(cookie);
+    const signedIn = await request('/api/auth/me', {}, cookie);
+    const signedInBody = await signedIn.json();
+
+    const changePassword = await request('/api/auth/password', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-csrf-token': signedInBody.csrfToken },
+      body: JSON.stringify({ currentPassword: 'a-safe-test-password-123', newPassword: 'a-new-safe-test-password-456' })
+    }, cookie);
+    assert.equal(changePassword.status, 200);
+
+    const oldPasswordLogin = await request('/api/auth/login', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ username: 'test_user', password: 'a-safe-test-password-123' })
+    });
+    assert.equal(oldPasswordLogin.status, 401);
+
+    const newPasswordLogin = await request('/api/auth/login', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ username: 'test_user', password: 'a-new-safe-test-password-456' })
+    });
+    assert.equal(newPasswordLogin.status, 200);
+    cookie = newPasswordLogin.headers.get('set-cookie')?.split(';')[0];
+    const currentSession = await request('/api/auth/me', {}, cookie);
+    const currentSessionBody = await currentSession.json();
+
+    const deleteAccount = await request('/api/auth/account', {
+      method: 'DELETE',
+      headers: { 'content-type': 'application/json', 'x-csrf-token': currentSessionBody.csrfToken },
+      body: JSON.stringify({ password: 'a-new-safe-test-password-456' })
+    }, cookie);
+    assert.equal(deleteAccount.status, 200);
+
+    const deletedAccountLogin = await request('/api/auth/login', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ username: 'test_user', password: 'a-new-safe-test-password-456' })
+    });
+    assert.equal(deletedAccountLogin.status, 401);
   } finally {
     child.kill('SIGTERM');
     await new Promise(resolve => {
