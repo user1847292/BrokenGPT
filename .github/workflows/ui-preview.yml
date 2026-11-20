@@ -1,0 +1,55 @@
+name: BROKENGPT UI preview screenshots
+
+on:
+  push:
+    branches: [main, "build/**"]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install backend and browser test dependencies
+        working-directory: backend
+        run: |
+          npm install
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+      - name: Start local BROKENGPT backend
+        working-directory: backend
+        env:
+          PORT: 3000
+          NODE_ENV: test
+          BROKENGPT_ENCRYPTION_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+          BROKENGPT_DATA_DIR: /tmp/brokengpt-preview-data
+        run: |
+          npm start > /tmp/brokengpt-preview.log 2>&1 &
+          for attempt in $(seq 1 40); do
+            if curl --fail --silent http://127.0.0.1:3000/api/health > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/brokengpt-preview.log
+          exit 1
+      - name: Capture actual app screenshots
+        run: node scripts/capture-screenshots.cjs
+      - name: Upload screenshot preview gallery
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: BROKENGPT-actual-screenshot-previews
+          path: screenshots/actual/
+          if-no-files-found: warn
+          retention-days: 30
