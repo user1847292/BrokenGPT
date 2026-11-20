@@ -100,3 +100,23 @@ body.rgb-direct-switch{--rgb-easing:steps(1,end)}
 .voice-toolbar{max-width:700px;margin:12px auto;padding:12px;display:flex;align-items:center;gap:9px;flex-wrap:wrap;background:var(--panel);border:1px solid var(--line);border-radius:9px}.voice-toolbar button{background:#292929;color:#fff;border:1px solid var(--line);border-radius:7px;padding:9px 12px;min-height:40px}.voice-toolbar button:disabled{opacity:.45}.voice-toolbar label{font-size:12px;color:#ccc}.voice-toolbar .voice-toggle{display:flex;align-items:center;gap:6px}.voice-toolbar select{background:#090909;color:#fff;border:1px solid var(--line);border-radius:6px;padding:8px}.voice-toolbar .status{flex-basis:100%;margin:0;font-size:11px}
 
 .creative-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:15px 0}.creative-options>div{display:grid;gap:6px}.creative-options label{font-size:12px;color:#c47b7e;font-weight:700}.creative-options select,.settings-card textarea{background:#090909;color:#fff;border:1px solid var(--line);border-radius:7px;padding:10px;width:100%}.creative-output{display:grid;gap:12px;margin-top:16px}.creative-output img{max-width:100%;height:auto;border-radius:9px;border:1px solid var(--line)}.creative-output button,.settings-card>button{min-height:42px}@media(max-width:620px){.creative-options{grid-template-columns:1fr}}
+
+/* Hacking Center: clear root/non-root directories and safe management previews */
+.hacking-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:20px 0}
+.hacking-tab{min-height:44px;padding:10px 13px;border:1px solid var(--line);border-radius:8px;background:#171717;color:#ddd;cursor:pointer}
+.hacking-tab.selected{background:#351316;border-color:#9b343b;color:#fff}
+.hack-panel{display:none}.hack-panel.active{display:block}
+.tool-directory{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:16px 0}
+.tool-card,.wifi-status-card{background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:16px}
+.tool-card b{display:block;font-size:16px;margin-bottom:8px}
+.tool-card p{color:#aaa;margin:10px 0}
+.tool-card small{display:block;color:#999;line-height:1.5}
+.tool-tag{display:inline-block;background:#281416;border:1px solid #633037;color:#ff9ba0;padding:3px 7px;border-radius:5px;font-size:10px;font-weight:800;letter-spacing:.5px}
+.wifi-status-card{margin:16px 0}
+.wifi-status-card p{color:#aaa}
+.wifi-device-list,.offline-items{display:grid;gap:8px;margin-top:12px}
+.wifi-device-note,.offline-item{border:1px solid var(--line);border-radius:8px;padding:11px;background:#0b0b0b}
+.wifi-device-note b,.offline-item b{display:block}
+.wifi-device-note small,.offline-item small{color:#999}
+.wifi-device-note button,.offline-item button{margin-top:8px}
+@media(max-width:650px){.tool-directory{grid-template-columns:1fr}.hacking-tabs{display:grid;grid-template-columns:1fr 1fr}}
