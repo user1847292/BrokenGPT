@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: brokengpt-private-demo
+    runtime: node
+    plan: starter
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeploy: false
+    disk:
+      name: brokengpt-demo-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: TRUST_PROXY
+        value: "1"
+      - key: BROKENGPT_DATA_DIR
+        value: /var/data
+      - key: BROKENGPT_ENCRYPTION_KEY
+        generateValue: true
+      - key: BROKENGPT_DEMO_ACCESS_PASSWORD
+        sync: false
