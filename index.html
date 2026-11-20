@@ -42,6 +42,22 @@
 <div class="check-row"><input id="character-outside-toggle" type="checkbox"><label for="character-outside-toggle">Allow Character to Get Out of the App</label></div>
 <p id="character-outside-status" class="status" aria-live="polite">A real floating companion outside the app requires a native Android companion service and Android overlay permission. This web prototype cannot keep a character above other apps.</p>
 <button id="character-test-warning" type="button">Preview the goodbye warning</button></div>
+<div class="settings-card"><h2>🎬 Character Talking Scenes</h2>
+<p>Choose a scene to hear your character say it. More scenes can be added as the character grows.</p>
+<label for="character-scene">Choose a talking scene</label>
+<select id="character-scene">
+<option value="welcome">You're back!</option>
+<option value="happy">Super happy</option>
+<option value="surprised">You scared me!</option>
+<option value="angry">A little annoyed</option>
+<option value="sleepy">Sleepy break</option>
+<option value="joke">That was funny</option>
+<option value="ready">Ready for an adventure</option>
+<option value="goodbye">See you later</option>
+<option value="dont-close">DON'T CLOSE ME! (your scene)</option>
+</select>
+<button id="play-character-scene" type="button">Play talking scene</button>
+<p id="character-scene-status" class="status" aria-live="polite">Select a scene and press play.</p></div>
 <div class="settings-card"><h2>📸 Screenshot understanding</h2><p>Upload a screenshot for the character/AI to inspect. The image preview works here; automatic understanding needs a connected vision model.</p>
 <label for="character-screenshot">Choose screenshot</label><input id="character-screenshot" type="file" accept="image/*">
 <div id="character-screenshot-preview" class="screenshot-preview" aria-live="polite"></div>
