@@ -444,7 +444,7 @@ apiEl("provider-remove-key").addEventListener("click",async()=>{
   try{await apiRequest("/api/providers/"+provider+"/key",{method:"DELETE",csrf:true});providerMessage(provider.toUpperCase()+" disconnected.");await refreshProviderStatus();}
   catch(error){providerMessage(error.message);}
 });
-apiEl("active-provider").addEventListener("change",refreshProviderStatus);
+apiEl("active-provider").addEventListener("change",()=>{const model=apiEl("active-model");if(model.value==="gpt-4o-mini"||model.value==="gemini-2.5-flash")model.value=apiEl("active-provider").value==="gemini"?"gemini-2.5-flash":"gpt-4o-mini";refreshProviderStatus();});
 function addChatMessage(label,content){
   const card=document.createElement("article");card.className="message";
   const heading=document.createElement("b");heading.textContent=label;
