@@ -518,6 +518,35 @@ async function sendChatMessage(value){
 }
 restoreAccount();
 
+/* Official release checker in Account Settings */
+const CURRENT_APP_VERSION="0.1.0";
+const RELEASES_API="https://api.github.com/repos/user1847292/BrokenGPT/releases/latest";
+let latestReleaseUrl="";
+async function checkForUpdates(){
+ const status=apiEl("update-status"),version=apiEl("update-version"),button=apiEl("check-updates"),open=apiEl("open-latest-release"),log=apiEl("update-changelog");
+ if(!status)return;
+ button.disabled=true;button.textContent="Checking…";status.textContent="Checking the official BrokenGPT GitHub Releases page…";log.replaceChildren();open.disabled=true;
+ try{
+  const response=await fetch(RELEASES_API,{headers:{Accept:"application/vnd.github+json"},cache:"no-store"});
+  if(response.status===404)throw new Error("No published release was found yet. Check again after the first official release.");
+  if(!response.ok)throw new Error("GitHub could not be reached (HTTP "+response.status+"). Try again later.");
+  const release=await response.json();
+  if(!release||release.draft||release.prerelease||!release.tag_name)throw new Error("The latest release is not a stable published release.");
+  const latest=String(release.tag_name).replace(/^v/i,"");
+  latestReleaseUrl=release.html_url||"";
+  version.textContent="Current version: "+CURRENT_APP_VERSION+" · Latest version: "+latest;
+  open.disabled=!latestReleaseUrl;
+  if(latest!==CURRENT_APP_VERSION){
+   status.textContent="A newer release may be available. Review its notes and assets before installing.";
+   const heading=safeText("h3",release.name||release.tag_name);const body=safeText("p",(release.body||"No changelog was provided.").slice(0,6000));log.append(heading,body);
+  }else{status.textContent="You're using the latest published version.";}
+ }catch(error){status.textContent=error.message;}
+ finally{button.disabled=false;button.textContent="Check for updates";}
+}
+apiEl("check-updates")?.addEventListener("click",checkForUpdates);
+apiEl("open-latest-release")?.addEventListener("click",()=>{if(latestReleaseUrl)window.open(latestReleaseUrl,"_blank","noopener,noreferrer");});
+
+
 
 
 /* Stage 4B: independent model comparison and synthesis */
