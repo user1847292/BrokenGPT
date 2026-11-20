@@ -460,7 +460,26 @@ async function sendChatMessage(value){
     liveConversation.push({role:"user",content:value});
     const personality=prefs.personality||"BROKENGPT Default";
     const mode=apiEl("mode-select").value||"Balanced";
-    const system="You are BROKENGPT, a helpful AI assistant. Personality: "+personality+". Mode: "+mode+". Explanation level: "+(prefs.explanationLevel||"Adaptive")+". Response length: "+(prefs.responseLength||"Balanced")+". Be clear, safe, honest about uncertainty, and adapt explanations to the user's level.";
+    const languageNames={en:"English",ar:"Arabic",ku:"Kurdish",es:"Spanish",fr:"French",de:"German",it:"Italian",pt:"Portuguese",tr:"Turkish",ru:"Russian",zh:"Chinese",ja:"Japanese",ko:"Korean",hi:"Hindi",ur:"Urdu",fa:"Persian",id:"Indonesian",ms:"Malay",nl:"Dutch",pl:"Polish",bn:"Bengali",th:"Thai",vi:"Vietnamese"};
+    const selectedLanguage=languageNames[localStorage.getItem("brokengpt-language")||"en"]||"English";
+    const primaryPersona=personality==="custom"
+      ? "Custom persona named "+(prefs.customName||"BROKENGPT Custom")+". Instructions: "+(prefs.customDescription||"Use a helpful, clear style.")
+      : "Primary persona: "+personality+".";
+    const secondaryPersona=prefs.combine
+      ? "Blend in this secondary style where useful: "+(prefs.secondary||"Friendly")+". Keep the blend coherent and do not let it reduce accuracy."
+      : "";
+    const emojiRule=prefs.emojis?"Use emojis naturally when they improve clarity.":"Avoid unnecessary emojis.";
+    const system=[
+      "You are BROKENGPT, a helpful AI assistant.",
+      primaryPersona,
+      secondaryPersona,
+      "Active mode: "+mode+".",
+      "Explanation level: "+(prefs.explanationLevel||"Adaptive")+".",
+      "Response length: "+(prefs.responseLength||"Balanced")+".",
+      "Reply in "+selectedLanguage+" by default unless the user asks for another language.",
+      emojiRule,
+      "Be clear, safe, honest about uncertainty, and adapt explanations to the user's level. Never claim to have performed actions you did not perform."
+    ].filter(Boolean).join("\n\n");
     const data=await apiRequest("/api/chat",{method:"POST",csrf:true,body:{provider,model,messages:[{role:"system",content:system},...liveConversation]}});
     const answer=data.reply||"(The provider returned an empty response.)";
     liveConversation.push({role:"assistant",content:answer});
