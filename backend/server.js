@@ -39,6 +39,74 @@ app.get('/api/providers',auth,(req,res)=>{const rows=db.prepare('SELECT provider
 app.put('/api/providers/:provider/key',auth,csrf,(req,res)=>{const p=provider(req.params.provider),apiKey=typeof req.body?.apiKey==='string'?req.body.apiKey.trim():'';if(!p)return fail(res,404,'Provider is not supported yet.');if(apiKey.length<12||apiKey.length>500||/\s/.test(apiKey))return fail(res,400,'Enter a valid provider API key.');let secret;try{secret=encrypt(apiKey);}catch{return fail(res,503,'Provider key storage is not configured on this server yet.');}db.prepare('INSERT INTO provider_keys(user_id,provider,encrypted_value,iv,auth_tag,updated_at) VALUES(@user_id,@provider,@encrypted_value,@iv,@auth_tag,@updated_at) ON CONFLICT(user_id,provider) DO UPDATE SET encrypted_value=excluded.encrypted_value,iv=excluded.iv,auth_tag=excluded.auth_tag,updated_at=excluded.updated_at').run({user_id:req.auth.user_id,provider:p,...secret,updated_at:Date.now()});res.json({ok:true,provider:p,message:'Provider key encrypted and saved on this server.'});});
 app.delete('/api/providers/:provider/key',auth,csrf,(req,res)=>{const p=provider(req.params.provider);if(!p)return fail(res,404,'Provider is not supported yet.');db.prepare('DELETE FROM provider_keys WHERE user_id=? AND provider=?').run(req.auth.user_id,p);res.json({ok:true,provider:p});});
 app.post('/api/chat',auth,csrf,apiLimit,async(req,res)=>{const p=provider(req.body?.provider),model=typeof req.body?.model==='string'?req.body.model.trim():'',msgs=messagesOk(req.body?.messages);if(!p)return fail(res,400,'Choose OpenAI or Gemini.');if(!/^[a-zA-Z0-9._:-]{2,100}$/.test(model))return fail(res,400,'Enter a valid model identifier.');if(!msgs)return fail(res,400,'Messages must contain 1–40 valid entries, each under 12,000 characters.');const row=db.prepare('SELECT * FROM provider_keys WHERE user_id=? AND provider=?').get(req.auth.user_id,p);if(!row)return fail(res,400,'Connect this provider in Settings first.');let secret;try{secret=decrypt(row);}catch{return fail(res,503,'The server cannot decrypt the saved provider key. Check its encryption configuration.');}try{let response,data;if(p==='openai'){response=await fetch('https://api.openai.com/v1/chat/completions',{method:'POST',headers:{Authorization:'Bearer '+secret,'Content-Type':'application/json'},body:JSON.stringify({model,messages:msgs,max_tokens:1800}),signal:AbortSignal.timeout(60000)});data=await response.json().catch(()=>({}));if(!response.ok)return fail(res,response.status===401?401:502,data.error?.message||'OpenAI request failed. Check the key, model, and usage limits.');return res.json({provider:p,model,reply:data.choices?.[0]?.message?.content||'',usage:data.usage||null});}const contents=msgs.filter(m=>m.role!=='system').map(m=>({role:m.role==='assistant'?'model':'user',parts:[{text:m.content}]})),system=msgs.filter(m=>m.role==='system').map(m=>m.content).join('\n\n'),body={contents,generationConfig:{maxOutputTokens:1800}};if(system)body.systemInstruction={parts:[{text:system}]};response=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(model)+':generateContent',{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':secret},body:JSON.stringify(body),signal:AbortSignal.timeout(60000)});data=await response.json().catch(()=>({}));if(!response.ok)return fail(res,[401,403].includes(response.status)?401:502,data.error?.message||'Gemini request failed. Check the key, model, and usage limits.');const reply=(data.candidates?.[0]?.content?.parts||[]).map(x=>x.text||'').join('\n');res.json({provider:p,model,reply,usage:data.usageMetadata||null});}catch(e){fail(res,502,e.name==='TimeoutError'?'The provider took too long to respond. Try again.':'Could not reach the AI provider. Try again later.');}});
+
+const mediaLimit=rateLimit({windowMs:60*60*1000,limit:5,standardHeaders:'draft-7',legacyHeaders:false});
+function openAIKeyFor(userId){const row=db.prepare('SELECT * FROM provider_keys WHERE user_id=? AND provider=?').get(userId,'openai');if(!row)return null;return decrypt(row);}
+app.post('/api/creative/image',auth,csrf,mediaLimit,async(req,res)=>{
+  const prompt=typeof req.body?.prompt==='string'?req.body.prompt.trim():'';
+  const model=typeof req.body?.model==='string'?req.body.model:'gpt-image-2.6-flare';
+  const size=typeof req.body?.size==='string'?req.body.size:'1024x1024';
+  const quality=typeof req.body?.quality==='string'?req.body.quality:'medium';
+  const allowedModels=['gpt-image-2.6-flare','gpt-image-2.6-sunburst','gpt-image-2','gpt-image-1.5'];
+  if(prompt.length<3||prompt.length>3000)return fail(res,400,'Image prompt must be 3–3000 characters.');
+  if(!allowedModels.includes(model))return fail(res,400,'Choose a supported GPT Image model.');
+  if(!['1024x1024','1024x1536','1536x1024'].includes(size))return fail(res,400,'Choose a supported image size.');
+  if(!['low','medium','high'].includes(quality))return fail(res,400,'Choose low, medium, or high quality.');
+  let secret;try{secret=openAIKeyFor(req.auth.user_id);}catch{return fail(res,503,'The saved OpenAI key cannot be decrypted. Check server encryption settings.');}
+  if(!secret)return fail(res,400,'Connect an OpenAI key in Settings first.');
+  try{
+    const upstream=await fetch('https://api.openai.com/v1/images/generations',{method:'POST',headers:{Authorization:'Bearer '+secret,'Content-Type':'application/json'},body:JSON.stringify({model,prompt,n:1,size,quality}),signal:AbortSignal.timeout(180000)});
+    const data=await upstream.json().catch(()=>({}));
+    if(!upstream.ok)return fail(res,upstream.status===401?401:502,data.error?.message||'Image generation failed. Check model access, organization verification, and API usage limits.');
+    const image=data.data?.[0]?.b64_json;
+    if(!image)return fail(res,502,'The image provider returned no image data.');
+    res.json({model,size,quality,imageDataUrl:'data:image/png;base64,'+image,usage:data.usage||null});
+  }catch(error){fail(res,502,error.name==='TimeoutError'?'Image generation timed out. Try again later.':'Could not reach the image provider.');}
+});
+app.post('/api/creative/video',auth,csrf,mediaLimit,async(req,res)=>{
+  const prompt=typeof req.body?.prompt==='string'?req.body.prompt.trim():'';
+  const model=typeof req.body?.model==='string'?req.body.model:'sora-2';
+  const size=typeof req.body?.size==='string'?req.body.size:'1280x720';
+  const seconds=String(req.body?.seconds||'4');
+  if(prompt.length<3||prompt.length>3000)return fail(res,400,'Video prompt must be 3–3000 characters.');
+  if(!['sora-2','sora-2-pro'].includes(model))return fail(res,400,'Choose Sora 2 or Sora 2 Pro.');
+  if(!['4','8','12','16','20'].includes(seconds))return fail(res,400,'Choose a supported clip length.');
+  const sizes=model==='sora-2'?['1280x720','720x1280']:['1280x720','720x1280','1920x1080','1080x1920','1792x1024','1024x1792'];
+  if(!sizes.includes(size))return fail(res,400,'That resolution is not supported for the selected video model.');
+  let secret;try{secret=openAIKeyFor(req.auth.user_id);}catch{return fail(res,503,'The saved OpenAI key cannot be decrypted. Check server encryption settings.');}
+  if(!secret)return fail(res,400,'Connect an OpenAI key in Settings first.');
+  try{
+    const upstream=await fetch('https://api.openai.com/v1/videos',{method:'POST',headers:{Authorization:'Bearer '+secret,'Content-Type':'application/json'},body:JSON.stringify({model,prompt,size,seconds}),signal:AbortSignal.timeout(60000)});
+    const data=await upstream.json().catch(()=>({}));
+    if(!upstream.ok)return fail(res,upstream.status===401?401:502,data.error?.message||'Video job could not start. Check Sora API access and usage limits.');
+    res.status(202).json({id:data.id,status:data.status,progress:data.progress||0,model:data.model||model,seconds:data.seconds||seconds,size:data.size||size});
+  }catch(error){fail(res,502,error.name==='TimeoutError'?'Could not start the video job in time.':'Could not reach the video provider.');}
+});
+app.get('/api/creative/video/:id',auth,async(req,res)=>{
+  const id=req.params.id;
+  if(!/^video_[A-Za-z0-9_-]{8,100}$/.test(id))return fail(res,400,'Invalid video job ID.');
+  let secret;try{secret=openAIKeyFor(req.auth.user_id);}catch{return fail(res,503,'The saved OpenAI key cannot be decrypted.');}
+  if(!secret)return fail(res,400,'Connect an OpenAI key in Settings first.');
+  try{
+    const upstream=await fetch('https://api.openai.com/v1/videos/'+encodeURIComponent(id),{headers:{Authorization:'Bearer '+secret},signal:AbortSignal.timeout(30000)});
+    const data=await upstream.json().catch(()=>({}));
+    if(!upstream.ok)return fail(res,502,data.error?.message||'Could not check the video job.');
+    res.json({id:data.id,status:data.status,progress:data.progress||0,error:data.error?.message||null});
+  }catch{return fail(res,502,'Could not check video status.');}
+});
+app.get('/api/creative/video/:id/content',auth,async(req,res)=>{
+  const id=req.params.id;
+  if(!/^video_[A-Za-z0-9_-]{8,100}$/.test(id))return fail(res,400,'Invalid video job ID.');
+  let secret;try{secret=openAIKeyFor(req.auth.user_id);}catch{return fail(res,503,'The saved OpenAI key cannot be decrypted.');}
+  if(!secret)return fail(res,400,'Connect an OpenAI key in Settings first.');
+  try{
+    const upstream=await fetch('https://api.openai.com/v1/videos/'+encodeURIComponent(id)+'/content',{headers:{Authorization:'Bearer '+secret},signal:AbortSignal.timeout(180000)});
+    if(!upstream.ok){const data=await upstream.json().catch(()=>({}));return fail(res,502,data.error?.message||'Video download is not ready yet.');}
+    res.setHeader('Content-Type','video/mp4');res.setHeader('Content-Disposition','attachment; filename="brokengpt-video.mp4"');res.setHeader('Cache-Control','no-store');
+    const {Readable}=require('node:stream');Readable.fromWeb(upstream.body).pipe(res);
+  }catch{return fail(res,502,'Could not download the completed video.');}
+});
+
 app.use('/api',(_req,res)=>fail(res,404,'API route not found.'));
 app.use(express.static(ROOT,{dotfiles:'deny',index:'index.html',etag:true,maxAge:PROD?'1h':0}));
 app.get('*',(_req,res)=>res.sendFile(path.join(ROOT,'index.html')));
