@@ -11,6 +11,10 @@ BROKENGPT is a dark, blood-red AI workspace with a browser interface and a Node.
 - AI Battle sends the same prompt to two models, shows both answers, and requests a combined response.
 - 3D model generation, game export workflows, native Android companion features, and several external integrations remain in progress.
 
+## Preview screenshots
+
+The [UI preview workflow](https://github.com/user1847292/BrokenGPT/actions/workflows/ui-preview.yml) runs BROKENGPT in Chromium, captures six real screens, and uploads a downloadable screenshot artifact. Artifacts are temporary (30-day retention) and are previews of the current build, not proof of production readiness.
+
 ## Run locally
 
 Follow [`backend/README.md`](backend/README.md). The backend serves the web interface from the same origin so secure session cookies work correctly.
