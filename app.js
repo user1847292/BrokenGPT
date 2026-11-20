@@ -3,13 +3,13 @@ const languages=window.BROKENGPT_LANGUAGES||{};const languageSelect=document.get
 Object.entries(languages).forEach(([code,item])=>{const opt=document.createElement("option");opt.value=code;opt.textContent=item.name;languageSelect.append(opt)});
 function applyLanguage(code){const lang=languages[code]||languages.en;document.documentElement.lang=code;document.documentElement.dir=lang.dir||"ltr";document.querySelector('[data-view="chat"]').textContent="◈ "+(lang.chat||"Chat");document.querySelector('[data-view="battle"]').textContent="⚔ "+(lang.battle||"AI Battle");document.querySelector('[data-view="browser"]').textContent="◎ "+(lang.browser||"Browser");document.querySelector('[data-view="studio"]').textContent="▧ "+(lang.studio||"Creative Studio");document.querySelector('[data-view="cyber"]').textContent="⌘ "+(lang.cyber||"Cyber Lab");document.querySelector('[data-view="settings"]').textContent="⚙ "+(lang.settings||"Settings");document.getElementById("new-chat").textContent="＋ "+(lang.newChat||"New chat");["home","notes","prompts","academy","toolbox","favorites","history"].forEach(id=>{const nav=document.querySelector(`[data-view="${id}"]`);if(nav&&lang[id])nav.textContent=({home:"⌂ ",notes:"▤ ",prompts:"✦ ",academy:"▣ ",toolbox:"⌘ ",favorites:"★ ",history:"◷ "}[id])+lang[id]});document.querySelector("#chat .hero h1").innerHTML=(lang.welcome||"I can help with")+" <em>"+(lang.anything||"anything.")+"</em>";document.getElementById("prompt").placeholder=lang.message||"Message BROKENGPT...";document.querySelector("#settings h1").innerHTML=(lang.account||"Account")+" <em>"+(lang.settings||"Settings")+"</em>";document.getElementById("language-status").textContent=lang.languageSaved||"Interface language selected. AI reply language can be configured after provider connection.";localStorage.setItem("brokengpt-language",code)}
 languageSelect.value=savedLanguage in languages?savedLanguage:"en";applyLanguage(languageSelect.value);languageSelect.addEventListener("change",()=>applyLanguage(languageSelect.value));
-const defaults={personality:"🤖 BROKENGPT Default",responseLength:"Balanced",explanationLevel:"Adaptive",emojis:false,combine:false,secondary:"😂 Funny",bg:"#080808",fg:"#f5f5f5",accent:"#df2028",bubble:"#121212",font:"system-ui",rgb:false,rgbSpeed:"4s",rainbowText:false,rgbGlow:false,customName:"",customDescription:""};let prefs={...defaults};try{prefs={...defaults,...JSON.parse(localStorage.getItem("brokengpt-prefs")||"{}")}}catch{}
-const el=id=>document.getElementById(id);function applyPrefs(){document.documentElement.style.setProperty("--bg",prefs.bg);document.documentElement.style.setProperty("--red",prefs.accent);document.documentElement.style.setProperty("--panel",prefs.bubble);document.body.style.color=prefs.fg;document.body.style.fontFamily=prefs.font+",sans-serif";document.body.classList.toggle("rgb-on",prefs.rgb);document.body.classList.toggle("rgb-glow",prefs.rgbGlow);document.body.style.setProperty("--rgb-speed",prefs.rgbSpeed);el("personality").value=prefs.personality;el("response-length").value=prefs.responseLength;el("explanation-level").value=prefs.explanationLevel;el("use-emojis").checked=prefs.emojis;el("combine-personalities").checked=prefs.combine;el("secondary-personality").value=prefs.secondary;el("background-color").value=prefs.bg;el("text-color").value=prefs.fg;el("accent-color").value=prefs.accent;el("bubble-color").value=prefs.bubble;el("font-choice").value=prefs.font;el("rainbow-enabled").checked=prefs.rgb;el("rainbow-speed").value=prefs.rgbSpeed;el("rainbow-text").checked=prefs.rainbowText;el("rainbow-glow").checked=prefs.rgbGlow;el("custom-name").value=prefs.customName;el("custom-description").value=prefs.customDescription;el("custom-personality").classList.toggle("hidden",prefs.personality!=="custom");el("combine-area").classList.toggle("hidden",!prefs.combine)}
+const defaults={personality:"🤖 BROKENGPT Default",responseLength:"Balanced",explanationLevel:"Adaptive",emojis:false,combine:false,secondary:"😂 Funny",bg:"#080808",fg:"#ff3038",accent:"#b00020",bubble:"#121212",font:"system-ui",rgb:false,rgbSpeed:"4s",rainbowText:false,rgbGlow:false,customName:"",customDescription:""};let prefs={...defaults};try{const saved=JSON.parse(localStorage.getItem("brokengpt-prefs")||"{}");if(saved.bg==="#080808"&&saved.fg==="#f5f5f5"&&saved.accent==="#df2028")saved.fg="#ff3038";prefs={...defaults,...saved}}catch{}
+const el=id=>document.getElementById(id);function applyPrefs(){document.documentElement.style.setProperty("--bg",prefs.bg);document.documentElement.style.setProperty("--red",prefs.accent);document.documentElement.style.setProperty("--text",prefs.fg);document.documentElement.style.setProperty("--panel",prefs.bubble);document.body.style.color=prefs.fg;document.body.style.fontFamily=prefs.font+",sans-serif";document.body.classList.toggle("rgb-on",prefs.rgb);document.body.classList.toggle("rgb-glow",prefs.rgbGlow);document.body.style.setProperty("--rgb-speed",prefs.rgbSpeed);el("personality").value=prefs.personality;el("response-length").value=prefs.responseLength;el("explanation-level").value=prefs.explanationLevel;el("use-emojis").checked=prefs.emojis;el("combine-personalities").checked=prefs.combine;el("secondary-personality").value=prefs.secondary;el("background-color").value=prefs.bg;el("text-color").value=prefs.fg;el("accent-color").value=prefs.accent;el("bubble-color").value=prefs.bubble;el("font-choice").value=prefs.font;el("rainbow-enabled").checked=prefs.rgb;el("rainbow-speed").value=prefs.rgbSpeed;el("rainbow-text").checked=prefs.rainbowText;el("rainbow-glow").checked=prefs.rgbGlow;el("custom-name").value=prefs.customName;el("custom-description").value=prefs.customDescription;el("custom-personality").classList.toggle("hidden",prefs.personality!=="custom");el("combine-area").classList.toggle("hidden",!prefs.combine)}
 function readPrefs(){prefs={...prefs,personality:el("personality").value,responseLength:el("response-length").value,explanationLevel:el("explanation-level").value,emojis:el("use-emojis").checked,combine:el("combine-personalities").checked,secondary:el("secondary-personality").value,bg:el("background-color").value,fg:el("text-color").value,accent:el("accent-color").value,bubble:el("bubble-color").value,font:el("font-choice").value,rgb:el("rainbow-enabled").checked,rgbSpeed:el("rainbow-speed").value,rainbowText:el("rainbow-text").checked,rgbGlow:el("rainbow-glow").checked,customName:el("custom-name").value,customDescription:el("custom-description").value};applyPrefs()}
 ["personality","response-length","explanation-level","use-emojis","combine-personalities","secondary-personality","background-color","text-color","accent-color","bubble-color","font-choice","rainbow-enabled","rainbow-speed","rainbow-text","rainbow-glow","custom-name","custom-description"].forEach(id=>el(id).addEventListener("input",readPrefs));
 el("personality").addEventListener("change",()=>{el("custom-personality").classList.toggle("hidden",el("personality").value!=="custom");readPrefs()});el("combine-personalities").addEventListener("change",()=>{el("combine-area").classList.toggle("hidden",!el("combine-personalities").checked);readPrefs()});
 el("save-personality").addEventListener("click",()=>{readPrefs();localStorage.setItem("brokengpt-prefs",JSON.stringify(prefs));el("settings-status").textContent="Personality preferences saved on this device."});
-document.querySelectorAll("[data-theme]").forEach(b=>b.addEventListener("click",()=>{const t={blood:["#080808","#f5f5f5","#df2028","#121212",false],midnight:["#15152a","#f5f2ff","#a78bfa","#201f38",false],light:["#f2f2f2","#171717","#2563eb","#fff",false],forest:["#10251b","#effaf2","#65d99b","#183528",false],rainbow:["#080808","#fff","#ed3b9d","#15121b",true]}[b.dataset.theme];[prefs.bg,prefs.fg,prefs.accent,prefs.bubble,prefs.rgb]=t;applyPrefs();el("settings-status").textContent="Theme preview selected. Save appearance to keep it."}));
+document.querySelectorAll("[data-theme]").forEach(b=>b.addEventListener("click",()=>{const t={blood:["#080808","#ff3038","#b00020","#121212",false],midnight:["#15152a","#f5f2ff","#a78bfa","#201f38",false],light:["#f2f2f2","#171717","#2563eb","#fff",false],forest:["#10251b","#effaf2","#65d99b","#183528",false],rainbow:["#080808","#fff","#ed3b9d","#15121b",true]}[b.dataset.theme];[prefs.bg,prefs.fg,prefs.accent,prefs.bubble,prefs.rgb]=t;applyPrefs();el("settings-status").textContent="Theme preview selected. Save appearance to keep it."}));
 el("save-appearance").addEventListener("click",()=>{readPrefs();localStorage.setItem("brokengpt-prefs",JSON.stringify(prefs));el("settings-status").textContent="Appearance saved on this device."});
 el("reset-settings").addEventListener("click",()=>{prefs={...defaults};applyPrefs();localStorage.removeItem("brokengpt-prefs");el("settings-status").textContent="Settings reset to BROKENGPT defaults."});
 
@@ -29,7 +29,7 @@ const modeSelect=document.getElementById("mode-select"),modeDescription=document
 function setMode(mode){if(!modeInfo[mode])return;modeSelect.value=mode;modeDescription.textContent=modeInfo[mode];localStorage.setItem("brokengpt-mode",mode);document.querySelectorAll("[data-mode]").forEach(b=>b.classList.toggle("active",b.dataset.mode===mode))}
 setMode(localStorage.getItem("brokengpt-mode")||"Balanced");
 modeSelect.addEventListener("change",()=>setMode(modeSelect.value));
-document.querySelectorAll("[data-mode]").forEach(b=>b.addEventListener("click",()=>{setMode(b.dataset.mode);show("chat")}));
+document.querySelectorAll("[data-mode]").forEach(b=>b.addEventListener("click",()=>{setMode(b.dataset.mode);show(b.dataset.mode==="Study"?"study":"chat")}));
 document.querySelectorAll("[data-go]").forEach(b=>b.addEventListener("click",()=>show(b.dataset.go)));
 function readList(key){try{return JSON.parse(localStorage.getItem(key)||"[]")}catch{return[]}}
 function writeList(key,list){localStorage.setItem(key,JSON.stringify(list))}
@@ -455,7 +455,7 @@ async function sendChatMessage(value){
   addChatMessage("YOU",value);
   const provider=apiEl("active-provider").value,model=apiEl("active-model").value.trim();
   if(!currentUser){addChatMessage("BROKENGPT · SETUP","Sign in and connect an AI provider in Settings to get real AI replies. This is a local prototype until the backend is deployed.");return;}
-  const button=document.querySelector("#chat-form button");button.disabled=true;
+  const button=document.getElementById("send-message");button.disabled=true;
   try{
     liveConversation.push({role:"user",content:value});
     const personality=prefs.personality||"BROKENGPT Default";
@@ -690,4 +690,110 @@ apiEl("download-video").addEventListener("click",async()=>{
    renderOffline();
  });
  renderOffline();
+/* Approved BROKENGPT update: composer actions, file attachment, and family shortcuts */
+  const plus=document.getElementById("composer-plus");
+  const menu=document.getElementById("composer-menu");
+  const fileInput=document.getElementById("chat-file-input");
+  const prompt=document.getElementById("prompt");
+  if(!plus||!menu||!fileInput||!prompt)return;
+  const closeMenu=()=>{menu.classList.add("hidden");plus.setAttribute("aria-expanded","false");};
+  plus.addEventListener("click",()=>{
+    const opening=menu.classList.contains("hidden");
+    menu.classList.toggle("hidden",!opening);
+    plus.setAttribute("aria-expanded",String(opening));
+  });
+  document.addEventListener("click",event=>{
+    if(!event.target.closest(".composer-plus-wrap"))closeMenu();
+  });
+  menu.querySelectorAll("[data-composer-action]").forEach(button=>button.addEventListener("click",()=>{
+    const action=button.dataset.composerAction;
+    closeMenu();
+    if(action==="image"){show("studio");document.getElementById("image-prompt")?.focus();return;}
+    if(action==="video"){show("studio");document.getElementById("video-prompt")?.focus();return;}
+    if(action==="upload"){fileInput.click();return;}
+    if(action==="code"){setMode("Developer");show("chat");prompt.value=prompt.value||"Help me write and understand code for: ";prompt.focus();return;}
+    if(action==="model3d"||action==="game"){
+      show("studio");
+      const status=document.getElementById("studio-feature-status");
+      if(status)status.textContent=action==="model3d"?"3D generation and downloadable model export are not connected yet. This section is planned and is not a working generator.":"Game project generation and export are not connected yet. This section is planned and is not a working game builder.";
+    }
+  }));
+  fileInput.addEventListener("change",async()=>{
+    const file=fileInput.files?.[0];if(!file)return;
+    if(file.size>8000){voiceStatus("That file is too large for the text attachment preview (limit: 8 KB).");fileInput.value="";return;}
+    try{
+      const text=await file.text();
+      prompt.value=(prompt.value?prompt.value+"\n\n":"")+"[Attached text file: "+file.name+"]\n"+text;
+      prompt.focus();
+      voiceStatus("Text from "+file.name+" was added to your message. Review it before sending.");
+    }catch{voiceStatus("Could not read that file. Try a plain-text file.");}
+    fileInput.value="";
+  });
+
+})();
+
+
+/* Study Mode: grade-aware tutoring with image and sampled-video-frame input. */
+(()=>{
+  const imageInput=apiEl("study-images"),videoInput=apiEl("study-video"),submit=apiEl("study-submit");
+  if(!imageInput||!videoInput||!submit)return;
+  const status=apiEl("study-status"),filesStatus=apiEl("study-files-status"),result=apiEl("study-result");
+  const MAX_IMAGE_BYTES=12*1024*1024,MAX_VIDEO_BYTES=30*1024*1024;
+  function dataUrlParts(dataUrl){const comma=dataUrl.indexOf(",");return{mimeType:(dataUrl.slice(5,comma).split(";")[0]||"image/jpeg"),data:dataUrl.slice(comma+1)};}
+  function canvasAttachment(canvas,label){return{...dataUrlParts(canvas.toDataURL("image/jpeg",0.78)),label};}
+  async function imageAttachment(file){
+    if(file.size>MAX_IMAGE_BYTES)throw Error(file.name+" is larger than 12 MB.");
+    const bitmap=await createImageBitmap(file),scale=Math.min(1,1600/Math.max(bitmap.width,bitmap.height));
+    const canvas=document.createElement("canvas");canvas.width=Math.max(1,Math.round(bitmap.width*scale));canvas.height=Math.max(1,Math.round(bitmap.height*scale));
+    canvas.getContext("2d").drawImage(bitmap,0,0,canvas.width,canvas.height);bitmap.close?.();
+    return canvasAttachment(canvas,"Image: "+file.name);
+  }
+  function waitEvent(target,event){return new Promise((resolve,reject)=>{const done=()=>{cleanup();resolve();},bad=()=>{cleanup();reject(Error("Could not read the selected video."));},cleanup=()=>{target.removeEventListener(event,done);target.removeEventListener("error",bad);};target.addEventListener(event,done,{once:true});target.addEventListener("error",bad,{once:true});});}
+  async function videoAttachments(file){
+    if(file.size>MAX_VIDEO_BYTES)throw Error("The selected video is larger than 30 MB.");
+    const url=URL.createObjectURL(file),video=document.createElement("video");video.preload="metadata";video.muted=true;video.playsInline=true;video.src=url;
+    try{
+      await waitEvent(video,"loadedmetadata");
+      if(!Number.isFinite(video.duration)||video.duration<=0)throw Error("This video could not be opened.");
+      const frames=[],times=[0.08,0.34,0.66,0.92].map(p=>Math.min(Math.max(0,video.duration*p),Math.max(0,video.duration-0.05)));
+      for(let i=0;i<times.length;i++){
+        const ready=waitEvent(video,"seeked");video.currentTime=times[i];await ready;
+        const scale=Math.min(1,1280/Math.max(video.videoWidth,video.videoHeight));
+        const canvas=document.createElement("canvas");canvas.width=Math.max(1,Math.round(video.videoWidth*scale));canvas.height=Math.max(1,Math.round(video.videoHeight*scale));
+        canvas.getContext("2d").drawImage(video,0,0,canvas.width,canvas.height);
+        frames.push(canvasAttachment(canvas,"Video frame "+(i+1)+" from "+file.name+" at "+times[i].toFixed(1)+" seconds"));
+      }
+      return frames;
+    }finally{URL.revokeObjectURL(url);video.removeAttribute("src");video.load();}
+  }
+  function refreshFilesStatus(){
+    const pics=[...imageInput.files],video=videoInput.files[0];
+    filesStatus.textContent=(pics.length?pics.length+" image(s): "+pics.map(f=>f.name).join(", "):"No images")+(video?" · Video: "+video.name:"")+". Video is analysed using sampled frames; audio is not processed.";
+  }
+  imageInput.addEventListener("change",()=>{if(imageInput.files.length>4){status.textContent="Choose up to 4 images per question.";imageInput.value="";}refreshFilesStatus();});
+  videoInput.addEventListener("change",refreshFilesStatus);
+  submit.addEventListener("click",async()=>{
+    const prompt=apiEl("study-prompt").value.trim(),pics=[...imageInput.files],video=videoInput.files[0];
+    if(!prompt&&!pics.length&&!video){status.textContent="Tell your tutor what you want to learn, or attach a lesson page/video.";return;}
+    if(!currentUser){status.textContent="Please sign in first, then connect OpenAI or Gemini in Settings.";return;}
+    submit.disabled=true;submit.textContent="Preparing your lesson…";result.classList.add("hidden");status.textContent="Preparing your attachments…";
+    try{
+      const attachments=[];
+      for(const file of pics)attachments.push(await imageAttachment(file));
+      if(video)attachments.push(...await videoAttachments(video));
+      if(attachments.length>8)throw Error("This question contains too many images. Use up to 4 pictures and one short video.");
+      const provider=apiEl("active-provider").value,model=apiEl("active-model").value.trim();
+      const grade=apiEl("study-grade").value,subject=apiEl("study-subject").value.trim()||"Not specified",task=apiEl("study-task").value;
+      const promptText=[task+".", "Student level: "+grade+".", "Subject: "+subject+".", "Student's question: "+(prompt||"Please explain the attached material.")].join("\n");
+      status.textContent="Your tutor is working on it…";
+      const data=await apiRequest("/api/study",{method:"POST",csrf:true,body:{provider,model,grade,subject,task,prompt:promptText,images:attachments}});
+      result.replaceChildren();
+      const heading=document.createElement("h2");heading.textContent="Your study explanation";
+      const answer=document.createElement("p");answer.className="study-answer";answer.textContent=data.reply||"The tutor returned an empty answer.";
+      result.append(heading,answer);result.classList.remove("hidden");
+      status.textContent="Lesson ready · "+data.provider.toUpperCase()+" / "+data.model+". Ask another question whenever you're ready.";
+      const history=readList("brokengpt-study-history");history.push({title:subject+" · "+grade,preview:promptText+"\n"+answer.textContent.slice(0,800),time:new Date().toISOString()});writeList("brokengpt-study-history",history);
+    }catch(error){status.textContent=error.message;}
+    finally{submit.disabled=false;submit.textContent="🚀 Start studying";}
+  });
 })();

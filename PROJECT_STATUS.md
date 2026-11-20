@@ -14,6 +14,12 @@ This file tracks the current repository state. “Implemented in code” does no
 - [ ] Add password reset, account deletion, and production account-recovery safeguards
 
 ## Stage 2 — chat and AI Battle
+- [x] Composer plus menu for image, video, 3D, game, code, and text-file actions
+- [x] Dedicated microphone button beside the send arrow
+- [x] Text-file attachment preview (8 KB limit; plain text formats only)
+- [x] Iraqi Arabic interface option and existing Malay interface option
+- [ ] Guest text-only AI service (requires a protected, rate-limited server-side model configuration)
+- [ ] Google, Apple, and GitHub OAuth (requires provider application credentials and callback-domain setup)
 - [x] Chat UI sends requests to the backend
 - [x] Personality and mode instructions passed with chat
 - [x] Two independent model answers
@@ -21,15 +27,15 @@ This file tracks the current repository state. “Implemented in code” does no
 - [ ] Live provider testing with authorized provider accounts
 - [ ] Add more providers and model discovery
 
-## Stage 3 — voice and Creative Studio
+## Study Mode\n- [x] Dedicated grade-aware Study Mode UI for primary grades, middle school, high school, university/college, and postgraduate learners\n- [x] Tutor tasks for lesson explanations, homework guidance, quizzes, practice, study plans, and note review\n- [x] Image attachments sent to vision-capable OpenAI/Gemini models through a dedicated authenticated study endpoint\n- [x] Video upload preview via up to four sampled frames (video audio is not analysed)\n- [ ] Test image/video-frame tutoring with real connected provider accounts and supported vision models\n\n## Stage 3 — voice and Creative Studio
 - [x] Optional browser speech-to-text
 - [x] Optional device text-to-speech
 - [x] OpenAI GPT Image generation endpoint and UI
 - [x] Sora video job creation, status, and download endpoints/UI
 - [ ] Realtime natural voice conversation
 - [ ] Original expressive character voices and contextual sound effects
-- [ ] 3D model generation and export
-- [ ] Game creation and export workflow
+- [ ] 3D model generation and export (composer shortcut is a labelled placeholder)
+- [ ] Game creation and export workflow (composer shortcut is a labelled placeholder)
 - [ ] Runtime testing with approved provider access
 
 ## Stage 4 — Character Universe and Android companion
@@ -72,8 +78,15 @@ This file tracks the current repository state. “Implemented in code” does no
 - [ ] Create a versioned GitHub Release only after the full app is complete and tested
 
 ## Important limitations
-- The backend is source code only until it is deployed.
+- The backend is source code only until it is deployed.\n- Study Mode does not impose a lifetime message counter, but server rate limits, provider quotas, model support, upload-size limits, and API costs still apply.
 - The current account system has no password recovery or account deletion flow yet.
 - Provider API usage and media generation may cost money and depend on account eligibility, model access, and usage limits.
 - Browser speech features depend on device/browser support and are not a realtime voice-agent system.
 - App Connector and Ad Shield are not yet able to control arbitrary third-party apps or block every ad.
+
+
+## Approved update branch
+- [x] Composer action menu and voice-input placement
+- [x] Safe plain-text file attachment preview
+- [x] Iraqi Arabic locale; Malay locale was already present
+- [ ] OAuth sign-in, built-in guest model, 3D generation, and game export remain unimplemented pending required services/configuration
