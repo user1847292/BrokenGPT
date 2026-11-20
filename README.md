@@ -1,6 +1,6 @@
-# BROKENGPT
+# BrokenGPT
 
-BROKENGPT is a dark, blood-red AI workspace with a browser interface and a Node.js backend starter.
+BrokenGPT is a dark, blood-red AI workspace with a browser interface and a Node.js backend starter.
 
 ## Current project status
 
@@ -16,7 +16,7 @@ Follow [`backend/README.md`](backend/README.md). The backend serves the web inte
 
 ## Important
 
-This project is not yet fully built, deployed, or production-tested. The backend needs HTTPS, persistent storage, and a private `BROKENGPT_ENCRYPTION_KEY`. Provider usage may cost money and is controlled by the provider account and its limits. Media generation may require provider access or organization verification. Never commit `.env` files, API keys, or database files.
+This project is not yet fully built, deployed, or production-tested. The backend needs HTTPS, persistent storage, and a private `BrokenGPT_ENCRYPTION_KEY`. Provider usage may cost money and is controlled by the provider account and its limits. Media generation may require provider access or organization verification. Never commit `.env` files, API keys, or database files.
 
 
 ## Recent interface update
