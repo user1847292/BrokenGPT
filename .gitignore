@@ -1,0 +1,16 @@
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+
+# Local runtime data
+backend/data/
+backend/*.sqlite
+backend/*.sqlite-*
+backend/*.db
+backend/node_modules/
+node_modules/
+
+# Logs and OS/editor files
+*.log
+.DS_Store
