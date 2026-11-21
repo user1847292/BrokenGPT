@@ -64,16 +64,50 @@ jobs:
               path.write_text(text)
           print("Configured Google-hosted Maven Central mirror fallback")
           PY
-      - name: Build debug APK
+      - name: Build debug APK for automated checks
         working-directory: android
         run: ./gradlew assembleDebug --no-daemon
-      - name: Upload debug APK
+      - name: Upload debug APK (test build only)
         uses: actions/upload-artifact@v4
         with:
-          name: BrokenGPT-debug-APK
+          name: BrokenGPT-debug-test-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
-          retention-days: 14
+          retention-days: 7
+      - name: Build release APK
+        working-directory: android
+        run: ./gradlew assembleRelease --no-daemon
+      - name: Sign release APK for installation
+        run: |
+          set -euo pipefail
+          APK_DIR="android/app/build/outputs/apk/release"
+          UNSIGNED_APK="$APK_DIR/app-release-unsigned.apk"
+          SIGNED_APK="$APK_DIR/BrokenGPT-release.apk"
+          KEYSTORE="$RUNNER_TEMP/brokengpt-release.keystore"
+          STORE_PASS="$(openssl rand -hex 24)"
+          keytool -genkeypair -v \
+            -keystore "$KEYSTORE" \
+            -storepass "$STORE_PASS" \
+            -keypass "$STORE_PASS" \
+            -alias brokengpt-release \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -dname "CN=BrokenGPT Release"
+          APKSIGNER="$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -n 1)"
+          "$APKSIGNER" sign \
+            --ks "$KEYSTORE" \
+            --ks-key-alias brokengpt-release \
+            --ks-pass "pass:$STORE_PASS" \
+            --key-pass "pass:$STORE_PASS" \
+            --out "$SIGNED_APK" "$UNSIGNED_APK"
+          "$APKSIGNER" verify --verbose "$SIGNED_APK"
+          rm -f "$KEYSTORE"
+      - name: Upload installable release APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: BrokenGPT-release-APK
+          path: android/app/build/outputs/apk/release/BrokenGPT-release.apk
+          if-no-files-found: error
+          retention-days: 30
       - name: Start local preview server
         run: |
           python3 -m http.server 4173 --directory www > /tmp/brokengpt-preview.log 2>&1 &
@@ -85,13 +119,6 @@ jobs:
         run: node scripts/capture-screenshots.mjs
       - name: Run browser smoke tests
         run: npm run test:smoke
-      - name: Publish pre-release APK artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: BrokenGPT-pre-release-APK
-          path: android/app/build/outputs/apk/debug/app-debug.apk
-          if-no-files-found: error
-          retention-days: 30
       - name: Upload mobile screenshots
         uses: actions/upload-artifact@v4
         with:
