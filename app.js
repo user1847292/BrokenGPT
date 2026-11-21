@@ -657,30 +657,95 @@ apiEl("run-battle").addEventListener("click",async()=>{
 
 
 
-/* Stage 4C: device speech and hands-free voice conversation */
+/* Stage 4C: native Android speech recognition with browser fallback */
+const NativeSpeechRecognition=window.BrokenGPTNativeSpeechRecognition||null;
 const SpeechRecognitionAPI=window.SpeechRecognition||window.webkitSpeechRecognition;
-let speechRecognition=null;
+let speechRecognition=null,nativeSpeechListening=false,nativeVoiceOneShot=false;
 const voiceStatus=message=>{const node=apiEl("voice-status");if(node)node.textContent=message;};
-function beginVoiceListening(){if(!speechRecognition){voiceStatus("Speech recognition is unavailable in this browser.");voiceConversationActive=false;refreshComposerControl();return;}if(voiceMicMuted||!voiceConversationActive)return;try{speechRecognition.lang=document.documentElement.lang||"en";speechRecognition.start();}catch(error){voiceStatus("Could not start microphone: "+error.message);}}
-function startVoiceConversation(){if(!SpeechRecognitionAPI){voiceStatus("Voice mode needs browser speech recognition. You can still type a message.");return;}voiceConversationActive=true;voiceMicMuted=false;apiEl("voice-auto-play").checked=true;refreshComposerControl();voiceStatus("Voice mode is on. Allow microphone access, then speak.");beginVoiceListening();}
-function stopVoiceConversation(){voiceConversationActive=false;voiceMicMuted=false;if(speechRecognition)try{speechRecognition.stop();}catch{}if("speechSynthesis" in window)window.speechSynthesis.cancel();apiEl("voice-stop").disabled=true;voiceStatus("Voice conversation ended.");refreshComposerControl();}
-if(SpeechRecognitionAPI){speechRecognition=new SpeechRecognitionAPI();speechRecognition.continuous=false;speechRecognition.interimResults=false;
- speechRecognition.onstart=()=>{apiEl("voice-input").disabled=true;voiceStatus(voiceConversationActive?"Voice conversation active. Speak naturally.":"Listening… speak your prompt.");};
- speechRecognition.onresult=event=>{const transcript=event.results?.[0]?.[0]?.transcript?.trim()||"";if(!transcript)return;if(voiceConversationActive){voiceStatus("You said: "+transcript);sendChatMessage(transcript);}else{const field=apiEl("prompt");field.value=(field.value?field.value+" ":"")+transcript;field.focus();refreshComposerControl();voiceStatus("Speech added to your message. Review it, then press Send.");}};
- speechRecognition.onerror=event=>{voiceStatus(event.error==="not-allowed"?"Microphone permission was denied. Type instead.":"Voice recognition error: "+event.error);if(event.error==="not-allowed")voiceConversationActive=false;};
- speechRecognition.onend=()=>{apiEl("voice-input").disabled=false;if(voiceConversationActive&&!voiceMicMuted&&!activeRequestController&&!window.speechSynthesis?.speaking){setTimeout(()=>{if(voiceConversationActive&&!voiceMicMuted)beginVoiceListening();},400);}};
-}else{apiEl("voice-input").addEventListener("click",()=>voiceStatus("Voice input is not supported by this browser. Try a browser with speech recognition support."));}
-apiEl("voice-input").addEventListener("click",()=>{if(voiceConversationActive){voiceMicMuted=!voiceMicMuted;if(voiceMicMuted&&speechRecognition)try{speechRecognition.stop();}catch{}refreshComposerControl();voiceStatus(voiceMicMuted?"Microphone muted. You can still type and send messages.":"Microphone unmuted. Listening again.");if(!voiceMicMuted&&!activeRequestController&&!window.speechSynthesis?.speaking)beginVoiceListening();}else{voiceConversationActive=false;voiceMicMuted=false;beginVoiceListening();}});
+async function beginNativeVoiceListening(){
+  if(!NativeSpeechRecognition||nativeSpeechListening||voiceMicMuted||(!voiceConversationActive&&!nativeVoiceOneShot))return;
+  nativeSpeechListening=true;apiEl("voice-input").disabled=true;
+  try{
+    const available=await NativeSpeechRecognition.available();
+    if(!available?.available)throw new Error("Android speech recognition is not available on this device.");
+    let permission=await NativeSpeechRecognition.checkPermissions();
+    if(permission?.speechRecognition!=="granted")permission=await NativeSpeechRecognition.requestPermissions();
+    if(permission?.speechRecognition!=="granted")throw new Error("Microphone permission was not granted. You can still type.");
+    voiceStatus("Opening Android voice recognition…");
+    const result=await NativeSpeechRecognition.start({
+      language:activeReplyLanguage==="ar"?"ar-IQ":"en-US",
+      maxResults:1,
+      popup:true,
+      partialResults:false
+    });
+    const transcript=result?.matches?.[0]?.trim()||"";
+    if(transcript){
+      if(voiceConversationActive&&!voiceMicMuted){voiceStatus("You said: "+transcript);sendChatMessage(transcript);}
+      else if(nativeVoiceOneShot){const field=apiEl("prompt");field.value=(field.value?field.value+" ":"")+transcript;field.focus();refreshComposerControl();voiceStatus("Speech added to your message. Review it, then press Send.");}
+    }else voiceStatus("No speech was recognized. Tap the microphone to try again.");
+  }catch(error){
+    voiceStatus("Voice input unavailable: "+(error?.message||String(error)));
+    if(/permission|denied/i.test(error?.message||""))voiceConversationActive=false;
+  }finally{
+    nativeSpeechListening=false;nativeVoiceOneShot=false;apiEl("voice-input").disabled=false;
+    if(!voiceConversationActive)refreshComposerControl();
+  }
+}
+function beginVoiceListening(){
+  if(voiceMicMuted||(!voiceConversationActive&&!nativeVoiceOneShot))return;
+  if(NativeSpeechRecognition){void beginNativeVoiceListening();return;}
+  if(!speechRecognition){voiceStatus("Speech recognition is unavailable here. You can still type a message.");voiceConversationActive=false;refreshComposerControl();return;}
+  try{speechRecognition.lang=activeReplyLanguage==="ar"?"ar-IQ":"en-US";speechRecognition.start();}
+  catch(error){voiceStatus("Could not start microphone: "+error.message);}
+}
+function startVoiceConversation(){
+  if(!NativeSpeechRecognition&&!SpeechRecognitionAPI){voiceStatus("Voice recognition is not supported here. You can still type a message.");return;}
+  voiceConversationActive=true;voiceMicMuted=false;nativeVoiceOneShot=false;apiEl("voice-auto-play").checked=true;
+  refreshComposerControl();voiceStatus(NativeSpeechRecognition?"Voice conversation is on. Android will open its voice-recognition dialog.":"Voice conversation is on. Allow microphone access, then speak.");
+  beginVoiceListening();
+}
+function stopVoiceConversation(){
+  voiceConversationActive=false;voiceMicMuted=false;nativeVoiceOneShot=false;
+  if(NativeSpeechRecognition&&nativeSpeechListening)NativeSpeechRecognition.stop().catch(()=>{});
+  if(speechRecognition)try{speechRecognition.stop();}catch{}
+  if("speechSynthesis" in window)window.speechSynthesis.cancel();
+  apiEl("voice-stop").disabled=true;voiceStatus("Voice conversation ended.");refreshComposerControl();
+}
+if(!NativeSpeechRecognition&&SpeechRecognitionAPI){
+  speechRecognition=new SpeechRecognitionAPI();speechRecognition.continuous=false;speechRecognition.interimResults=false;
+  speechRecognition.onstart=()=>{apiEl("voice-input").disabled=true;voiceStatus(voiceConversationActive?"Voice conversation active. Speak naturally.":"Listening… speak your prompt.");};
+  speechRecognition.onresult=event=>{
+    const transcript=event.results?.[0]?.[0]?.transcript?.trim()||"";if(!transcript)return;
+    if(voiceConversationActive){voiceStatus("You said: "+transcript);sendChatMessage(transcript);}
+    else if(nativeVoiceOneShot){const field=apiEl("prompt");field.value=(field.value?field.value+" ":"")+transcript;field.focus();refreshComposerControl();voiceStatus("Speech added to your message. Review it, then press Send.");}
+  };
+  speechRecognition.onerror=event=>{voiceStatus(event.error==="not-allowed"?"Microphone permission was denied. Type instead.":"Voice recognition error: "+event.error);if(event.error==="not-allowed")voiceConversationActive=false;};
+  speechRecognition.onend=()=>{apiEl("voice-input").disabled=false;if(voiceConversationActive&&!voiceMicMuted&&!activeRequestController&&!window.speechSynthesis?.speaking){setTimeout(()=>{if(voiceConversationActive&&!voiceMicMuted)beginVoiceListening();},500);}};
+}
+apiEl("voice-input").addEventListener("click",()=>{
+  if(voiceConversationActive){
+    voiceMicMuted=!voiceMicMuted;
+    if(voiceMicMuted){if(NativeSpeechRecognition&&nativeSpeechListening)NativeSpeechRecognition.stop().catch(()=>{});if(speechRecognition)try{speechRecognition.stop();}catch{}}
+    refreshComposerControl();voiceStatus(voiceMicMuted?"Microphone muted. You can still type and send messages.":"Microphone unmuted. Listening again.");
+    if(!voiceMicMuted&&!activeRequestController&&!window.speechSynthesis?.speaking)beginVoiceListening();
+  }else{
+    nativeVoiceOneShot=true;voiceMicMuted=false;beginVoiceListening();
+  }
+});
 function speakAIReply(text){
   if(!apiEl("voice-auto-play").checked&&!voiceConversationActive)return;
-  if(!("speechSynthesis" in window)||!("SpeechSynthesisUtterance" in window)){voiceStatus("Text-to-speech is not supported by this browser.");return;}
+  if(!("speechSynthesis" in window)||!("SpeechSynthesisUtterance" in window)){
+    voiceStatus("Text-to-speech is not supported here. You can read the reply and tap the microphone to continue.");
+    if(voiceConversationActive&&!voiceMicMuted&&!activeRequestController)setTimeout(beginVoiceListening,500);
+    return;
+  }
   window.speechSynthesis.cancel();
   const utterance=new SpeechSynthesisUtterance(text);
-  utterance.lang=activeReplyLanguage==="ar"?"ar-IQ":document.documentElement.lang||"en";
+  utterance.lang=activeReplyLanguage==="ar"?"ar-IQ":"en-US";
   utterance.rate=Number(apiEl("voice-rate").value)||1;
   utterance.onstart=()=>{apiEl("voice-stop").disabled=false;voiceStatus("Reading the AI reply aloud with a device voice.");};
   utterance.onend=()=>{apiEl("voice-stop").disabled=true;voiceStatus("Voice playback finished.");if(voiceConversationActive&&!voiceMicMuted&&!activeRequestController)beginVoiceListening();};
-  utterance.onerror=()=>{apiEl("voice-stop").disabled=true;voiceStatus("Voice playback stopped or unavailable.");};
+  utterance.onerror=()=>{apiEl("voice-stop").disabled=true;voiceStatus("Voice playback stopped or unavailable.");if(voiceConversationActive&&!voiceMicMuted&&!activeRequestController)setTimeout(beginVoiceListening,500);};
   window.speechSynthesis.speak(utterance);
 }
 apiEl("voice-stop").addEventListener("click",stopVoiceConversation);
