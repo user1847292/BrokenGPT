@@ -14,6 +14,7 @@ try {
   await page.goto("http://127.0.0.1:4173", { waitUntil: "networkidle" });
   await page.locator("#chat").waitFor({ state: "visible" });
   assert.equal(await page.locator("#chat").evaluate(node => node.classList.contains("active")), true);
+  assert.equal(pageErrors.length, 0, "JavaScript runtime errors on initial load: " + JSON.stringify(pageErrors));
 
   const views = await page.locator("[data-view]").evaluateAll(nodes =>
     [...new Set(nodes.map(node => node.dataset.view).filter(Boolean))]
@@ -27,6 +28,11 @@ try {
       "Navigation failed for view: " + view
     );
   }
+
+  await page.locator("#prompt").fill("send icon test");
+  assert.equal(await page.locator("#send-message").getAttribute("aria-label"), "Send message", "Composer switches from voice to send icon while typing");
+  assert.ok(await page.locator("#send-message").evaluate(node => node.classList.contains("send-mode-button")), "Send button styling state was not updated");
+  await page.locator("#prompt").fill("");
 
   await page.locator('[data-view="tasks"]').first().evaluate(node => node.click());
   await page.locator("#task-title").fill("Smoke test task tracker");
