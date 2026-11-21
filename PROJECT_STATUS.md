@@ -85,6 +85,18 @@ This file tracks the current repository state. “Implemented in code” does no
 - App Connector and Ad Shield are not yet able to control arbitrary third-party apps or block every ad.
 
 
+## Current repair pass (2026-11-21)
+- [x] Repair Task Center add-button binding and add a browser regression assertion
+- [x] Add chat composer state assertion (waveform changes to send arrow when text is present)
+- [x] Save submitted chats locally even before account/provider setup; add open/restore history actions
+- [x] Add user-managed local Memory notes (save/delete; included as context in chat)
+- [x] Add Temporary Root information/status section; clearly states root cannot be granted by the web app and requires native support plus explicit OS/root-manager permission
+- [x] Add initial-load runtime-error assertion to browser smoke tests
+- [x] Prevent automatic public draft/release creation on every branch push; require explicit manual workflow input to create a draft release
+- [ ] Complete latest Android and browser smoke run; inspect failures and repair them
+- [ ] Verify APK installation and UI on a real Android device (not available to CI)
+- [ ] Configure persistent release signing key before producing an update-compatible signed APK
+
 ## Approved update branch
 - [x] Composer action menu and voice-input placement
 - [x] Safe plain-text file attachment preview
