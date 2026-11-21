@@ -381,3 +381,6 @@ body textarea:focus-visible,body select:focus-visible{
 #chat .hero{transform:translateY(var(--welcome-y,0vh));font-size:var(--welcome-size,32px);transition:transform .16s ease,font-size .16s ease}
 #chat .hero h1{font-size:inherit;line-height:1.2}
 @media(max-height:650px){#chat .hero{margin-block:clamp(8px,2vh,24px)}}
+
+/* Local task board: readable cards with restrained crimson status labels. */
+.task-list{display:grid;gap:12px;margin-top:14px}.task-item{border:1px solid #70202b;border-radius:14px;padding:14px;background:linear-gradient(145deg,#13080b,#080708)}.task-item-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.task-item-head b{overflow-wrap:anywhere}.task-state{font-size:12px;text-transform:uppercase;border:1px solid #842238;border-radius:999px;padding:4px 8px;white-space:nowrap}.task-state-completed{border-color:#387a58;color:#83d9a5!important}.task-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}.task-activity ol{padding-left:22px}.task-activity li{margin:8px 0;overflow-wrap:anywhere}.task-create textarea{width:100%;box-sizing:border-box}
