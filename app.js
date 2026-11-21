@@ -13,7 +13,7 @@ modelInput?.addEventListener("input",refreshModelLabel);providerSelect?.addEvent
 let gestureStart=null;
 document.addEventListener("touchstart",event=>{const t=event.changedTouches?.[0];if(t)gestureStart={x:t.clientX,y:t.clientY};},{passive:true});
 document.addEventListener("touchend",event=>{const t=event.changedTouches?.[0];if(!t||!gestureStart)return;const dx=t.clientX-gestureStart.x,dy=t.clientY-gestureStart.y;gestureStart=null;if(Math.abs(dx)<65||Math.abs(dx)<Math.abs(dy)*1.3)return;if(dx<0&&!drawer?.classList.contains("drawer-open")){drawer?.classList.add("drawer-open");drawerBackdrop?.classList.add("visible");drawerToggle?.setAttribute("aria-expanded","true");}else if(dx>0&&drawer?.classList.contains("drawer-open"))closeDrawer();},{passive:true});
-show("chat");const messages=document.getElementById("messages");document.getElementById("chat-form").addEventListener("submit",e=>{e.preventDefault();const field=document.getElementById("prompt"),value=field.value.trim();if(!value)return;field.value="";sendChatMessage(value)});document.getElementById("new-chat").addEventListener("click",()=>{messages.replaceChildren();liveConversation=[];show("chat")});document.getElementById("browser-form").addEventListener("submit",e=>{e.preventDefault();const q=document.getElementById("address").value.trim();if(!q)return;const url=/^https?:\/\//i.test(q)?q:/^[\w-]+\.[a-z]{2,}/i.test(q)?"https://"+q:"https://www.google.com/search?q="+encodeURIComponent(q);window.open(url,"_blank","noopener,noreferrer")});
+show("chat");const messages=document.getElementById("messages");document.getElementById("chat-form").addEventListener("submit",e=>{e.preventDefault();const field=document.getElementById("prompt"),value=field.value.trim();if(!value)return;field.value="";sendChatMessage(value)});document.getElementById("new-chat").addEventListener("click",()=>{messages.replaceChildren();liveConversation=[];show("chat")});document.getElementById("browser-form").addEventListener("submit",e=>{e.preventDefault();const q=document.getElementById("address").value.trim();if(!q)return;const url=/^https?:\/\//i.test(q)?q:/^[\w-]+\.[a-z]{2,}/i.test(q)?"https://"+q:"https://www.google.com/search?q="+encodeURIComponent(q);window.open(url,"_blank","noopener,noreferrer");activityStart("Browser search / navigation");activityStep("Opening "+(url.startsWith("https://www.google.com/search")?"a web search":"the requested website"));activityFinish("Browser opened in a new tab. Website contents and search-result sources are not read by BrokenGPT in this browser version.");});
 const languages=window.BROKENGPT_LANGUAGES||{};const languageSelect=document.getElementById("language-select");const savedLanguage=localStorage.getItem("brokengpt-language")||"en";
 Object.entries(languages).forEach(([code,item])=>{const opt=document.createElement("option");opt.value=code;opt.textContent=item.name;languageSelect.append(opt)});
 function applyLanguage(code){const lang=languages[code]||languages.en;document.documentElement.lang=code;document.documentElement.dir=lang.dir||"ltr";document.querySelector('[data-view="chat"]').textContent="◈ "+(lang.chat||"Chat");document.querySelector('[data-view="battle"]').textContent=" "+(lang.battle||"AI Battle");document.querySelector('[data-view="browser"]').textContent="◎ "+(lang.browser||"Browser");document.querySelector('[data-view="studio"]').textContent="▧ "+(lang.studio||"Creative Studio");document.querySelector('[data-view="cyber"]').textContent="⌘ "+(lang.cyber||"Cyber Lab");document.querySelector('[data-view="settings"]').textContent=" "+(lang.settings||"Settings");document.getElementById("new-chat").textContent="＋ "+(lang.newChat||"New chat");["home","notes","prompts","academy","toolbox","favorites","history"].forEach(id=>{const nav=document.querySelector(`[data-view="${id}"]`);if(nav&&lang[id])nav.textContent=({home:"⌂ ",notes:"▤ ",prompts:" ",academy:"▣ ",toolbox:"⌘ ",favorites:" ",history:"◷ "}[id])+lang[id]});document.querySelector("#chat .hero h1").innerHTML=(lang.welcome||"I can help with")+" <em>"+(lang.anything||"anything.")+"</em>";document.getElementById("prompt").placeholder=lang.message||"Message BrokenGPT...";document.querySelector("#settings h1").innerHTML=(lang.account||"Account")+" <em>"+(lang.settings||"Settings")+"</em>";document.getElementById("language-status").textContent=lang.languageSaved||"Interface language selected. AI reply language can be configured after provider connection.";localStorage.setItem("brokengpt-language",code)}
@@ -559,28 +559,60 @@ function addReplyPreferencePicker(question,currentAnswer,systemPrompt,anchorCard
  }catch(error){hint.textContent="Could not create the second reply: "+error.message;}finally{busy=false;compare.disabled=false;}});
  anchorCard.append(panel);
 }
+/* Live activity tracker: visible progress and genuine source links when a tool supplies them. */
+const activityRoot=document.getElementById("live-activity");
+let activeActivity=null;
+function activityStart(title="Working on your request"){
+ if(!activityRoot)return null;activityRoot.replaceChildren();activityRoot.classList.remove("hidden");
+ const details=document.createElement("details");details.className="activity-card";details.open=true;
+ const summary=document.createElement("summary");summary.className="activity-summary";
+ const icon=document.createElement("span");icon.className="activity-pulse";icon.setAttribute("aria-hidden","true");
+ const label=document.createElement("span");label.className="activity-title";label.textContent=title;
+ const state=document.createElement("span");state.className="activity-state";state.textContent="In progress";
+ summary.append(icon,label,state);details.append(summary);
+ const steps=document.createElement("ol");steps.className="activity-steps";details.append(steps);
+ const sources=document.createElement("div");sources.className="activity-sources";details.append(sources);
+ activityRoot.append(details);activeActivity={details,steps,sources,state,title,done:false};activityStep(title);return activeActivity;
+}
+function activityStep(text,kind="progress"){
+ if(!activeActivity)return;const li=document.createElement("li");li.className="activity-step "+kind;li.textContent=text;activeActivity.steps.append(li);activeActivity.details.open=true;
+}
+function activitySources(items){
+ if(!activeActivity||!Array.isArray(items))return;activeActivity.sources.replaceChildren();
+ const heading=document.createElement("b");heading.textContent="Sources opened";activeActivity.sources.append(heading);
+ items.filter(x=>x&&typeof x.url==="string"&&/^https?:\/\//i.test(x.url)).forEach(item=>{
+  let url;try{url=new URL(item.url)}catch{return;}
+  const link=document.createElement("a");link.className="activity-source";link.href=url.href;link.target="_blank";link.rel="noopener noreferrer";
+  const favicon=document.createElement("img");favicon.alt="";favicon.loading="lazy";favicon.width=20;favicon.height=20;favicon.src="https://www.google.com/s2/favicons?domain="+encodeURIComponent(url.hostname)+"&sz=32";
+  const name=document.createElement("span");name.textContent=item.title||url.hostname;const domain=document.createElement("small");domain.textContent=url.hostname;link.append(favicon,name,domain);activeActivity.sources.append(link);
+ });
+}
+function activityFinish(message="Finished"){
+ if(!activeActivity)return;activityStep(message,"complete");activeActivity.state.textContent="Complete";activeActivity.state.classList.add("complete");activeActivity.done=true;activeActivity.details.open=false;activeActivity=null;
+}
+function activityFail(message){if(!activeActivity)return;activityStep(message,"error");activeActivity.state.textContent="Stopped";activeActivity.state.classList.add("error");activeActivity.details.open=true;activeActivity=null;}
 async function sendChatMessage(value){
   addChatMessage("YOU",value);
   activeReplyLanguage=detectMessageLanguage(value);
   const provider=apiEl("active-provider").value,model=apiEl("active-model").value.trim();
   if(!currentUser){addChatMessage("BrokenGPT · AI SETUP","I received your message, but the AI service is not connected yet. In Settings, enter the deployed HTTPS backend URL, test it, then create/sign in to your account and connect a provider API key. After the status says the provider is connected, send your message again.");apiEl("active-provider-status").textContent="AI offline: backend/account/provider setup is incomplete.";return;}
   const button=document.getElementById("send-message");button.disabled=true;
-  const typing=addChatMessage("BrokenGPT","Thinking…");typing.classList.add("typing-message");
+  const typing=addChatMessage("BrokenGPT","Thinking…");typing.classList.add("typing-message");activityStart("BrokenGPT is working");activityStep("Thinking through your message");
   try{
-    liveConversation.push({role:"user",content:value});
+    liveConversation.push({role:"user",content:value});activityStep("Preparing your AI request");activityStep("Connecting to the selected AI provider");
     const personality=prefs.personality||"BrokenGPT Default";
     const mode=apiEl("mode-select").value||"Balanced";
     const languageInstruction=activeReplyLanguage==="ar"?"The user's latest message is in Arabic. Reply naturally and fully in Arabic. Use Arabic for explanations and follow-up questions unless the user asks for another language.":"The user's latest message is in English or another non-Arabic language. Reply in the same language as the user's latest message. If uncertain, use English.";
     const learnedStyle=localStorage.getItem("brokengpt-response-preference")||"balanced";
     const system="You are BrokenGPT, the default AI assistant and coordinating intelligence across this app. Keep the BrokenGPT identity in chat and AI-powered workflows. "+languageInstruction+" Personality: "+personality+". Mode: "+mode+". Explanation level: "+(prefs.explanationLevel||"Adaptive")+". Response length: "+(prefs.responseLength||"Balanced")+". The user's learned response preference is "+learnedStyle+"; honor it unless the user asks otherwise. Be clear, safe, honest about uncertainty, and adapt explanations to the user's level.";
-    const data=await apiRequest("/api/chat",{method:"POST",csrf:true,body:{provider,model,stream:true,messages:[{role:"system",content:system},...liveConversation]},onToken:token=>{const paragraph=typing.querySelector("p");if(paragraph){paragraph.textContent=paragraph.textContent==="Thinking…"?token:paragraph.textContent+token;typing.classList.remove("typing-message");}}});
+    const data=await apiRequest("/api/chat",{method:"POST",csrf:true,body:{provider,model,stream:true,messages:[{role:"system",content:system},...liveConversation]},onToken:token=>{if(!activeActivity?.received){activityStep("Receiving the AI response");if(activeActivity)activeActivity.received=true;}const paragraph=typing.querySelector("p");if(paragraph){paragraph.textContent=paragraph.textContent==="Thinking…"?token:paragraph.textContent+token;typing.classList.remove("typing-message");}}});
     const streamedText=typing.querySelector("p")?.textContent||"";const answer=data.reply||streamedText||"(The provider returned an empty response.)";
     liveConversation.push({role:"assistant",content:answer});
-    typing.remove();const assistantCard=addChatMessage("BrokenGPT",answer);addReplyPreferencePicker(value,answer,system,assistantCard);speakAIReply(answer);
+    typing.remove();const assistantCard=addChatMessage("BrokenGPT",answer);addReplyPreferencePicker(value,answer,system,assistantCard);activityFinish("Reply delivered");speakAIReply(answer);
     const hist=readList("brokengpt-history");hist.push({title:value.slice(0,48),preview:"You: "+value+"\nBrokenGPT: "+answer.slice(0,700),time:new Date().toISOString()});writeList("brokengpt-history",hist);renderHistory();
   }catch(error){
     if(liveConversation.at(-1)?.role==="user")liveConversation.pop();
-    typing.remove();addChatMessage("BrokenGPT · CONNECTION",error.message+" Your message was not answered; fix the connection and tap send again.");apiEl("active-provider-status").textContent="AI request failed: "+error.message;
+    typing.remove();activityFail(error.message);addChatMessage("BrokenGPT · CONNECTION",error.message+" Your message was not answered; fix the connection and tap send again.");apiEl("active-provider-status").textContent="AI request failed: "+error.message;
   }finally{button.disabled=false;}
 }
 restoreAccount();
