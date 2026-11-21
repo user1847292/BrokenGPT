@@ -474,3 +474,15 @@ button,a,select,label,[role="button"],.message-action,.message-toolbar{
 
 /* RGB sequential single-hue cycling: one color at a time, with speed controlling each transition. */
 body.rgb-on{background-image:none!important;background-color:var(--rgb-current-color)!important}body.rgb-bg-active{background-image:none!important;background-color:var(--rgb-current-color)!important}body.rgb-text-active .brand,body.rgb-text-active h1,body.rgb-text-active h2,body.rgb-text-active h3,body.rgb-text-active header,body.rgb-text-active .view>small{background:none!important;color:var(--rgb-current-color)!important;-webkit-text-fill-color:var(--rgb-current-color)!important}body.rgb-border-active .settings-card,body.rgb-border-active .tile,body.rgb-border-active .message,body.rgb-border-active .rgb-studio{border-color:var(--rgb-current-color)!important;box-shadow:0 0 0 1px var(--rgb-current-color),0 0 10px color-mix(in srgb,var(--rgb-current-color) 45%,transparent)!important;animation:none!important}body.rgb-bubble-active .message{background:var(--rgb-current-color)!important;background-image:none!important}body.rgb-buttons-active button:not(.secondary){background:var(--rgb-current-color)!important;background-image:none!important}body.rgb-direct-switch{animation-timing-function:steps(8,end)!important}
+
+
+/* Hard-stop Android WebView text-selection callouts on navigation, tool and button UI. */
+:where(button,button *,a,a *,[role="button"],[role="button"] *,[data-view],[data-view] *,nav,nav *,aside,aside *,summary,summary *){
+  -webkit-user-select:none!important;
+  user-select:none!important;
+  -webkit-touch-callout:none!important;
+  -webkit-user-drag:none!important;
+  touch-action:manipulation;
+}
+:where(button,a,[role="button"],[data-view])::selection,
+:where(button,a,[role="button"],[data-view]) *::selection{background:transparent!important;color:inherit!important}
