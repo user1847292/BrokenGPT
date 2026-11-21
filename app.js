@@ -1,3 +1,4 @@
+var universeById=Object.create(null);
 const buttons=[...document.querySelectorAll("[data-view]")];function show(id){document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",v.id===id));buttons.forEach(b=>b.classList.toggle("selected",b.dataset.view===id));document.getElementById("page").textContent=id==="chat"?"CHAT":id.toUpperCase();closeDrawer()}buttons.forEach(b=>b.addEventListener("click",()=>show(b.dataset.view)));const drawer=document.getElementById("app-drawer"),drawerToggle=document.getElementById("drawer-toggle"),drawerBackdrop=document.getElementById("drawer-backdrop");function closeDrawer(){drawer?.classList.remove("drawer-open");drawerBackdrop?.classList.remove("visible");drawerToggle?.setAttribute("aria-expanded","false")}drawerToggle?.addEventListener("click",()=>{const open=!drawer.classList.contains("drawer-open");drawerToggle.setAttribute("aria-expanded",String(open));if(open){drawerBackdrop.classList.add("visible");requestAnimationFrame(()=>drawer.classList.add("drawer-open"));}else{drawer.classList.remove("drawer-open");drawerBackdrop.classList.remove("visible");}});drawerBackdrop?.addEventListener("click",closeDrawer);
 const modelToggle=document.getElementById("model-menu-toggle"),chatView=document.getElementById("chat"),providerSelect=document.getElementById("active-provider"),modelInput=document.getElementById("active-model");
 // BrokenGPT is the default assistant profile. The provider/model underneath is configurable.
@@ -361,7 +362,7 @@ const universeCharacters = [
  {id:"toystory",name:"Buzz Lightyear",category:"Movies",emoji:"",description:"A brave space ranger with earnest confidence and mission-focused humor.",tag:"To infinity and beyond!",style:["space mission","ranger report","launch ready","star command","mission log","cosmic discovery","team check","brave landing","infinity ahead","all systems go"]},
  {id:"shrek",name:"Shrek",category:"Movies",emoji:"",description:"A grumpy-but-kind swamp-dweller persona with dry humor and a soft heart.",tag:"Get outta my swamp—just kidding.",style:["swamp wisdom","onion layers","quiet afternoon","fairy tale trouble","dry joke","muddy boots","unexpected kindness","snack break","ogre logic","all done"]}
 ];
-const universeById = Object.fromEntries(universeCharacters.map(item=>[item.id,item]));
+universeById = Object.fromEntries(universeCharacters.map(item=>[item.id,item]));
 universeCharacters.forEach(item=>{
  expandedCharacterProfiles[item.id]={name:item.name,tag:item.tag,style:item.style,description:item.description,emoji:item.emoji};
 });
