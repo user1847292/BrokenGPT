@@ -683,8 +683,8 @@ async function beginNativeVoiceListening(){
     const result=await NativeSpeechRecognition.start({
       language:activeReplyLanguage==="ar"?"ar-IQ":"en-US",
       maxResults:1,
-      popup:true,
-      partialResults:false
+      popup:false,
+      partialResults:true
     });
     const transcript=result?.matches?.[0]?.trim()||"";
     if(transcript){
@@ -709,7 +709,7 @@ function beginVoiceListening(){
 function startVoiceConversation(){
   if(!NativeSpeechRecognition&&!SpeechRecognitionAPI){voiceStatus("Voice recognition is not supported here. You can still type a message.");return;}
   voiceConversationActive=true;voiceMicMuted=false;nativeVoiceOneShot=false;apiEl("voice-auto-play").checked=true;
-  refreshComposerControl();voiceStatus(NativeSpeechRecognition?"Voice conversation is on. Android will open its voice-recognition dialog.":"Voice conversation is on. Allow microphone access, then speak.");
+  refreshComposerControl();voiceStatus(NativeSpeechRecognition?"Voice conversation is on. BrokenGPT will listen inline without opening the Android voice popup.":"Voice conversation is on. Allow microphone access, then speak.");
   beginVoiceListening();
 }
 function stopVoiceConversation(){
