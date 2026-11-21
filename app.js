@@ -407,7 +407,7 @@ async function apiRequest(url,options={}){
     if(!response.ok)throw new Error("The BrokenGPT stream request failed.");
     const reader=response.body.getReader(),decoder=new TextDecoder();let buffer="",reply="",streamError="";
     const parseLine=line=>{if(!line.startsWith("data:"))return;const raw=line.slice(5).trim();if(!raw)return;let event;try{event=JSON.parse(raw)}catch{return;}if(event.token){reply+=event.token;options.onToken(event.token)}if(event.error)streamError=event.error;};
-    while(true){const {value,done}=await reader.read();if(done)break;buffer+=decoder.decode(value,{stream:true});const lines=buffer.split(/\\r?\\n/);buffer=lines.pop()||"";lines.forEach(parseLine);}
+    while(true){const {value,done}=await reader.read();if(done)break;buffer+=decoder.decode(value,{stream:true});const lines=buffer.split(/\r?\n/);buffer=lines.pop()||"";lines.forEach(parseLine);}
     if(buffer)parseLine(buffer);if(streamError)throw new Error(streamError);return {reply,streamed:true};
   }
   if(!type.includes("application/json"))throw new Error("BrokenGPT backend is not connected to this website yet.");
