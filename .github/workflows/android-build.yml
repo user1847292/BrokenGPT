@@ -52,6 +52,18 @@ jobs:
           /tmp/brokengpt-icon-venv/bin/python scripts/generate-android-icons.py file_00000000a7b481f4ac6329d53b247deb.png android/app/src/main/res
       - name: Sync Capacitor
         run: npx cap sync android
+      - name: Add Maven Central mirror for transient rate limits
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path("android/settings.gradle")
+          text = path.read_text()
+          mirror = 'maven { url "https://maven-central.storage-download.googleapis.com/maven2" }'
+          if mirror not in text:
+              text = text.replace("mavenCentral()", mirror + "\\n        mavenCentral()")
+              path.write_text(text)
+          print("Configured Google-hosted Maven Central mirror fallback")
+          PY
       - name: Build debug APK
         working-directory: android
         run: ./gradlew assembleDebug --no-daemon
