@@ -445,3 +445,8 @@ body textarea:focus-visible,body select:focus-visible{
 
 /* User-controlled stop button for active chat/task activity */
 .activity-cancel{margin-left:auto;flex:0 0 auto;padding:6px 10px;border:1px solid #b51b36!important;border-radius:8px;background:#390812!important;color:#ff7188!important;font-size:12px;font-weight:700;cursor:pointer}.activity-cancel:disabled{opacity:.7;cursor:wait}.activity-cancel.is-stopping{border-color:#6b3038!important;color:#d8a0a8!important}.activity-summary{flex-wrap:wrap}
+
+/* Composer button: voice when empty, send when text exists, square stop during generation. */
+#chat-form .composer-send.voice-mode-button{background:#241017!important;border-color:#a31b3b!important;color:#ff6c8b!important;border-radius:50%!important;font-size:19px!important;box-shadow:0 0 0 2px #6e142433}
+#chat-form .composer-send.stop-mode-button{background:#4a0b17!important;border-color:#ff1744!important;color:#fff!important;font-size:17px!important;font-weight:900!important}
+#chat-form .composer-send.stop-mode-button:hover{background:#700018!important}
