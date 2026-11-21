@@ -1,6 +1,12 @@
 const buttons=[...document.querySelectorAll("[data-view]")];function show(id){document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",v.id===id));buttons.forEach(b=>b.classList.toggle("selected",b.dataset.view===id));document.getElementById("page").textContent=id==="chat"?"CHAT":id.toUpperCase();closeDrawer()}buttons.forEach(b=>b.addEventListener("click",()=>show(b.dataset.view)));const drawer=document.getElementById("app-drawer"),drawerToggle=document.getElementById("drawer-toggle"),drawerBackdrop=document.getElementById("drawer-backdrop");function closeDrawer(){drawer?.classList.remove("drawer-open");drawerBackdrop?.classList.remove("visible");drawerToggle?.setAttribute("aria-expanded","false")}drawerToggle?.addEventListener("click",()=>{const open=!drawer.classList.contains("drawer-open");drawerToggle.setAttribute("aria-expanded",String(open));if(open){drawerBackdrop.classList.add("visible");requestAnimationFrame(()=>drawer.classList.add("drawer-open"));}else{drawer.classList.remove("drawer-open");drawerBackdrop.classList.remove("visible");}});drawerBackdrop?.addEventListener("click",closeDrawer);
 const modelToggle=document.getElementById("model-menu-toggle"),chatView=document.getElementById("chat"),providerSelect=document.getElementById("active-provider"),modelInput=document.getElementById("active-model");
-function refreshModelLabel(){if(!modelToggle||!modelInput)return;const raw=modelInput.value.trim()||"Choose model";const compact=raw.length>22?raw.slice(0,19)+"…":raw;modelToggle.innerHTML=""+compact+" <span aria-hidden='true'>⌄</span>";}
+// BrokenGPT is the default assistant profile. The provider/model underneath is configurable.
+const savedAISelection=(()=>{try{return JSON.parse(localStorage.getItem("brokengpt-ai-selection")||"{}")}catch{return{}}})();
+if(providerSelect&&savedAISelection.provider&&[...providerSelect.options].some(o=>o.value===savedAISelection.provider))providerSelect.value=savedAISelection.provider;
+if(modelInput&&typeof savedAISelection.model==="string"&&savedAISelection.model.trim())modelInput.value=savedAISelection.model;
+function saveAISelection(){localStorage.setItem("brokengpt-ai-selection",JSON.stringify({provider:providerSelect?.value||"openai",model:modelInput?.value?.trim()||"gpt-4o-mini"}));}
+function refreshModelLabel(){if(!modelToggle||!modelInput)return;const provider=providerSelect?.value||"openai",model=modelInput.value.trim()||"Choose model";const raw=provider==="openai"&&model==="gpt-4o-mini"?"BrokenGPT":model;const compact=raw.length>22?raw.slice(0,19)+"…":raw;modelToggle.innerHTML=""+compact+" <span aria-hidden='true'>⌄</span>";}
+modelInput?.addEventListener("change",saveAISelection);providerSelect?.addEventListener("change",saveAISelection);
 modelToggle?.addEventListener("click",()=>{const open=!chatView.classList.contains("model-menu-open");chatView.classList.toggle("model-menu-open",open);modelToggle.setAttribute("aria-expanded",String(open));});
 document.addEventListener("click",event=>{if(!event.target.closest("#model-menu-toggle")&&!event.target.closest("#model-settings-panel")){chatView?.classList.remove("model-menu-open");modelToggle?.setAttribute("aria-expanded","false");}});
 modelInput?.addEventListener("input",refreshModelLabel);providerSelect?.addEventListener("change",refreshModelLabel);refreshModelLabel();
@@ -24,6 +30,7 @@ el("reset-settings").addEventListener("click",()=>{prefs={...defaults};applyPref
 
 /* Stage 3: navigation, modes, notes, prompts, local history and utilities */
 const modeInfo={
+BrokenGPT:"BrokenGPT is the default assistant identity used throughout this app.",
 Balanced:"Balanced everyday assistance.",
 Turbo:"A concise, fast-response style. It does not make the model run faster.",
 Genius:"A careful, structured reasoning style. It does not unlock a different model.",
@@ -36,7 +43,7 @@ Master:"A confident, direct, command-center style."
 };
 const modeSelect=document.getElementById("mode-select"),modeDescription=document.getElementById("mode-description");
 function setMode(mode){if(!modeInfo[mode])return;modeSelect.value=mode;modeDescription.textContent=modeInfo[mode];localStorage.setItem("brokengpt-mode",mode);document.querySelectorAll("[data-mode]").forEach(b=>b.classList.toggle("active",b.dataset.mode===mode))}
-setMode(localStorage.getItem("brokengpt-mode")||"Balanced");
+setMode(localStorage.getItem("brokengpt-mode")||"BrokenGPT");
 modeSelect.addEventListener("change",()=>setMode(modeSelect.value));
 document.querySelectorAll("[data-mode]").forEach(b=>b.addEventListener("click",()=>{setMode(b.dataset.mode);show(b.dataset.mode==="Study"?"study":"chat")}));
 document.querySelectorAll("[data-go]").forEach(b=>b.addEventListener("click",()=>show(b.dataset.go)));
@@ -529,6 +536,24 @@ function detectMessageLanguage(value){
   return "en";
 }
 let activeReplyLanguage="en";
+function addReplyPreferencePicker(question,currentAnswer,systemPrompt,anchorCard){
+ const panel=document.createElement("details");panel.className="reply-preference";const summary=document.createElement("summary");summary.textContent="Which reply do you prefer?";panel.append(summary);
+ const hint=document.createElement("p");hint.textContent="Compare a second answer when you want to help BrokenGPT learn your response style. A second AI request happens only when you tap the button.";panel.append(hint);
+ const compare=document.createElement("button");compare.type="button";compare.textContent="Compare another reply";panel.append(compare);
+ const choices=document.createElement("div");choices.className="reply-choice-grid";panel.append(choices);let busy=false;
+ compare.addEventListener("click",async()=>{if(busy)return;busy=true;compare.disabled=true;compare.textContent="Generating option B…";try{
+  const history=liveConversation.slice(0,-2);history.push(liveConversation.at(-2));
+  const alternateSystem=systemPrompt+" For this comparison, create an alternative answer that is noticeably more detailed and includes useful examples, while staying accurate.";
+  const data=await apiRequest("/api/chat",{method:"POST",csrf:true,body:{provider:apiEl("active-provider").value,model:apiEl("active-model").value.trim(),messages:[{role:"system",content:alternateSystem},...history]}});
+  const alternate=data.reply||"No alternative answer was returned.";choices.replaceChildren();
+  [[currentAnswer,"A · Current reply","balanced"],[alternate,"B · Detailed alternative","detailed"]].forEach(([answer,label,style],index)=>{
+   const card=document.createElement("article");card.className="reply-choice";const heading=document.createElement("b");heading.textContent=label;const text=document.createElement("p");text.textContent=answer;const choose=document.createElement("button");choose.type="button";choose.textContent="I prefer "+(index===0?"A":"B");
+   choose.addEventListener("click",()=>{localStorage.setItem("brokengpt-response-preference",style);liveConversation[liveConversation.length-1].content=answer;const p=anchorCard.querySelector("p");if(p)p.textContent=answer;panel.querySelector("summary").textContent="Preference saved: "+(style==="detailed"?"detailed answers":"balanced answers");choices.querySelectorAll("button").forEach(b=>b.disabled=true);});
+   card.append(heading,text,choose);choices.append(card);
+  });compare.textContent="Compare again";
+ }catch(error){hint.textContent="Could not create the second reply: "+error.message;}finally{busy=false;compare.disabled=false;}});
+ anchorCard.append(panel);
+}
 async function sendChatMessage(value){
   addChatMessage("YOU",value);
   activeReplyLanguage=detectMessageLanguage(value);
@@ -541,11 +566,12 @@ async function sendChatMessage(value){
     const personality=prefs.personality||"BrokenGPT Default";
     const mode=apiEl("mode-select").value||"Balanced";
     const languageInstruction=activeReplyLanguage==="ar"?"The user's latest message is in Arabic. Reply naturally and fully in Arabic. Use Arabic for explanations and follow-up questions unless the user asks for another language.":"The user's latest message is in English or another non-Arabic language. Reply in the same language as the user's latest message. If uncertain, use English.";
-    const system="You are BrokenGPT, a helpful AI assistant. "+languageInstruction+" Personality: "+personality+". Mode: "+mode+". Explanation level: "+(prefs.explanationLevel||"Adaptive")+". Response length: "+(prefs.responseLength||"Balanced")+". Be clear, safe, honest about uncertainty, and adapt explanations to the user's level.";
+    const learnedStyle=localStorage.getItem("brokengpt-response-preference")||"balanced";
+    const system="You are BrokenGPT, the default AI assistant and coordinating intelligence across this app. Keep the BrokenGPT identity in chat and AI-powered workflows. "+languageInstruction+" Personality: "+personality+". Mode: "+mode+". Explanation level: "+(prefs.explanationLevel||"Adaptive")+". Response length: "+(prefs.responseLength||"Balanced")+". The user's learned response preference is "+learnedStyle+"; honor it unless the user asks otherwise. Be clear, safe, honest about uncertainty, and adapt explanations to the user's level.";
     const data=await apiRequest("/api/chat",{method:"POST",csrf:true,body:{provider,model,messages:[{role:"system",content:system},...liveConversation]}});
     const answer=data.reply||"(The provider returned an empty response.)";
     liveConversation.push({role:"assistant",content:answer});
-    typing.remove();addChatMessage("BrokenGPT",answer);speakAIReply(answer);
+    typing.remove();const assistantCard=addChatMessage("BrokenGPT",answer);addReplyPreferencePicker(value,answer,system,assistantCard);speakAIReply(answer);
     const hist=readList("brokengpt-history");hist.push({title:value.slice(0,48),preview:"You: "+value+"\nBrokenGPT: "+answer.slice(0,700),time:new Date().toISOString()});writeList("brokengpt-history",hist);renderHistory();
   }catch(error){
     if(liveConversation.at(-1)?.role==="user")liveConversation.pop();
