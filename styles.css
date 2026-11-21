@@ -376,3 +376,8 @@ body textarea:focus-visible,body select:focus-visible{
   outline:2px solid var(--blood-bright)!important;
   box-shadow:0 0 0 3px var(--blood-glow);
 }
+
+/* User-adjustable chat welcome heading; restrained range prevents extreme placement. */
+#chat .hero{transform:translateY(var(--welcome-y,0vh));font-size:var(--welcome-size,32px);transition:transform .16s ease,font-size .16s ease}
+#chat .hero h1{font-size:inherit;line-height:1.2}
+@media(max-height:650px){#chat .hero{margin-block:clamp(8px,2vh,24px)}}
