@@ -2,6 +2,12 @@ name: BrokenGPT Android APK and screenshots
 
 on:
   workflow_dispatch:
+    inputs:
+      publish_release:
+        description: 'Create a draft GitHub Release only after reviewing this build'
+        required: false
+        type: boolean
+        default: false
   push:
     branches:
       - feature/approved-brokgpt-expansion
@@ -130,7 +136,7 @@ jobs:
           if-no-files-found: error
           retention-days: 30
       - name: Publish direct APK download to GitHub Releases
-        if: always() && steps.release_apk_artifact.outcome == 'success'
+        if: github.event_name == 'workflow_dispatch' && inputs.publish_release == true && steps.release_apk_artifact.outcome == 'success'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: brokengpt-build-${{ github.run_number }}
@@ -139,7 +145,8 @@ jobs:
             Installable signed Android APK for BrokenGPT.
             Download **BrokenGPT-release.apk** below directly—no artifact ZIP extraction.
             This build was produced from branch `feature/approved-brokgpt-expansion`.
-          prerelease: true
+          draft: true
+          prerelease: false
           files: android/app/build/outputs/apk/release/BrokenGPT-release.apk
       - name: Upload mobile screenshots
         uses: actions/upload-artifact@v4
