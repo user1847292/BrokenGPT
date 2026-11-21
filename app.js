@@ -1128,3 +1128,14 @@ apiEl("download-video").addEventListener("click",async()=>{
  $("task-list")?.addEventListener("click",event=>{const complete=event.target.closest("[data-task-complete]"),remove=event.target.closest("[data-task-remove]");if(complete){const task=tasks.find(t=>t.id===complete.dataset.taskComplete);if(task)task.status="completed";}else if(remove){tasks=tasks.filter(t=>t.id!==remove.dataset.taskRemove);}else return;save();render();});
  render();
 })();
+
+
+/* Global native context-menu suppression. Message cards keep their own BrokenGPT menu. */
+(()=>{
+  document.addEventListener("contextmenu", event => {
+    event.preventDefault();
+  }, {capture:true});
+  document.addEventListener("selectstart", event => {
+    if (!event.target.closest("input,textarea,[contenteditable='true'],.message-content")) event.preventDefault();
+  }, {capture:true});
+})();
