@@ -19,7 +19,7 @@ on:
       - ".github/workflows/android-build.yml"
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -85,29 +85,42 @@ jobs:
           SIGNED_APK="$APK_DIR/BrokenGPT-release.apk"
           KEYSTORE="$RUNNER_TEMP/brokengpt-release.keystore"
           STORE_PASS="$(openssl rand -hex 24)"
-          keytool -genkeypair -v \
-            -keystore "$KEYSTORE" \
-            -storepass "$STORE_PASS" \
-            -keypass "$STORE_PASS" \
-            -alias brokengpt-release \
-            -keyalg RSA -keysize 2048 -validity 10000 \
+          keytool -genkeypair -v \\
+            -keystore "$KEYSTORE" \\
+            -storepass "$STORE_PASS" \\
+            -keypass "$STORE_PASS" \\
+            -alias brokengpt-release \\
+            -keyalg RSA -keysize 2048 -validity 10000 \\
             -dname "CN=BrokenGPT Release"
           APKSIGNER="$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -n 1)"
-          "$APKSIGNER" sign \
-            --ks "$KEYSTORE" \
-            --ks-key-alias brokengpt-release \
-            --ks-pass "pass:$STORE_PASS" \
-            --key-pass "pass:$STORE_PASS" \
+          "$APKSIGNER" sign \\
+            --ks "$KEYSTORE" \\
+            --ks-key-alias brokengpt-release \\
+            --ks-pass "pass:$STORE_PASS" \\
+            --key-pass "pass:$STORE_PASS" \\
             --out "$SIGNED_APK" "$UNSIGNED_APK"
           "$APKSIGNER" verify --verbose "$SIGNED_APK"
           rm -f "$KEYSTORE"
-      - name: Upload installable release APK
+      - name: Upload installable release APK artifact
+        id: release_apk_artifact
         uses: actions/upload-artifact@v4
         with:
           name: BrokenGPT-release-APK
           path: android/app/build/outputs/apk/release/BrokenGPT-release.apk
           if-no-files-found: error
           retention-days: 30
+      - name: Publish direct APK download to GitHub Releases
+        if: always() && steps.release_apk_artifact.outcome == 'success'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: brokengpt-build-${{ github.run_number }}
+          name: BrokenGPT APK Build ${{ github.run_number }}
+          body: |
+            Installable signed Android APK for BrokenGPT.
+            Download **BrokenGPT-release.apk** below directly—no artifact ZIP extraction.
+            This build was produced from branch `feature/approved-brokgpt-expansion`.
+          prerelease: true
+          files: android/app/build/outputs/apk/release/BrokenGPT-release.apk
       - name: Start local preview server
         run: |
           python3 -m http.server 4173 --directory www > /tmp/brokengpt-preview.log 2>&1 &
