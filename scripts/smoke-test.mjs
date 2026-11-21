@@ -34,6 +34,14 @@ try {
   assert.ok(await page.locator("#send-message").evaluate(node => node.classList.contains("send-mode-button")), "Send button styling state was not updated");
   await page.locator("#prompt").fill("");
 
+  await page.locator("#prompt").fill("local history smoke conversation");
+  await page.locator("#send-message").click();
+  assert.ok((await page.locator("#messages").innerText()).includes("local history smoke conversation"), "Composer did not display the submitted user message");
+  await page.locator('[data-view="history"]').first().evaluate(node => node.click());
+  assert.ok((await page.locator("#history-list").innerText()).includes("local history smoke conversation"), "Local chat history did not save the submitted conversation");
+  await page.locator("#history-list button").first().click();
+  assert.ok((await page.locator("#messages").innerText()).includes("local history smoke conversation"), "History Open conversation did not restore the saved transcript");
+
   await page.locator('[data-view="tasks"]').first().evaluate(node => node.click());
   await page.locator("#task-title").fill("Smoke test task tracker");
   await page.locator("#task-add").click();
