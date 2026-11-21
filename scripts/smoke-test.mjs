@@ -98,6 +98,11 @@ try {
   );
 
   await page.locator('[data-view="settings"]').first().evaluate(node => node.click());
+  await page.locator('[data-category="Memory"]').click();
+  await page.locator("#memory-note").fill("Smoke test memory preference");
+  await page.locator("#memory-save").click();
+  assert.ok((await page.locator("#memory-list").innerText()).includes("Smoke test memory preference"), "Memory note save and reload failed");
+  assert.ok(await page.evaluate(() => JSON.parse(localStorage.getItem("brokengpt-memory-v1")||"[]").includes("Smoke test memory preference")), "Memory was not stored locally");
   await page.locator("#welcome-position").evaluate(node => {
     node.value = "-6";
     node.dispatchEvent(new Event("input", { bubbles: true }));
