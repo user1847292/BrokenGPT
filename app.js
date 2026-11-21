@@ -81,19 +81,27 @@ function rgbPalette(){
   return Array.from({length:5},()=>"#"+Math.floor(Math.random()*16777215).toString(16).padStart(6,"0"));
 }
 function applyRGBStudio(){
-  if(rgbRandomTimer){clearInterval(rgbRandomTimer);rgbRandomTimer=null}
   document.body.classList.remove("rgb-on","rgb-glow","rgb-bg-active","rgb-text-active","rgb-border-active","rgb-bubble-active","rgb-buttons-active","rgb-direct-switch");
   const enabled=el("rainbow-enabled").checked;
-  if(!enabled){document.body.style.removeProperty("--rgb-gradient");return}
+  const oldStyle=el("rgb-dynamic-keyframes");if(oldStyle)oldStyle.remove();
+  document.body.style.removeProperty("--rgb-cycle-duration");
+  document.body.style.removeProperty("--rgb-current-color");
+  if(!enabled)return;
   const targets=prefs.rgbTargets||rgbDefaults.rgbTargets;
   const applyTarget=(key,cls)=>document.body.classList.toggle(cls,!!targets[key]);
   applyTarget("background","rgb-bg-active");applyTarget("text","rgb-text-active");applyTarget("borders","rgb-border-active");applyTarget("bubbles","rgb-bubble-active");applyTarget("buttons","rgb-buttons-active");
-  document.body.classList.toggle("rgb-direct-switch",prefs.rgbTransition==="switch");
-  document.body.style.setProperty("--rgb-easing",prefs.rgbTransition==="switch"?"steps(1,end)":prefs.rgbTransition==="flow"?"linear":"ease-in-out");
-  document.body.style.setProperty("--rgb-duration",Math.max(.5,Number(prefs.rgbSpeedSeconds)||8)+"s");
-  const updateGradient=()=>{const colors=rgbPalette();document.body.style.setProperty("--rgb-gradient","linear-gradient(110deg,"+colors.join(",")+")");document.body.style.setProperty("--rgb-color-a",colors[0]);document.body.style.setProperty("--rgb-color-b",colors[1]||colors[0])};
-  updateGradient();
-  if(prefs.rgbMode==="random")rgbRandomTimer=setInterval(updateGradient,Math.max(500,Number(prefs.rgbSpeedSeconds)*1000));
+  const colors=rgbPalette();
+  const palette=colors.length>1?colors:[colors[0]||"#ff0000"];
+  const seconds=Math.max(.5,Number(prefs.rgbSpeedSeconds)||8);
+  const duration=seconds*palette.length;
+  const stops=palette.map((color,index)=>{const pct=(index/palette.length)*100;return pct.toFixed(3)+"%{--rgb-current-color:"+color+"}"}).join("");
+  const style=document.createElement("style");style.id="rgb-dynamic-keyframes";
+  style.textContent="@property --rgb-current-color{syntax:'<color>';inherits:true;initial-value:#ff0000}@keyframes rgb-color-cycle{"+stops+"100%{--rgb-current-color:"+palette[0]+"}}";
+  document.head.append(style);
+  document.body.style.setProperty("--rgb-cycle-duration",duration+"s");
+  document.body.style.setProperty("--rgb-current-color",palette[0]);
+  document.body.classList.add("rgb-on");
+  document.body.style.animation="rgb-color-cycle "+duration+"s "+(prefs.rgbTransition==="switch"?"steps("+palette.length+",end)":"linear")+" infinite";
 }
 function loadRGBStudio(){
   rgbSetValue("rgb-mode",prefs.rgbMode);rgbSetValue("rgb-transition",prefs.rgbTransition);rgbSetValue("rgb-speed-range",prefs.rgbSpeedSeconds);
