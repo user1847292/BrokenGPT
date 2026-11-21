@@ -4,17 +4,19 @@
   "private": true,
   "description": "BrokenGPT mobile wrapper and screenshot build tools",
   "scripts": {
-    "build:web": "node scripts/prepare-web.mjs",
+    "build:web": "node scripts/prepare-web.mjs && esbuild scripts/native-bridge.js --bundle --format=iife --outfile=www/native-bridge.js",
     "build:android": "npm run build:web && cap sync android",
-    "test:syntax": "node --check app.js && node --check languages.js && node --check backend/server.js && node --check scripts/prepare-web.mjs && node --check scripts/capture-screenshots.mjs",
+    "test:syntax": "node --check app.js && node --check languages.js && node --check backend/server.js && node --check scripts/prepare-web.mjs && node --check scripts/capture-screenshots.mjs && node --check scripts/native-bridge.js",
     "test:smoke": "node scripts/smoke-test.mjs"
   },
   "dependencies": {
     "@capacitor/android": "7.4.3",
-    "@capacitor/core": "7.4.3"
+    "@capacitor/core": "7.4.3",
+    "@capacitor-community/speech-recognition": "7.0.1"
   },
   "devDependencies": {
     "@capacitor/cli": "7.4.3",
-    "playwright": "1.55.0"
+    "playwright": "1.55.0",
+    "esbuild": "^0.25.0"
   }
 }
