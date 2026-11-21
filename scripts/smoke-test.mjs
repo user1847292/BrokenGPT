@@ -71,12 +71,33 @@ try {
     "SHA-256 did not match the known test vector"
   );
 
+  await page.locator('[data-view="settings"]').first().evaluate(node => node.click());
+  await page.locator("#welcome-position").evaluate(node => {
+    node.value = "-6";
+    node.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+  await page.locator("#welcome-size").evaluate(node => {
+    node.value = "36";
+    node.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+  await page.locator("#save-appearance").click();
+  const welcomePrefs = await page.evaluate(() => JSON.parse(localStorage.getItem("brokengpt-prefs")));
+  assert.equal(welcomePrefs.welcomeY, -6, "Welcome position was not saved");
+  assert.equal(welcomePrefs.welcomeSize, 36, "Welcome size was not saved");
+  assert.ok((await page.locator("#chat .hero").evaluate(node => node.style.getPropertyValue("--welcome-y"))).includes("-6vh"),
+    "Welcome heading did not apply vertical position");
+  await page.reload({ waitUntil: "networkidle" });
+  assert.equal(await page.locator("#welcome-position").inputValue(), "-6",
+    "Welcome position did not persist after reload");
+  assert.equal(await page.locator("#welcome-size").inputValue(), "36",
+    "Welcome size did not persist after reload");
+
   if (pageErrors.length || consoleErrors.length) {
     throw new Error("Browser errors detected. pageerror=" + JSON.stringify(pageErrors) +
       " console=" + JSON.stringify(consoleErrors));
   }
 
-  console.log("BrokenGPT smoke tests passed: navigation, standalone downloads, local notes, word counter, offline calculator, password generation, Base64, SHA-256, and browser console.");
+  console.log("BrokenGPT smoke tests passed: navigation, standalone downloads, local notes, word counter, offline calculator, password generation, Base64, SHA-256, welcome heading position/size persistence, and browser console.");
 } finally {
   await browser.close();
 }
