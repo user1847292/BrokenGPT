@@ -112,6 +112,24 @@ app.post('/api/study',auth,csrf,apiLimit,async(req,res)=>{
   }catch(error){return fail(res,502,error.name==='TimeoutError'?'The tutor took too long to respond. Try a smaller attachment or another model.':'Could not reach the AI provider. Try again later.');}
 });
 
+async function forwardAIStream(upstream,res,providerName){
+ const contentType=upstream.headers.get('content-type')||'';
+ if(!upstream.ok){const err=await upstream.json().catch(()=>({}));return fail(res,[401,403].includes(upstream.status)?401:502,err.error?.message||providerName.toUpperCase()+' streaming request failed. Check model access and provider limits.');}
+ if(!contentType.includes('text/event-stream')){const fallback=await upstream.json().catch(()=>({}));const reply=fallback.choices?.[0]?.message?.content||(fallback.candidates?.[0]?.content?.parts||[]).map(x=>x.text||'').join('\\n')||(fallback.content||[]).filter(x=>x.type==='text').map(x=>x.text||'').join('\\n')||'';return res.json({provider:providerName,reply,streamed:false});}
+ res.status(200);res.set({'Content-Type':'text/event-stream; charset=utf-8','Cache-Control':'no-cache, no-transform','Connection':'keep-alive','X-Accel-Buffering':'no'});res.flushHeaders?.();
+ const reader=upstream.body.getReader(),decoder=new TextDecoder();let buffer='',finished=false;
+ const send=payload=>{if(!res.writableEnded)res.write('data: '+JSON.stringify(payload)+'\\n\\n');};
+ const parseLine=line=>{if(!line.startsWith('data:'))return;const raw=line.slice(5).trim();if(!raw||raw==='[DONE]'){finished=true;return;}let event;try{event=JSON.parse(raw)}catch{return;}
+  if(event.error){send({error:event.error.message||'The provider reported a stream error.'});return;}
+  let token='';
+  if(providerName==='anthropic')token=event.type==='content_block_delta'?(event.delta?.text||''):'';
+  else if(providerName==='gemini')token=(event.candidates?.[0]?.content?.parts||[]).map(x=>x.text||'').join('');
+  else token=event.choices?.[0]?.delta?.content||event.choices?.[0]?.text||'';
+  if(token)send({token});
+ };
+ try{while(!finished){const {value,done}=await reader.read();if(done)break;buffer+=decoder.decode(value,{stream:true});const lines=buffer.split(/\\r?\\n/);buffer=lines.pop()||'';for(const line of lines)parseLine(line);}if(buffer)parseLine(buffer);send({done:true});res.end();}
+ catch(error){send({error:error.name==='AbortError'?'The stream was cancelled.':'The provider stream was interrupted. Please retry.'});res.end();}
+}
 app.post('/api/chat',auth,csrf,apiLimit,async(req,res)=>{
   const p=provider(req.body?.provider),model=typeof req.body?.model==='string'?req.body.model.trim():'',msgs=messagesOk(req.body?.messages);
   if(!p)return fail(res,400,'Choose a supported AI provider.');
@@ -123,7 +141,8 @@ app.post('/api/chat',auth,csrf,apiLimit,async(req,res)=>{
   try{
     let response,data,reply='';
     if(p==='openai'){
-      response=await fetch(PROVIDERS.openai.url,{method:'POST',headers:{Authorization:'Bearer '+secret,'Content-Type':'application/json'},body:JSON.stringify({model,messages:msgs,max_tokens:1800}),signal:AbortSignal.timeout(60000)});
+      response=await fetch(PROVIDERS.openai.url,{method:'POST',headers:{Authorization:'Bearer '+secret,'Content-Type':'application/json'},body:JSON.stringify(req.body?.stream?{model,messages:msgs,max_tokens:1800,stream:true}:{model,messages:msgs,max_tokens:1800}),signal:AbortSignal.timeout(60000)});
+      if(req.body?.stream)return await forwardAIStream(response,res,p);
       data=await response.json().catch(()=>({}));
       if(!response.ok)return fail(res,[401,403].includes(response.status)?401:502,data.error?.message||'OpenAI request failed. Check the key, model, and usage limits.');
       return res.json({provider:p,model,reply:data.choices?.[0]?.message?.content||'',usage:data.usage||null});
@@ -131,7 +150,8 @@ app.post('/api/chat',auth,csrf,apiLimit,async(req,res)=>{
     if(p==='gemini'){
       const contents=msgs.filter(m=>m.role!=='system').map(m=>({role:m.role==='assistant'?'model':'user',parts:[{text:m.content}]})),system=msgs.filter(m=>m.role==='system').map(m=>m.content).join('\n\n'),body={contents,generationConfig:{maxOutputTokens:1800}};
       if(system)body.systemInstruction={parts:[{text:system}]};
-      response=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(model)+':generateContent',{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':secret},body:JSON.stringify(body),signal:AbortSignal.timeout(60000)});
+      response=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(model)+':'+(req.body?.stream?'streamGenerateContent?alt=sse':'generateContent'),{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':secret},body:JSON.stringify(body),signal:AbortSignal.timeout(60000)});
+      if(req.body?.stream)return await forwardAIStream(response,res,p);
       data=await response.json().catch(()=>({}));
       if(!response.ok)return fail(res,[401,403].includes(response.status)?401:502,data.error?.message||'Gemini request failed. Check the key, model, and usage limits.');
       reply=(data.candidates?.[0]?.content?.parts||[]).map(x=>x.text||'').join('\n');
@@ -139,16 +159,18 @@ app.post('/api/chat',auth,csrf,apiLimit,async(req,res)=>{
     }
     if(p==='anthropic'){
       const system=msgs.filter(m=>m.role==='system').map(m=>m.content).join('\n\n');
-      const body={model,max_tokens:1800,messages:msgs.filter(m=>m.role!=='system').map(m=>({role:m.role,content:m.content}))};
+      const body={model,max_tokens:1800,messages:msgs.filter(m=>m.role!=='system').map(m=>({role:m.role,content:m.content})),...(req.body?.stream?{stream:true}:{})};
       if(system)body.system=system;
       response=await fetch(PROVIDERS.anthropic.url,{method:'POST',headers:{'x-api-key':secret,'anthropic-version':'2023-06-01','Content-Type':'application/json'},body:JSON.stringify(body),signal:AbortSignal.timeout(60000)});
+      if(req.body?.stream)return await forwardAIStream(response,res,p);
       data=await response.json().catch(()=>({}));
       if(!response.ok)return fail(res,[401,403].includes(response.status)?401:502,data.error?.message||'Claude request failed. Check the key, model, and usage limits.');
       reply=(data.content||[]).filter(x=>x.type==='text').map(x=>x.text||'').join('\n');
       return res.json({provider:p,model,reply,usage:data.usage||null});
     }
     const config=PROVIDERS[p];
-    response=await fetch(config.url,{method:'POST',headers:{Authorization:'Bearer '+secret,'Content-Type':'application/json'},body:JSON.stringify({model,messages:msgs,max_tokens:1800}),signal:AbortSignal.timeout(60000)});
+    response=await fetch(config.url,{method:'POST',headers:{Authorization:'Bearer '+secret,'Content-Type':'application/json'},body:JSON.stringify(req.body?.stream?{model,messages:msgs,max_tokens:1800,stream:true}:{model,messages:msgs,max_tokens:1800}),signal:AbortSignal.timeout(60000)});
+    if(req.body?.stream)return await forwardAIStream(response,res,p);
     data=await response.json().catch(()=>({}));
     if(!response.ok)return fail(res,[401,403].includes(response.status)?401:502,data.error?.message||p.toUpperCase()+' request failed. Check the key, model ID, and provider usage limits.');
     reply=data.choices?.[0]?.message?.content||'';
