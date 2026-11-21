@@ -115,10 +115,10 @@ app.post('/api/study',auth,csrf,apiLimit,async(req,res)=>{
 async function forwardAIStream(upstream,res,providerName){
  const contentType=upstream.headers.get('content-type')||'';
  if(!upstream.ok){const err=await upstream.json().catch(()=>({}));return fail(res,[401,403].includes(upstream.status)?401:502,err.error?.message||providerName.toUpperCase()+' streaming request failed. Check model access and provider limits.');}
- if(!contentType.includes('text/event-stream')){const fallback=await upstream.json().catch(()=>({}));const reply=fallback.choices?.[0]?.message?.content||(fallback.candidates?.[0]?.content?.parts||[]).map(x=>x.text||'').join('\\n')||(fallback.content||[]).filter(x=>x.type==='text').map(x=>x.text||'').join('\\n')||'';return res.json({provider:providerName,reply,streamed:false});}
+ if(!contentType.includes('text/event-stream')){const fallback=await upstream.json().catch(()=>({}));const reply=fallback.choices?.[0]?.message?.content||(fallback.candidates?.[0]?.content?.parts||[]).map(x=>x.text||'').join('\n')||(fallback.content||[]).filter(x=>x.type==='text').map(x=>x.text||'').join('\n')||'';return res.json({provider:providerName,reply,streamed:false});}
  res.status(200);res.set({'Content-Type':'text/event-stream; charset=utf-8','Cache-Control':'no-cache, no-transform','Connection':'keep-alive','X-Accel-Buffering':'no'});res.flushHeaders?.();
  const reader=upstream.body.getReader(),decoder=new TextDecoder();let buffer='',finished=false;
- const send=payload=>{if(!res.writableEnded)res.write('data: '+JSON.stringify(payload)+'\\n\\n');};
+ const send=payload=>{if(!res.writableEnded)res.write('data: '+JSON.stringify(payload)+'\n\n');};
  const parseLine=line=>{if(!line.startsWith('data:'))return;const raw=line.slice(5).trim();if(!raw||raw==='[DONE]'){finished=true;return;}let event;try{event=JSON.parse(raw)}catch{return;}
   if(event.error){send({error:event.error.message||'The provider reported a stream error.'});return;}
   let token='';
@@ -127,7 +127,7 @@ async function forwardAIStream(upstream,res,providerName){
   else token=event.choices?.[0]?.delta?.content||event.choices?.[0]?.text||'';
   if(token)send({token});
  };
- try{while(!finished){const {value,done}=await reader.read();if(done)break;buffer+=decoder.decode(value,{stream:true});const lines=buffer.split(/\\r?\\n/);buffer=lines.pop()||'';for(const line of lines)parseLine(line);}if(buffer)parseLine(buffer);send({done:true});res.end();}
+ try{while(!finished){const {value,done}=await reader.read();if(done)break;buffer+=decoder.decode(value,{stream:true});const lines=buffer.split(/\r?\n/);buffer=lines.pop()||'';for(const line of lines)parseLine(line);}if(buffer)parseLine(buffer);send({done:true});res.end();}
  catch(error){send({error:error.name==='AbortError'?'The stream was cancelled.':'The provider stream was interrupted. Please retry.'});res.end();}
 }
 app.post('/api/chat',auth,csrf,apiLimit,async(req,res)=>{
