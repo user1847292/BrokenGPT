@@ -104,6 +104,31 @@ try {
   assert.equal(await page.locator("#welcome-size").inputValue(), "36",
     "Welcome size did not persist after reload");
 
+  const voicePage = await browser.newPage({ viewport: { width: 412, height: 915 } });
+  await voicePage.addInitScript(() => {
+    window.__speechStartCalls = 0;
+    window.BrokenGPTNativeSpeechRecognition = {
+      available: async () => ({ available: true }),
+      checkPermissions: async () => ({ speechRecognition: "granted" }),
+      requestPermissions: async () => ({ speechRecognition: "granted" }),
+      start: async () => {
+        window.__speechStartCalls++;
+        return { matches: ["Native voice test"] };
+      },
+      stop: async () => {}
+    };
+  });
+  await voicePage.goto("http://127.0.0.1:4173", { waitUntil: "networkidle" });
+  await voicePage.locator("#voice-input").click();
+  await voicePage.waitForFunction(() => document.querySelector("#prompt").value === "Native voice test");
+  await voicePage.locator("#prompt").fill("");
+  await voicePage.locator("#send-message").click();
+  await voicePage.waitForFunction(() => document.querySelector("#messages").innerText.includes("Native voice test"));
+  assert.ok((await voicePage.evaluate(() => window.__speechStartCalls)) >= 2,
+    "Native speech recognition was not used for one-shot and conversation voice input");
+  await voicePage.locator("#send-message").click();
+  await voicePage.close();
+
   if (pageErrors.length || consoleErrors.length) {
     throw new Error("Browser errors detected. pageerror=" + JSON.stringify(pageErrors) +
       " console=" + JSON.stringify(consoleErrors));
