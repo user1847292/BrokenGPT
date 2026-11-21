@@ -486,3 +486,6 @@ body.rgb-on{background-image:none!important;background-color:var(--rgb-current-c
 }
 :where(button,a,[role="button"],[data-view])::selection,
 :where(button,a,[role="button"],[data-view]) *::selection{background:transparent!important;color:inherit!important}
+
+/* Familiar composer icons: mic + voice waveform when empty; send arrow when text is entered. */
+#chat-form .composer-mic svg,#chat-form .composer-send svg{display:block;width:23px;height:23px;margin:auto}#chat-form .composer-mic{border-radius:50%!important;width:46px;height:46px;display:grid;place-items:center}#chat-form .composer-send.voice-mode-button{width:48px;height:48px;min-width:48px;min-height:48px;border-radius:50%!important;background:#2864e8!important;border:0!important;color:#fff!important;display:grid;place-items:center;box-shadow:0 2px 9px #1645a955}#chat-form .composer-send.send-mode-button{width:48px;height:48px;min-width:48px;min-height:48px;border-radius:50%!important;background:#2864e8!important;border:0!important;color:#fff!important;display:grid;place-items:center}#chat-form .composer-send.stop-mode-button{display:grid;place-items:center}#chat-form .composer-mic svg{width:23px;height:23px}
