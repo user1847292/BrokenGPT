@@ -31,7 +31,7 @@ try {
   await page.locator('[data-view="tasks"]').first().evaluate(node => node.click());
   await page.locator("#task-title").fill("Smoke test task tracker");
   await page.locator("#task-add").click();
-  assert.ok((await page.locator("#task-list").innerText()).includes("Smoke test task tracker"), "Task was not added");
+  assert.ok((await page.locator("#task-list").innerText()).includes("Smoke test task tracker"), "Task was not added; input="+await page.locator("#task-title").inputValue()+" status="+await page.locator("#task-create-status").innerText()+" list="+await page.locator("#task-list").innerText());
   assert.ok((await page.locator("#task-create-status").innerText()).includes("has not been executed"), "Task tracker overstated execution status");
   await page.locator("[data-task-complete]").first().click();
   assert.ok((await page.locator("#task-list").innerText()).includes("completed"), "Task completion failed");
