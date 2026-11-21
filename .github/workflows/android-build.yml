@@ -77,6 +77,17 @@ jobs:
       - name: Build release APK
         working-directory: android
         run: ./gradlew assembleRelease --no-daemon
+      - name: Start local preview server
+        run: |
+          python3 -m http.server 4173 --directory www > /tmp/brokengpt-preview.log 2>&1 &
+          echo $! > /tmp/brokengpt-preview.pid
+          for attempt in $(seq 1 20); do curl -fsS http://127.0.0.1:4173/ > /dev/null && break; sleep 1; done
+      - name: Install Playwright browser
+        run: npx playwright install chromium
+      - name: Capture mobile app screenshots
+        run: node scripts/capture-screenshots.mjs
+      - name: Run browser smoke tests
+        run: npm run test:smoke
       - name: Load persistent release signing key
         env:
           BROKENGPT_RELEASE_KEYSTORE_BASE64: ${{ secrets.BROKENGPT_RELEASE_KEYSTORE_BASE64 }}
@@ -130,17 +141,6 @@ jobs:
             This build was produced from branch `feature/approved-brokgpt-expansion`.
           prerelease: true
           files: android/app/build/outputs/apk/release/BrokenGPT-release.apk
-      - name: Start local preview server
-        run: |
-          python3 -m http.server 4173 --directory www > /tmp/brokengpt-preview.log 2>&1 &
-          echo $! > /tmp/brokengpt-preview.pid
-          for attempt in $(seq 1 20); do curl -fsS http://127.0.0.1:4173/ > /dev/null && break; sleep 1; done
-      - name: Install Playwright browser
-        run: npx playwright install chromium
-      - name: Capture mobile app screenshots
-        run: node scripts/capture-screenshots.mjs
-      - name: Run browser smoke tests
-        run: npm run test:smoke
       - name: Upload mobile screenshots
         uses: actions/upload-artifact@v4
         with:
