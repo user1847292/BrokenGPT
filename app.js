@@ -403,10 +403,15 @@ async function apiRequest(url,options={}){
   if(options.csrf)headers["X-CSRF-Token"]=csrfToken;
   let response;try{response=await fetch(apiUrl(url),{method:options.method||"GET",credentials:"include",headers,body:options.body?JSON.stringify(options.body):undefined,signal:AbortSignal.timeout(65000)});}catch(error){if(error.name==="TimeoutError")throw new Error("The AI server took too long. Check your internet connection and backend status, then retry.");throw new Error("Could not reach the BrokenGPT AI server. Check the backend URL and internet connection.");}
   const type=response.headers.get("content-type")||"";
+  if(options.onToken&&type.includes("text/event-stream")){
+    if(!response.ok)throw new Error("The BrokenGPT stream request failed.");
+    const reader=response.body.getReader(),decoder=new TextDecoder();let buffer="",reply="",streamError="";
+    const parseLine=line=>{if(!line.startsWith("data:"))return;const raw=line.slice(5).trim();if(!raw)return;let event;try{event=JSON.parse(raw)}catch{return;}if(event.token){reply+=event.token;options.onToken(event.token)}if(event.error)streamError=event.error;};
+    while(true){const {value,done}=await reader.read();if(done)break;buffer+=decoder.decode(value,{stream:true});const lines=buffer.split(/\\r?\\n/);buffer=lines.pop()||"";lines.forEach(parseLine);}
+    if(buffer)parseLine(buffer);if(streamError)throw new Error(streamError);return {reply,streamed:true};
+  }
   if(!type.includes("application/json"))throw new Error("BrokenGPT backend is not connected to this website yet.");
-  const data=await response.json();
-  if(!response.ok)throw new Error(data.error||"The request failed.");
-  return data;
+  const data=await response.json();if(!response.ok)throw new Error(data.error||"The request failed.");return data;
 }
 function accountMessage(message){const node=apiEl("account-status");if(node)node.textContent=message;}
 function providerMessage(message){const node=apiEl("provider-status");if(node)node.textContent=message;}
@@ -568,8 +573,8 @@ async function sendChatMessage(value){
     const languageInstruction=activeReplyLanguage==="ar"?"The user's latest message is in Arabic. Reply naturally and fully in Arabic. Use Arabic for explanations and follow-up questions unless the user asks for another language.":"The user's latest message is in English or another non-Arabic language. Reply in the same language as the user's latest message. If uncertain, use English.";
     const learnedStyle=localStorage.getItem("brokengpt-response-preference")||"balanced";
     const system="You are BrokenGPT, the default AI assistant and coordinating intelligence across this app. Keep the BrokenGPT identity in chat and AI-powered workflows. "+languageInstruction+" Personality: "+personality+". Mode: "+mode+". Explanation level: "+(prefs.explanationLevel||"Adaptive")+". Response length: "+(prefs.responseLength||"Balanced")+". The user's learned response preference is "+learnedStyle+"; honor it unless the user asks otherwise. Be clear, safe, honest about uncertainty, and adapt explanations to the user's level.";
-    const data=await apiRequest("/api/chat",{method:"POST",csrf:true,body:{provider,model,messages:[{role:"system",content:system},...liveConversation]}});
-    const answer=data.reply||"(The provider returned an empty response.)";
+    const data=await apiRequest("/api/chat",{method:"POST",csrf:true,body:{provider,model,stream:true,messages:[{role:"system",content:system},...liveConversation]},onToken:token=>{const paragraph=typing.querySelector("p");if(paragraph){paragraph.textContent=paragraph.textContent==="Thinking…"?token:paragraph.textContent+token;typing.classList.remove("typing-message");}}});
+    const streamedText=typing.querySelector("p")?.textContent||"";const answer=data.reply||streamedText||"(The provider returned an empty response.)";
     liveConversation.push({role:"assistant",content:answer});
     typing.remove();const assistantCard=addChatMessage("BrokenGPT",answer);addReplyPreferencePicker(value,answer,system,assistantCard);speakAIReply(answer);
     const hist=readList("brokengpt-history");hist.push({title:value.slice(0,48),preview:"You: "+value+"\nBrokenGPT: "+answer.slice(0,700),time:new Date().toISOString()});writeList("brokengpt-history",hist);renderHistory();
