@@ -37,6 +37,11 @@ try {
   await page.locator("#prompt").fill("local history smoke conversation");
   await page.locator("#send-message").click();
   assert.ok((await page.locator("#messages").innerText()).includes("local history smoke conversation"), "Composer did not display the submitted user message");
+  await page.locator('[data-view="battle"]').first().evaluate(node => node.click());
+  await page.locator("#battle-add-model").click();
+  assert.ok((await page.locator("#battle-participant-count").innerText()).includes("3 participants"), "AI Battle participant count did not increase");
+  assert.equal(await page.locator("#battle-participants [data-battle-participant]").count(), 3, "AI Battle did not add a third selectable model");
+
   await page.locator('[data-view="history"]').first().evaluate(node => node.click());
   assert.ok((await page.locator("#history-list").innerText()).includes("local history smoke conversation"), "Local chat history did not save the submitted conversation");
   await page.locator("#history-list button").first().click();
