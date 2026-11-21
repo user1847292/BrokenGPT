@@ -1124,7 +1124,7 @@ apiEl("download-video").addEventListener("click",async()=>{
   log.innerHTML=tasks.slice().reverse().slice(0,8).map(task=>'<li><b>'+escapeText(task.title)+'</b> — '+escapeText(task.status)+'.</li>').join("");
   summary.textContent=tasks.filter(t=>t.status==="queued").length+" queued · "+tasks.filter(t=>t.status==="completed").length+" completed · saved locally";
  };
- $("task-add")?.addEventListener("click",()=>{const title=$("task-title").value.trim();if(!title){$("task-create-status").textContent="Enter a task first.";return;}tasks.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,7),title,created:new Date().toLocaleString(),status:"queued"});$("task-title").value="";save();render();$("task-create-status").textContent="Saved. It is queued for future AI task-runner integration; it has not been executed.";});
+ document.addEventListener("click",event=>{if(!event.target.closest("#task-add"))return;const title=$("task-title").value.trim();if(!title){$("task-create-status").textContent="Enter a task first.";return;}tasks.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,7),title,created:new Date().toLocaleString(),status:"queued"});$("task-title").value="";save();render();$("task-create-status").textContent="Saved. It is queued for future AI task-runner integration; it has not been executed.";});
  $("task-list")?.addEventListener("click",event=>{const complete=event.target.closest("[data-task-complete]"),remove=event.target.closest("[data-task-remove]");if(complete){const task=tasks.find(t=>t.id===complete.dataset.taskComplete);if(task)task.status="completed";}else if(remove){tasks=tasks.filter(t=>t.id!==remove.dataset.taskRemove);}else return;save();render();});
  render();
 })();
