@@ -442,3 +442,6 @@ body textarea:focus-visible,body select:focus-visible{
 
 /* Built-in browser selection and embedded browsing surface */
 .browser-controls{display:grid;gap:7px;max-width:520px;margin:14px 0}.browser-controls label{font-size:11px;letter-spacing:.7px;color:#ff536b}.browser-controls select{width:100%;min-height:44px;padding:10px;border:1px solid #4a202b;border-radius:10px;background:#111;color:#eee}.browser-toolbar{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}.builtin-browser-frame{display:none;width:100%;height:min(72vh,850px);min-height:420px;margin-top:12px;border:1px solid #4a202b;border-radius:13px;background:#fff}.builtin-browser-frame.loaded{display:block}
+
+/* User-controlled stop button for active chat/task activity */
+.activity-cancel{margin-left:auto;flex:0 0 auto;padding:6px 10px;border:1px solid #b51b36!important;border-radius:8px;background:#390812!important;color:#ff7188!important;font-size:12px;font-weight:700;cursor:pointer}.activity-cancel:disabled{opacity:.7;cursor:wait}.activity-cancel.is-stopping{border-color:#6b3038!important;color:#d8a0a8!important}.activity-summary{flex-wrap:wrap}
