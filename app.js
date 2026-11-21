@@ -983,3 +983,23 @@ apiEl("download-video").addEventListener("click",async()=>{
  byId("offline-base64-decode")?.addEventListener("click",()=>{try{const binary=atob(byId("offline-base64-input").value.trim());const bytes=Uint8Array.from(binary,c=>c.charCodeAt(0));byId("offline-base64-input").value=decoder.decode(bytes);byId("offline-base64-status").textContent="Decoded locally.";}catch{byId("offline-base64-status").textContent="Invalid Base64 or unsupported text.";}});
  byId("offline-hash-run")?.addEventListener("click",async()=>{try{if(!crypto.subtle)throw new Error("Secure local crypto is unavailable in this browser.");const digest=await crypto.subtle.digest("SHA-256",encoder.encode(byId("offline-hash-input").value));byId("offline-hash-result").value=Array.from(new Uint8Array(digest),b=>b.toString(16).padStart(2,"0")).join("");byId("offline-hash-status").textContent="Calculated locally.";}catch(e){byId("offline-hash-status").textContent=e.message;}});
 })();
+
+// Local task center: persist task titles/status and a concise user-visible activity log.
+(()=>{
+ const $=id=>document.getElementById(id);
+ const STORE="brokengpt-local-tasks-v1";
+ let tasks=[];
+ try{const saved=JSON.parse(localStorage.getItem(STORE)||"[]");if(Array.isArray(saved))tasks=saved;}catch{}
+ const escapeText=value=>String(value).replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;", "'":"&#39;"}[ch]));
+ const save=()=>{try{localStorage.setItem(STORE,JSON.stringify(tasks));}catch{$("task-create-status").textContent="Storage is unavailable; tasks may not persist.";}};
+ const render=()=>{
+  const list=$("task-list"),log=$("task-activity-log"),summary=$("task-activity-summary");if(!list||!log||!summary)return;
+  if(!tasks.length){list.innerHTML='<p class="status">No tasks yet. Add one above.</p>';log.innerHTML='<li>No activity yet.</li>';summary.textContent="No activity yet.";return;}
+  list.innerHTML=tasks.map(task=>'<article class="task-item"><div class="task-item-head"><b>'+escapeText(task.title)+'</b><span class="task-state task-state-'+task.status+'">'+escapeText(task.status)+'</span></div><p class="status">Added '+escapeText(task.created)+' · '+(task.status==="completed"?"Marked complete by you":"Waiting for an AI task runner; no action has been executed")+'</p><div class="task-actions">'+(task.status!=="completed"?'<button type="button" data-task-complete="'+task.id+'" class="secondary">Mark completed</button>':'')+'<button type="button" data-task-remove="'+task.id+'" class="secondary">Remove</button></div></article>').join("");
+  log.innerHTML=tasks.slice().reverse().slice(0,8).map(task=>'<li><b>'+escapeText(task.title)+'</b> — '+escapeText(task.status)+'.</li>').join("");
+  summary.textContent=tasks.filter(t=>t.status==="queued").length+" queued · "+tasks.filter(t=>t.status==="completed").length+" completed · saved locally";
+ };
+ $("task-add")?.addEventListener("click",()=>{const title=$("task-title").value.trim();if(!title){$("task-create-status").textContent="Enter a task first.";return;}tasks.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,7),title,created:new Date().toLocaleString(),status:"queued"});$("task-title").value="";save();render();$("task-create-status").textContent="Saved. It is queued for future AI task-runner integration; it has not been executed.";});
+ $("task-list")?.addEventListener("click",event=>{const complete=event.target.closest("[data-task-complete]"),remove=event.target.closest("[data-task-remove]");if(complete){const task=tasks.find(t=>t.id===complete.dataset.taskComplete);if(task)task.status="completed";}else if(remove){tasks=tasks.filter(t=>t.id!==remove.dataset.taskRemove);}else return;save();render();});
+ render();
+})();
