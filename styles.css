@@ -384,3 +384,42 @@ body textarea:focus-visible,body select:focus-visible{
 
 /* Local task board: readable cards with restrained crimson status labels. */
 .task-list{display:grid;gap:12px;margin-top:14px}.task-item{border:1px solid #70202b;border-radius:14px;padding:14px;background:linear-gradient(145deg,#13080b,#080708)}.task-item-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.task-item-head b{overflow-wrap:anywhere}.task-state{font-size:12px;text-transform:uppercase;border:1px solid #842238;border-radius:999px;padding:4px 8px;white-space:nowrap}.task-state-completed{border-color:#387a58;color:#83d9a5!important}.task-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}.task-activity ol{padding-left:22px}.task-activity li{margin:8px 0;overflow-wrap:anywhere}.task-create textarea{width:100%;box-sizing:border-box}
+
+
+/* Release 2 polish: remove the artificial robot face and use clean crimson accents. */
+#chat .hero::before,#chat .hero::after{display:none!important;content:none!important}
+:root{
+ --blood-ink:#f1eeee;
+ --blood-bright:#ff1744;
+ --blood-deep:#650018;
+ --blood-edge:#ff1744;
+ --blood-glow:rgba(255,23,68,.22);
+}
+html,body{background:#050505!important;color:#f1eeee!important}
+body,body *{color:inherit}
+body p,body li,body label,body small,body summary,body figcaption,
+body .status,body .muted,body header,body footer,body .profile,
+body .view>p,body .tile p,body .message p,body .lesson p,
+body .settings-card p,body .tool-card p,body .universe-character-info p{
+ color:#c9c5c7!important;
+}
+body h1,body h2,body h3,body h4,body strong,body b,body em,
+body .brand,body nav button,body .label,body section>small,
+body .message b,body .tile>b,body .tool-tag,body .mode-chip{
+ color:#ff1744!important;text-shadow:0 0 6px rgba(255,23,68,.18);
+}
+body button,body a,body input,body textarea,body select,body option,
+body .universe-character-info button{color:#f1eeee!important}
+body button:not(.secondary),body form button,body .composer-send{
+ background-color:#700018!important;border-color:#ff1744!important;
+}
+body button:hover,body a:hover{color:#ff718d!important}
+body input::placeholder,body textarea::placeholder{color:#8d7f83!important}
+body ::selection{background:#b90032;color:#fff}
+body button:focus-visible,body a:focus-visible,body input:focus-visible,
+body textarea:focus-visible,body select:focus-visible{
+ outline:2px solid #ff1744!important;box-shadow:0 0 0 3px rgba(255,23,68,.2);
+}
+.sidebar{will-change:transform;contain:paint;transition:transform .18s cubic-bezier(.2,.75,.25,1)!important}
+.drawer-backdrop.visible{backdrop-filter:none!important;-webkit-backdrop-filter:none!important;background:rgba(0,0,0,.62)!important}
+@media(prefers-reduced-motion:reduce){.sidebar{transition:none!important}}
