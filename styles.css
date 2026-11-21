@@ -489,3 +489,14 @@ body.rgb-on{background-image:none!important;background-color:var(--rgb-current-c
 
 /* Familiar composer icons: mic + voice waveform when empty; send arrow when text is entered. */
 #chat-form .composer-mic svg,#chat-form .composer-send svg{display:block;width:23px;height:23px;margin:auto}#chat-form .composer-mic{border-radius:50%!important;width:46px;height:46px;display:grid;place-items:center}#chat-form .composer-send.voice-mode-button{width:48px;height:48px;min-width:48px;min-height:48px;border-radius:50%!important;background:#2864e8!important;border:0!important;color:#fff!important;display:grid;place-items:center;box-shadow:0 2px 9px #1645a955}#chat-form .composer-send.send-mode-button{width:48px;height:48px;min-width:48px;min-height:48px;border-radius:50%!important;background:#2864e8!important;border:0!important;color:#fff!important;display:grid;place-items:center}#chat-form .composer-send.stop-mode-button{display:grid;place-items:center}#chat-form .composer-mic svg{width:23px;height:23px}
+
+
+/* Composer voice/send button: requested red orb with black glyph, scoped only to the chat input. */
+#chat-form .composer-send.voice-mode-button,
+#chat-form .composer-send.send-mode-button{background:#ed1238!important;background-image:none!important;border:1px solid #ff3c5c!important;color:#050000!important;-webkit-text-fill-color:#050000!important;border-radius:50%!important;width:50px!important;height:50px!important;min-width:50px!important;min-height:50px!important;padding:0!important;display:grid!important;place-items:center!important;box-shadow:0 0 0 2px #ed123833,0 0 12px #ed123844!important}
+#chat-form .composer-send.voice-mode-button svg,
+#chat-form .composer-send.send-mode-button svg{width:24px!important;height:24px!important;color:#050000!important;stroke:#050000!important}
+#chat-form .composer-send.voice-mode-button svg path,
+#chat-form .composer-send.send-mode-button svg path{stroke:#050000!important}
+#chat-form #prompt{color:#f6f1f2!important;-webkit-text-fill-color:#f6f1f2!important;caret-color:#ed1238!important}
+#chat-form .composer-mic{background:#242424!important;color:#f4f4f4!important;border-color:#454545!important}
