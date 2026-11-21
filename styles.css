@@ -504,3 +504,8 @@ body.rgb-on{background-image:none!important;background-color:var(--rgb-current-c
 
 /* Temporary Root panel — clear status, same dark crimson custom UI. */
 #hack-panel-temporary-root .temporary-root-card{border:1px solid #a31232;background:#090607;border-radius:18px;padding:20px}#hack-panel-temporary-root #temporary-root-status{color:#f02a49}#hack-panel-temporary-root button{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+
+/* Android WebView: prevent text-selection callouts on tappable UI; keep selection enabled in editable text. */
+button,a,[role="button"],.tile,.tool-card,.hacking-tab,.saved-item,.task-item,.settings-category-nav,.sidebar nav,.composer-menu{user-select:none!important;-webkit-user-select:none!important;-webkit-touch-callout:none!important;touch-action:manipulation}
+button *,a *,[role="button"] *{user-select:none!important;-webkit-user-select:none!important;-webkit-touch-callout:none!important}
+input,textarea,[contenteditable="true"],.message p{user-select:text;-webkit-user-select:text;-webkit-touch-callout:default}
