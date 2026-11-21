@@ -401,7 +401,7 @@ function apiUrl(url){const base=backendBaseUrl();return base?base+url:url;}
 async function apiRequest(url,options={}){
   const headers={"Content-Type":"application/json",...(options.headers||{})};
   if(options.csrf)headers["X-CSRF-Token"]=csrfToken;
-  let response;try{response=await fetch(apiUrl(url),{method:options.method||"GET",credentials:"include",headers,body:options.body?JSON.stringify(options.body):undefined,signal:AbortSignal.timeout(65000)});}catch(error){if(error.name==="TimeoutError")throw new Error("The AI server took too long. Check your internet connection and backend status, then retry.");throw new Error("Could not reach the BrokenGPT AI server. Check the backend URL and internet connection.");}
+  let response;try{response=await fetch(apiUrl(url),{method:options.method||"GET",credentials:"include",headers,body:options.body?JSON.stringify(options.body):undefined,signal:options.signal||AbortSignal.timeout(65000)});}catch(error){if(error.name==="AbortError")throw error;if(error.name==="TimeoutError")throw new Error("The AI server took too long. Check your internet connection and backend status, then retry.");throw new Error("Could not reach the BrokenGPT AI server. Check the backend URL and internet connection.");}
   const type=response.headers.get("content-type")||"";
   if(options.onToken&&type.includes("text/event-stream")){
     if(!response.ok)throw new Error("The BrokenGPT stream request failed.");
@@ -561,7 +561,7 @@ function addReplyPreferencePicker(question,currentAnswer,systemPrompt,anchorCard
 }
 /* Live activity tracker: visible progress and genuine source links when a tool supplies them. */
 const activityRoot=document.getElementById("live-activity");
-let activeActivity=null;
+let activeActivity=null,activeRequestController=null,activeRequestCancelled=false;
 function activityStart(title="Working on your request"){
  if(!activityRoot)return null;activityRoot.replaceChildren();activityRoot.classList.remove("hidden");
  const details=document.createElement("details");details.className="activity-card";details.open=true;
@@ -569,7 +569,7 @@ function activityStart(title="Working on your request"){
  const icon=document.createElement("span");icon.className="activity-pulse";icon.setAttribute("aria-hidden","true");
  const label=document.createElement("span");label.className="activity-title";label.textContent=title;
  const state=document.createElement("span");state.className="activity-state";state.textContent="In progress";
- summary.append(icon,label,state);details.append(summary);
+ summary.append(icon,label,state);const cancel=document.createElement("button");cancel.type="button";cancel.className="activity-cancel";cancel.textContent="■ Stop";cancel.setAttribute("aria-label","Cancel current BrokenGPT task");cancel.addEventListener("click",event=>{event.preventDefault();event.stopPropagation();if(activeRequestController&&!activeRequestController.signal.aborted){activeRequestCancelled=true;cancel.disabled=true;cancel.textContent="Stopping…";cancel.classList.add("is-stopping");activeRequestController.abort();activityStep("Cancellation requested by you","error");state.textContent="Stopping";state.classList.add("error");}});summary.append(cancel);details.append(summary);
  const steps=document.createElement("ol");steps.className="activity-steps";details.append(steps);
  const sources=document.createElement("div");sources.className="activity-sources";details.append(sources);
  activityRoot.append(details);activeActivity={details,steps,sources,state,title,done:false};activityStep(title);return activeActivity;
@@ -596,7 +596,7 @@ async function sendChatMessage(value){
   activeReplyLanguage=detectMessageLanguage(value);
   const provider=apiEl("active-provider").value,model=apiEl("active-model").value.trim();
   if(!currentUser){addChatMessage("BrokenGPT · AI SETUP","I received your message, but the AI service is not connected yet. In Settings, enter the deployed HTTPS backend URL, test it, then create/sign in to your account and connect a provider API key. After the status says the provider is connected, send your message again.");apiEl("active-provider-status").textContent="AI offline: backend/account/provider setup is incomplete.";return;}
-  const button=document.getElementById("send-message");button.disabled=true;
+  const button=document.getElementById("send-message");button.disabled=true;activeRequestController=new AbortController();activeRequestCancelled=false;
   const typing=addChatMessage("BrokenGPT","Thinking…");typing.classList.add("typing-message");activityStart("BrokenGPT is working");activityStep("Thinking through your message");
   try{
     liveConversation.push({role:"user",content:value});activityStep("Preparing your AI request");activityStep("Connecting to the selected AI provider");
@@ -605,15 +605,15 @@ async function sendChatMessage(value){
     const languageInstruction=activeReplyLanguage==="ar"?"The user's latest message is in Arabic. Reply naturally and fully in Arabic. Use Arabic for explanations and follow-up questions unless the user asks for another language.":"The user's latest message is in English or another non-Arabic language. Reply in the same language as the user's latest message. If uncertain, use English.";
     const learnedStyle=localStorage.getItem("brokengpt-response-preference")||"balanced";
     const system="You are BrokenGPT, the default AI assistant and coordinating intelligence across this app. Keep the BrokenGPT identity in chat and AI-powered workflows. "+languageInstruction+" Personality: "+personality+". Mode: "+mode+". Explanation level: "+(prefs.explanationLevel||"Adaptive")+". Response length: "+(prefs.responseLength||"Balanced")+". The user's learned response preference is "+learnedStyle+"; honor it unless the user asks otherwise. Be clear, safe, honest about uncertainty, and adapt explanations to the user's level.";
-    const data=await apiRequest("/api/chat",{method:"POST",csrf:true,body:{provider,model,stream:true,messages:[{role:"system",content:system},...liveConversation]},onToken:token=>{if(!activeActivity?.received){activityStep("Receiving the AI response");if(activeActivity)activeActivity.received=true;}const paragraph=typing.querySelector("p");if(paragraph){paragraph.textContent=paragraph.textContent==="Thinking…"?token:paragraph.textContent+token;typing.classList.remove("typing-message");}}});
+    const data=await apiRequest("/api/chat",{method:"POST",csrf:true,body:{provider,model,stream:true,messages:[{role:"system",content:system},...liveConversation]},signal:activeRequestController.signal,onToken:token=>{if(!activeActivity?.received){activityStep("Receiving the AI response");if(activeActivity)activeActivity.received=true;}const paragraph=typing.querySelector("p");if(paragraph){paragraph.textContent=paragraph.textContent==="Thinking…"?token:paragraph.textContent+token;typing.classList.remove("typing-message");}}});
     const streamedText=typing.querySelector("p")?.textContent||"";const answer=data.reply||streamedText||"(The provider returned an empty response.)";
     liveConversation.push({role:"assistant",content:answer});
     typing.remove();const assistantCard=addChatMessage("BrokenGPT",answer);addReplyPreferencePicker(value,answer,system,assistantCard);activityFinish("Reply delivered");speakAIReply(answer);
     const hist=readList("brokengpt-history");hist.push({title:value.slice(0,48),preview:"You: "+value+"\nBrokenGPT: "+answer.slice(0,700),time:new Date().toISOString()});writeList("brokengpt-history",hist);renderHistory();
   }catch(error){
     if(liveConversation.at(-1)?.role==="user")liveConversation.pop();
-    typing.remove();activityFail(error.message);addChatMessage("BrokenGPT · CONNECTION",error.message+" Your message was not answered; fix the connection and tap send again.");apiEl("active-provider-status").textContent="AI request failed: "+error.message;
-  }finally{button.disabled=false;}
+    typing.remove();if(activeRequestCancelled||error.name==="AbortError"){activityFail("Task cancelled. BrokenGPT stopped waiting for this response.");addChatMessage("BrokenGPT · CANCELLED","Cancelled by you. The app stopped this request; if the server had already begun processing it, cancellation may not reverse work already performed.");}else{activityFail(error.message);addChatMessage("BrokenGPT · CONNECTION",error.message+" Your message was not answered; fix the connection and tap send again.");apiEl("active-provider-status").textContent="AI request failed: "+error.message;}
+  }finally{button.disabled=false;activeRequestController=null;activeRequestCancelled=false;}
 }
 restoreAccount();
 
