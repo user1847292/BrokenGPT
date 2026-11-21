@@ -77,27 +77,36 @@ jobs:
       - name: Build release APK
         working-directory: android
         run: ./gradlew assembleRelease --no-daemon
+      - name: Load persistent release signing key
+        env:
+          BROKENGPT_RELEASE_KEYSTORE_BASE64: ${{ secrets.BROKENGPT_RELEASE_KEYSTORE_BASE64 }}
+          BROKENGPT_RELEASE_STORE_PASSWORD: ${{ secrets.BROKENGPT_RELEASE_STORE_PASSWORD }}
+          BROKENGPT_RELEASE_KEY_PASSWORD: ${{ secrets.BROKENGPT_RELEASE_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [ -z "$BROKENGPT_RELEASE_KEYSTORE_BASE64" ] || [ -z "$BROKENGPT_RELEASE_STORE_PASSWORD" ] || [ -z "$BROKENGPT_RELEASE_KEY_PASSWORD" ]; then
+            echo "::error::Persistent signing secrets are missing. Follow docs/RELEASE_SIGNING.md; never generate a new signing key for each build."
+            exit 1
+          fi
+          KEYSTORE="$RUNNER_TEMP/brokengpt-release.keystore"
+          printf '%s' "$BROKENGPT_RELEASE_KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE"
+          keytool -list -keystore "$KEYSTORE" -storepass "$BROKENGPT_RELEASE_STORE_PASSWORD" -alias brokengpt-release
       - name: Sign release APK for installation
+        env:
+          BROKENGPT_RELEASE_STORE_PASSWORD: ${{ secrets.BROKENGPT_RELEASE_STORE_PASSWORD }}
+          BROKENGPT_RELEASE_KEY_PASSWORD: ${{ secrets.BROKENGPT_RELEASE_KEY_PASSWORD }}
         run: |
           set -euo pipefail
           APK_DIR="android/app/build/outputs/apk/release"
           UNSIGNED_APK="$APK_DIR/app-release-unsigned.apk"
           SIGNED_APK="$APK_DIR/BrokenGPT-release.apk"
           KEYSTORE="$RUNNER_TEMP/brokengpt-release.keystore"
-          STORE_PASS="$(openssl rand -hex 24)"
-          keytool -genkeypair -v \
-            -keystore "$KEYSTORE" \
-            -storepass "$STORE_PASS" \
-            -keypass "$STORE_PASS" \
-            -alias brokengpt-release \
-            -keyalg RSA -keysize 2048 -validity 10000 \
-            -dname "CN=BrokenGPT Release"
           APKSIGNER="$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -n 1)"
           "$APKSIGNER" sign \
             --ks "$KEYSTORE" \
             --ks-key-alias brokengpt-release \
-            --ks-pass "pass:$STORE_PASS" \
-            --key-pass "pass:$STORE_PASS" \
+            --ks-pass "pass:$BROKENGPT_RELEASE_STORE_PASSWORD" \
+            --key-pass "pass:$BROKENGPT_RELEASE_KEY_PASSWORD" \
             --out "$SIGNED_APK" "$UNSIGNED_APK"
           "$APKSIGNER" verify --verbose "$SIGNED_APK"
           rm -f "$KEYSTORE"
