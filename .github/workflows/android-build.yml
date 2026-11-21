@@ -60,7 +60,7 @@ jobs:
           text = path.read_text()
           mirror = 'maven { url "https://maven-central.storage-download.googleapis.com/maven2" }'
           if mirror not in text:
-              text = text.replace("mavenCentral()", mirror + "\\n        mavenCentral()")
+              text = text.replace("mavenCentral()", mirror + "\n        mavenCentral()")
               path.write_text(text)
           print("Configured Google-hosted Maven Central mirror fallback")
           PY
@@ -85,19 +85,19 @@ jobs:
           SIGNED_APK="$APK_DIR/BrokenGPT-release.apk"
           KEYSTORE="$RUNNER_TEMP/brokengpt-release.keystore"
           STORE_PASS="$(openssl rand -hex 24)"
-          keytool -genkeypair -v \\
-            -keystore "$KEYSTORE" \\
-            -storepass "$STORE_PASS" \\
-            -keypass "$STORE_PASS" \\
-            -alias brokengpt-release \\
-            -keyalg RSA -keysize 2048 -validity 10000 \\
+          keytool -genkeypair -v \
+            -keystore "$KEYSTORE" \
+            -storepass "$STORE_PASS" \
+            -keypass "$STORE_PASS" \
+            -alias brokengpt-release \
+            -keyalg RSA -keysize 2048 -validity 10000 \
             -dname "CN=BrokenGPT Release"
           APKSIGNER="$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -n 1)"
-          "$APKSIGNER" sign \\
-            --ks "$KEYSTORE" \\
-            --ks-key-alias brokengpt-release \\
-            --ks-pass "pass:$STORE_PASS" \\
-            --key-pass "pass:$STORE_PASS" \\
+          "$APKSIGNER" sign \
+            --ks "$KEYSTORE" \
+            --ks-key-alias brokengpt-release \
+            --ks-pass "pass:$STORE_PASS" \
+            --key-pass "pass:$STORE_PASS" \
             --out "$SIGNED_APK" "$UNSIGNED_APK"
           "$APKSIGNER" verify --verbose "$SIGNED_APK"
           rm -f "$KEYSTORE"
